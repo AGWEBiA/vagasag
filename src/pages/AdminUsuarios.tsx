@@ -273,9 +273,12 @@ const AdminUsuarios = () => {
       lider: 0,
       colaborador: 0,
     };
+    // Conta cada papel separadamente — um usuário pode aparecer em várias categorias
     users.forEach((u) => {
-      const role = (u.roles[0] ?? "colaborador") as AppRole;
-      if (role in c) c[role]++;
+      const list = u.roles.length > 0 ? u.roles : (["colaborador"] as AppRole[]);
+      list.forEach((role) => {
+        if (role in c) c[role as AppRole]++;
+      });
     });
     return c;
   }, [users]);
