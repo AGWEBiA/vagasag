@@ -258,43 +258,56 @@ const InboxCandidaturas = () => {
                 </Select>
               </div>
 
-              <div className="grid gap-2 text-sm">
-                <Contact icon={Mail} label={selected.email} />
-                {selected.telefone && <Contact icon={Phone} label={selected.telefone} />}
-                {selected.linkedin && (
-                  <Contact icon={Linkedin} label={selected.linkedin} link />
-                )}
-                {selected.portfolio && (
-                  <Contact icon={Globe} label={selected.portfolio} link />
-                )}
-              </div>
+              <Tabs defaultValue="detalhes" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-xs">
+                  <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+                  <TabsTrigger value="historico">Histórico</TabsTrigger>
+                </TabsList>
 
-              <div>
-                <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
-                  Experiência profissional
-                </h3>
-                <p className="text-sm text-body whitespace-pre-line leading-relaxed">
-                  {selected.dados_profissionais}
-                </p>
-              </div>
+                <TabsContent value="detalhes" className="space-y-5 mt-4">
+                  <div className="grid gap-2 text-sm">
+                    <Contact icon={Mail} label={selected.email} />
+                    {selected.telefone && <Contact icon={Phone} label={selected.telefone} />}
+                    {selected.linkedin && (
+                      <Contact icon={Linkedin} label={selected.linkedin} link />
+                    )}
+                    {selected.portfolio && (
+                      <Contact icon={Globe} label={selected.portfolio} link />
+                    )}
+                  </div>
 
-              {selected.informacoes_adicionais && (
-                <div>
-                  <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
-                    Informações adicionais
-                  </h3>
-                  <p className="text-sm text-body whitespace-pre-line leading-relaxed">
-                    {selected.informacoes_adicionais}
-                  </p>
-                </div>
-              )}
+                  <div>
+                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
+                      Experiência profissional
+                    </h3>
+                    <p className="text-sm text-body whitespace-pre-line leading-relaxed">
+                      {selected.dados_profissionais}
+                    </p>
+                  </div>
 
-              <div>
-                <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
-                  Respostas do candidato
-                </h3>
-                <RespostasCandidato candidaturaId={selected.id} />
-              </div>
+                  {selected.informacoes_adicionais && (
+                    <div>
+                      <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
+                        Informações adicionais
+                      </h3>
+                      <p className="text-sm text-body whitespace-pre-line leading-relaxed">
+                        {selected.informacoes_adicionais}
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
+                      Respostas do candidato
+                    </h3>
+                    <RespostasCandidato candidaturaId={selected.id} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="historico" className="mt-4">
+                  <CandidaturaTimeline candidaturaId={selected.id} />
+                </TabsContent>
+              </Tabs>
 
               <div className="flex gap-2 pt-3 border-t border-sidebar-border">
                 {selected.candidate_id ? (
