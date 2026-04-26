@@ -381,13 +381,42 @@ Deno.serve(async (req) => {
     const model = (settings?.model as string) || "google/gemini-2.5-flash";
 
     const cargoLabel = CARGO_LABELS[cargo];
+
+    // Carrega respostas do candidato (apenas perguntas marcadas para IA)
+    let respostasBlock = "";
+    if (candidaturaId) {
+      const { data: respostas } = await supabase
+        .from("candidatura_respostas")
+        .select(
+          "resposta_texto, resposta_numero, vaga_perguntas(texto, tipo, ordem, usar_na_ia)",
+        )
+        .eq("candidatura_id", candidaturaId);
+      const filtered = (respostas ?? [])
+        .filter((r: any) => r.vaga_perguntas?.usar_na_ia)
+        .sort(
+          (a: any, b: any) =>
+            (a.vaga_perguntas?.ordem ?? 0) - (b.vaga_perguntas?.ordem ?? 0),
+        );
+      if (filtered.length > 0) {
+        const lines = filtered.map((r: any) => {
+          const q = r.vaga_perguntas?.texto ?? "Pergunta";
+          const ans =
+            r.vaga_perguntas?.tipo === "escala"
+              ? `${r.resposta_numero}/5`
+              : (r.resposta_texto ?? "(sem resposta)");
+          return `- ${q}\n  R: ${ans}`;
+        });
+        respostasBlock = `\n\nRESPOSTAS DO CANDIDATO ÀS PERGUNTAS DA VAGA:\n${lines.join("\n")}`;
+      }
+    }
+
     const userPrompt = `Cargo avaliado: ${cargoLabel}
 Nome do candidato: ${nome}
 
 DADOS PROFISSIONAIS:
 ${dadosProfissionais}
 
-${informacoesAdicionais ? `INFORMAÇÕES ADICIONAIS:\n${informacoesAdicionais}` : ""}
+${informacoesAdicionais ? `INFORMAÇÕES ADICIONAIS:\n${informacoesAdicionais}` : ""}${respostasBlock}
 
 Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
 
