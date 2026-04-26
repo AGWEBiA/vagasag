@@ -389,6 +389,8 @@ const VagaPublica = () => {
                 </div>
               )}
 
+              <Button
+                type="submit"
                 disabled={submitting}
                 className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-12 text-base font-semibold"
               >
