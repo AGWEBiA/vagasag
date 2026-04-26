@@ -315,6 +315,8 @@ const AdminUsuarios = () => {
         </div>
       </header>
 
+      <ShareAutoavaliacaoCard />
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {ROLE_OPTIONS.map((r) => (
