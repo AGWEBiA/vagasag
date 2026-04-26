@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Trophy,
@@ -13,10 +13,20 @@ import {
   AlertTriangle,
   Calendar,
   UserPlus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CARGO_LABEL,
@@ -37,6 +47,12 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Users,
 };
 
+const SENIORIDADE_RANK: Record<Senioridade, number> = {
+  Junior: 1,
+  Pleno: 2,
+  Senior: 3,
+};
+
 interface PilarData {
   nota: number;
   justificativa: string;
@@ -54,11 +70,13 @@ interface Assessment {
   resumo_executivo: string;
   model_used: string;
   created_at: string;
+  candidate_id: string;
   candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
 
 const Relatorio = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ["assessment", id],
@@ -73,6 +91,38 @@ const Relatorio = () => {
     },
     enabled: !!id,
   });
+
+  const candidateId = data?.candidate_id ?? data?.candidates?.id ?? null;
+
+  const { data: history } = useQuery({
+    queryKey: ["assessment-history", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("assessments")
+        .select(
+          "id, senioridade_detectada, confidence_score, nota_ponderada, analise_pilares, created_at",
+        )
+        .eq("candidate_id", candidateId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{
+        id: string;
+        senioridade_detectada: Senioridade;
+        confidence_score: number;
+        nota_ponderada: number;
+        analise_pilares: Record<string, PilarData>;
+        created_at: string;
+      }>;
+    },
+    enabled: !!candidateId,
+  });
+
+  const previous = useMemo(() => {
+    if (!data || !history) return null;
+    const idx = history.findIndex((h) => h.id === data.id);
+    if (idx < 0 || idx >= history.length - 1) return null;
+    return history[idx + 1];
+  }, [data, history]);
 
   useEffect(() => {
     document.title = data?.candidates?.nome
@@ -167,6 +217,38 @@ const Relatorio = () => {
           {SENIORIDADE_DESC[s]}
         </p>
       </header>
+
+      {/* Histórico de versões + comparação */}
+      {history && history.length > 1 && (
+        <section className="surface-card rounded-xl p-4 md:p-6 mb-6 animate-fade-in">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+                <HistoryIcon className="h-4 w-4 text-gold" />
+                Histórico desta pessoa
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {history.length} avaliações registradas. Selecione uma versão para visualizar.
+              </p>
+            </div>
+            <Select value={data.id} onValueChange={(v) => navigate(`/relatorio/${v}`)}>
+              <SelectTrigger className="w-full md:w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {history.map((h, idx) => (
+                  <SelectItem key={h.id} value={h.id}>
+                    {idx === 0 ? "Mais recente · " : `v${history.length - idx} · `}
+                    {new Date(h.created_at).toLocaleDateString("pt-BR")} ·{" "}
+                    {SENIORIDADE_LABEL[h.senioridade_detectada]} ({h.nota_ponderada.toFixed(1)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {previous && <ComparisonBlock current={data} previous={previous} />}
+        </section>
+      )}
 
       {/* Section 2 — Métricas */}
       <section className="grid gap-4 md:grid-cols-3 mb-6">
@@ -346,4 +428,127 @@ const MetricBox = ({
   </div>
 );
 
+const ComparisonBlock = ({
+  current,
+  previous,
+}: {
+  current: { senioridade_detectada: Senioridade; nota_ponderada: number; analise_pilares: Record<string, PilarData>; created_at: string };
+  previous: { senioridade_detectada: Senioridade; nota_ponderada: number; analise_pilares: Record<string, PilarData>; created_at: string };
+}) => {
+  const deltaNota = current.nota_ponderada - previous.nota_ponderada;
+  const deltaRank =
+    SENIORIDADE_RANK[current.senioridade_detectada] -
+    SENIORIDADE_RANK[previous.senioridade_detectada];
+
+  const trendIcon = (delta: number) => {
+    if (delta > 0.05) return <ArrowUpRight className="h-4 w-4 text-senior" />;
+    if (delta < -0.05) return <ArrowDownRight className="h-4 w-4 text-destructive" />;
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
+  };
+
+  const trendClass = (delta: number) =>
+    delta > 0.05
+      ? "text-senior"
+      : delta < -0.05
+        ? "text-destructive"
+        : "text-muted-foreground";
+
+  return (
+    <div className="rounded-lg border border-sidebar-border bg-surface-elevated/60 p-4">
+      <div className="text-xs text-muted-foreground mb-3">
+        Comparando com a avaliação de{" "}
+        <strong>
+          {new Date(previous.created_at).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })}
+        </strong>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 mb-4">
+        <div className="rounded-md border border-sidebar-border bg-background p-3">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            Nível
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm">
+              {SENIORIDADE_LABEL[previous.senioridade_detectada]}
+            </span>
+            <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground rotate-45" />
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${senioridadeBadgeClasses(current.senioridade_detectada)}`}
+            >
+              {SENIORIDADE_LABEL[current.senioridade_detectada]}
+            </span>
+            {deltaRank !== 0 && (
+              <span
+                className={`text-[11px] font-medium ${deltaRank > 0 ? "text-senior" : "text-destructive"}`}
+              >
+                {deltaRank > 0
+                  ? `Subiu ${deltaRank} nível${deltaRank > 1 ? "s" : ""}`
+                  : `Desceu ${Math.abs(deltaRank)} nível${Math.abs(deltaRank) > 1 ? "s" : ""}`}
+              </span>
+            )}
+            {deltaRank === 0 && (
+              <span className="text-[11px] text-muted-foreground">
+                Mesmo nível
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-md border border-sidebar-border bg-background p-3">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            Nota ponderada
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm">{previous.nota_ponderada.toFixed(1)}</span>
+            <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground rotate-45" />
+            <span className="font-display text-lg">
+              {current.nota_ponderada.toFixed(1)}
+            </span>
+            <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${trendClass(deltaNota)}`}>
+              {trendIcon(deltaNota)}
+              {deltaNota >= 0 ? "+" : ""}
+              {deltaNota.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">
+        Evolução por pilar
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {PILARES.map((p) => {
+          const cur = current.analise_pilares?.[p.key]?.nota;
+          const prev = previous.analise_pilares?.[p.key]?.nota;
+          if (typeof cur !== "number" || typeof prev !== "number") return null;
+          const d = cur - prev;
+          return (
+            <div
+              key={p.key}
+              className="flex items-center justify-between rounded-md border border-sidebar-border bg-background px-3 py-2 text-xs"
+            >
+              <span className="truncate">{p.label}</span>
+              <span className="flex items-center gap-2 shrink-0">
+                <span className="text-muted-foreground">
+                  {prev.toFixed(1)} → {cur.toFixed(1)}
+                </span>
+                <span className={`inline-flex items-center gap-0.5 font-medium ${trendClass(d)}`}>
+                  {trendIcon(d)}
+                  {d >= 0 ? "+" : ""}
+                  {d.toFixed(2)}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export default Relatorio;
+

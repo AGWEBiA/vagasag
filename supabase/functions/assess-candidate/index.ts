@@ -312,26 +312,59 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const {
-      nome,
-      cargo,
-      dadosProfissionais,
-      informacoesAdicionais,
+      candidateId,
+      nome: nomeIn,
+      cargo: cargoIn,
+      dadosProfissionais: dadosIn,
+      informacoesAdicionais: infoIn,
       candidaturaId,
       origem,
     } = body ?? {};
 
-    if (
-      typeof nome !== "string" ||
-      nome.trim().length < 2 ||
-      typeof cargo !== "string" ||
-      !CARGO_LABELS[cargo] ||
-      typeof dadosProfissionais !== "string" ||
-      dadosProfissionais.trim().length < 50
-    ) {
-      return jsonResponse({ error: "Dados de entrada inválidos." }, 400);
+    let nome: string;
+    let cargo: string;
+    let dadosProfissionais: string;
+    let informacoesAdicionais: string | null;
+    let origemValue: string;
+    let existingCandidate: { id: string } | null = null;
+
+    if (typeof candidateId === "string" && candidateId.length > 0) {
+      // Reavaliação: carrega dados do candidato existente
+      const { data: existing, error: exErr } = await supabase
+        .from("candidates")
+        .select("id, nome, cargo, dados_profissionais, informacoes_adicionais, origem")
+        .eq("id", candidateId)
+        .maybeSingle();
+      if (exErr || !existing) {
+        return jsonResponse({ error: "Candidato não encontrado." }, 404);
+      }
+      existingCandidate = { id: existing.id };
+      nome = existing.nome;
+      cargo = existing.cargo;
+      dadosProfissionais = existing.dados_profissionais;
+      informacoesAdicionais = existing.informacoes_adicionais;
+      origemValue = existing.origem;
+    } else {
+      if (
+        typeof nomeIn !== "string" ||
+        nomeIn.trim().length < 2 ||
+        typeof cargoIn !== "string" ||
+        !CARGO_LABELS[cargoIn] ||
+        typeof dadosIn !== "string" ||
+        dadosIn.trim().length < 50
+      ) {
+        return jsonResponse({ error: "Dados de entrada inválidos." }, 400);
+      }
+      nome = nomeIn;
+      cargo = cargoIn;
+      dadosProfissionais = dadosIn;
+      informacoesAdicionais = (typeof infoIn === "string" && infoIn) || null;
+      origemValue = origem === "time" ? "time" : "candidato";
     }
 
-    const origemValue = origem === "time" ? "time" : "candidato";
+    if (!CARGO_LABELS[cargo]) {
+      return jsonResponse({ error: "Cargo inválido no candidato." }, 400);
+    }
 
     // Load AI settings
     const { data: settings, error: settingsErr } = await supabase
@@ -401,22 +434,36 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
       pilares.visaoEstrategica.nota * 0.2 +
       pilares.liderancaAutonomia.nota * 0.15;
 
-    const { data: candidate, error: candErr } = await supabase
-      .from("candidates")
-      .insert({
-        nome,
-        cargo,
-        dados_profissionais: dadosProfissionais,
-        informacoes_adicionais: informacoesAdicionais || null,
-        created_by: userData.user.id,
-        origem: origemValue,
-      })
-      .select()
-      .single();
-
-    if (candErr || !candidate) {
-      console.error("Erro inserindo candidato", candErr);
-      return jsonResponse({ error: "Erro ao salvar candidato." }, 500);
+    let candidate: { id: string; nome: string; cargo: string; origem: string };
+    if (existingCandidate) {
+      const { data: c, error: cErr } = await supabase
+        .from("candidates")
+        .select("id, nome, cargo, origem")
+        .eq("id", existingCandidate.id)
+        .single();
+      if (cErr || !c) {
+        console.error("Erro recarregando candidato", cErr);
+        return jsonResponse({ error: "Erro ao carregar candidato." }, 500);
+      }
+      candidate = c;
+    } else {
+      const { data: c, error: candErr } = await supabase
+        .from("candidates")
+        .insert({
+          nome,
+          cargo,
+          dados_profissionais: dadosProfissionais,
+          informacoes_adicionais: informacoesAdicionais || null,
+          created_by: userData.user.id,
+          origem: origemValue,
+        })
+        .select("id, nome, cargo, origem")
+        .single();
+      if (candErr || !c) {
+        console.error("Erro inserindo candidato", candErr);
+        return jsonResponse({ error: "Erro ao salvar candidato." }, 500);
+      }
+      candidate = c;
     }
 
     const { data: assessment, error: assErr } = await supabase
