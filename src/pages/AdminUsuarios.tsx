@@ -686,6 +686,12 @@ const AdminUsuarios = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Credenciais geradas pós-criação */}
+      <CreatedCredentialsDialog
+        info={createdInfo}
+        onClose={() => setCreatedInfo(null)}
+      />
     </AppShell>
   );
 };
