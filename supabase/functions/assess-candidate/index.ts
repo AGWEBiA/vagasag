@@ -97,9 +97,39 @@ function jsonResponse(body: unknown, status = 200) {
 
 // ---------- Provider adapters ----------
 
+const PROVIDER_TO_SECRET: Record<string, string> = {
+  lovable: "LOVABLE_API_KEY",
+  openai: "OPENAI_API_KEY",
+  anthropic: "ANTHROPIC_API_KEY",
+  groq: "GROQ_API_KEY",
+};
+
+async function loadKey(provider: string): Promise<string> {
+  // 1. Try DB-stored credential first (admin-managed)
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  if (supabaseUrl && serviceKey) {
+    const admin = createClient(supabaseUrl, serviceKey);
+    const { data } = await admin
+      .from("ai_credentials")
+      .select("api_key")
+      .eq("provider", provider)
+      .maybeSingle();
+    if (data?.api_key) return data.api_key;
+  }
+
+  // 2. Fallback to env (for managed LOVABLE_API_KEY)
+  const envName = PROVIDER_TO_SECRET[provider];
+  const env = envName ? Deno.env.get(envName) : null;
+  if (env) return env;
+
+  throw new Error(
+    `Chave do provedor ${provider} não configurada. Adicione-a no painel de Configuração de IA.`,
+  );
+}
+
 async function callLovable(model: string, userPrompt: string) {
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) throw new Error("LOVABLE_API_KEY ausente.");
+  const key = await loadKey("lovable");
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -126,8 +156,7 @@ async function callLovable(model: string, userPrompt: string) {
 }
 
 async function callOpenAI(model: string, userPrompt: string) {
-  const key = Deno.env.get("OPENAI_API_KEY");
-  if (!key) throw new Error("OPENAI_API_KEY não configurada. Peça ao admin para adicionar.");
+  const key = await loadKey("openai");
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -154,8 +183,7 @@ async function callOpenAI(model: string, userPrompt: string) {
 }
 
 async function callGroq(model: string, userPrompt: string) {
-  const key = Deno.env.get("GROQ_API_KEY");
-  if (!key) throw new Error("GROQ_API_KEY não configurada. Peça ao admin para adicionar.");
+  const key = await loadKey("groq");
   const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -182,8 +210,7 @@ async function callGroq(model: string, userPrompt: string) {
 }
 
 async function callAnthropic(model: string, userPrompt: string) {
-  const key = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!key) throw new Error("ANTHROPIC_API_KEY não configurada. Peça ao admin para adicionar.");
+  const key = await loadKey("anthropic");
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
