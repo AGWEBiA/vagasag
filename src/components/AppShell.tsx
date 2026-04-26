@@ -1,19 +1,35 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Sparkles, History, LogOut, Gem } from "lucide-react";
+import {
+  LayoutDashboard,
+  Sparkles,
+  History,
+  LogOut,
+  Gem,
+  Briefcase,
+  Cpu,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
-const NAV = [
+const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/nova-avaliacao", label: "Nova Avaliação", icon: Sparkles, badge: "IA" },
   { to: "/historico", label: "Histórico", icon: History },
+  { to: "/vagas-admin", label: "Vagas", icon: Briefcase },
+];
+
+const ADMIN_NAV = [
+  { to: "/admin/ia", label: "Configuração de IA", icon: Cpu, badge: "Admin" },
 ];
 
 export const AppShell = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
+  const NAV = isAdmin ? [...BASE_NAV, ...ADMIN_NAV] : BASE_NAV;
 
   const initials = (user?.email ?? "U").slice(0, 2).toUpperCase();
 
@@ -71,7 +87,9 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="truncate text-sm font-medium">{user?.email}</div>
-              <div className="text-xs text-muted-foreground">Recrutador</div>
+              <div className="text-xs text-muted-foreground">
+                {isAdmin ? "Admin Master" : "Recrutador"}
+              </div>
             </div>
           </div>
           <Button
@@ -103,7 +121,12 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         <div className="mx-auto max-w-7xl">{children}</div>
 
         {/* Mobile nav */}
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sidebar-border bg-sidebar grid grid-cols-3">
+        <nav
+          className={cn(
+            "md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sidebar-border bg-sidebar grid",
+            NAV.length === 5 ? "grid-cols-5" : NAV.length === 4 ? "grid-cols-4" : "grid-cols-3",
+          )}
+        >
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}

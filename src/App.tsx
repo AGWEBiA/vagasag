@@ -5,12 +5,18 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import NovaAvaliacao from "./pages/NovaAvaliacao.tsx";
 import Historico from "./pages/Historico.tsx";
 import Relatorio from "./pages/Relatorio.tsx";
+import Vagas from "./pages/Vagas.tsx";
+import InboxCandidaturas from "./pages/InboxCandidaturas.tsx";
+import AdminIA from "./pages/AdminIA.tsx";
+import PortalVagas from "./pages/PortalVagas.tsx";
+import VagaPublica from "./pages/VagaPublica.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -23,12 +29,26 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Public */}
             <Route path="/login" element={<Login />} />
+            <Route path="/vagas" element={<PortalVagas />} />
+            <Route path="/vagas/:id" element={<VagaPublica />} />
+
+            {/* Authenticated */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/nova-avaliacao" element={<ProtectedRoute><NovaAvaliacao /></ProtectedRoute>} />
             <Route path="/historico" element={<ProtectedRoute><Historico /></ProtectedRoute>} />
             <Route path="/relatorio/:id" element={<ProtectedRoute><Relatorio /></ProtectedRoute>} />
+            <Route path="/vagas-admin" element={<ProtectedRoute><Vagas /></ProtectedRoute>} />
+            <Route
+              path="/admin/candidaturas/:vagaId"
+              element={<ProtectedRoute><InboxCandidaturas /></ProtectedRoute>}
+            />
+
+            {/* Admin only */}
+            <Route path="/admin/ia" element={<AdminRoute><AdminIA /></AdminRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
