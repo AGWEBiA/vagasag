@@ -317,8 +317,78 @@ const VagaPublica = () => {
                 />
               </div>
 
-              <Button
-                type="submit"
+              {perguntas.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-sidebar-border">
+                  <div>
+                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-1">
+                      Perguntas adicionais
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Suas respostas ajudam na avaliação.
+                    </p>
+                  </div>
+                  {perguntas.map((p) => (
+                    <div key={p.id} className="space-y-2">
+                      <Label>
+                        {p.texto}
+                        {p.obrigatoria && <span className="text-gold ml-1">*</span>}
+                      </Label>
+                      {p.tipo === "texto" && (
+                        <Textarea
+                          rows={3}
+                          value={respostas[p.id]?.texto ?? ""}
+                          onChange={(e) =>
+                            setResposta(p.id, { texto: e.target.value })
+                          }
+                        />
+                      )}
+                      {p.tipo === "escolha" && (
+                        <div className="space-y-1.5">
+                          {p.opcoes.map((opt) => (
+                            <label
+                              key={opt}
+                              className="flex items-center gap-2 text-sm cursor-pointer"
+                            >
+                              <input
+                                type="radio"
+                                name={`q-${p.id}`}
+                                value={opt}
+                                checked={respostas[p.id]?.texto === opt}
+                                onChange={() => setResposta(p.id, { texto: opt })}
+                                className="accent-gold"
+                              />
+                              {opt}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                      {p.tipo === "escala" && (
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((n) => {
+                            const active = respostas[p.id]?.numero === n;
+                            return (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => setResposta(p.id, { numero: n })}
+                                className={`flex-1 rounded-md border py-2 text-sm font-medium transition ${
+                                  active
+                                    ? "bg-gradient-gold text-gold-foreground border-transparent shadow-gold"
+                                    : "border-sidebar-border bg-surface-elevated text-body hover:border-gold/40"
+                                }`}
+                                title={ESCALA_LABEL[n]}
+                              >
+                                {n}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
                 disabled={submitting}
                 className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-12 text-base font-semibold"
               >
