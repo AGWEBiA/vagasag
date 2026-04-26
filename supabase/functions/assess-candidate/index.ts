@@ -285,6 +285,31 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData.user) return jsonResponse({ error: "Unauthorized" }, 401);
 
+    // Apenas admin, líder ou recrutador podem executar avaliações de IA.
+    // Colaboradores (time) enviam autoavaliação via outro fluxo; candidatos públicos não rodam IA.
+    const { data: rolesRows, error: rolesErr } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id);
+    if (rolesErr) {
+      console.error("roles read error", rolesErr);
+      return jsonResponse({ error: "Falha ao validar permissões." }, 500);
+    }
+    const userRoles = (rolesRows ?? []).map((r: { role: string }) => r.role);
+    const canRunAssessment =
+      userRoles.includes("admin") ||
+      userRoles.includes("lider") ||
+      userRoles.includes("recrutador");
+    if (!canRunAssessment) {
+      return jsonResponse(
+        {
+          error:
+            "Você não tem permissão para executar avaliações. Apenas administradores, líderes e recrutadores podem rodar a IA.",
+        },
+        403,
+      );
+    }
+
     const body = await req.json();
     const {
       nome,
