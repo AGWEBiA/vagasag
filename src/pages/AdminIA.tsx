@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,6 +11,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Cpu,
   ShieldCheck,
@@ -21,6 +30,11 @@ import {
   ExternalLink,
   Zap,
   XCircle,
+  Eye,
+  EyeOff,
+  Trash2,
+  Pencil,
+  Copy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -66,10 +80,24 @@ const AdminIA = () => {
     anthropic: { status: "idle" },
     groq: { status: "idle" },
   });
+  // Credentials state — stores whether each provider has a key saved + last 4 chars preview
+  const [credentials, setCredentials] = useState<
+    Record<AIProvider, { configured: boolean; preview?: string; updatedAt?: string }>
+  >({
+    lovable: { configured: true, preview: "managed" },
+    openai: { configured: false },
+    anthropic: { configured: false },
+    groq: { configured: false },
+  });
+  const [editingProvider, setEditingProvider] = useState<AIProvider | null>(null);
+  const [editingKey, setEditingKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [savingKey, setSavingKey] = useState(false);
 
   useEffect(() => {
     document.title = "Configuração de IA | Seniority Hub";
     void load();
+    void loadCredentials();
   }, []);
 
   const load = async () => {
@@ -100,6 +128,30 @@ const AdminIA = () => {
       setEnabled(en);
     }
     setLoading(false);
+  };
+
+  const loadCredentials = async () => {
+    const { data, error } = await supabase
+      .from("ai_credentials")
+      .select("provider, api_key, updated_at");
+    if (error) {
+      console.error("loadCredentials error", error);
+      return;
+    }
+    setCredentials((prev) => {
+      const next = { ...prev };
+      (data ?? []).forEach((row: { provider: string; api_key: string; updated_at: string }) => {
+        const p = row.provider as AIProvider;
+        if (p in next) {
+          next[p] = {
+            configured: true,
+            preview: `${row.api_key.slice(0, 4)}…${row.api_key.slice(-4)}`,
+            updatedAt: row.updated_at,
+          };
+        }
+      });
+      return next;
+    });
   };
 
   const handleProviderChange = (p: AIProvider) => {
@@ -144,6 +196,69 @@ const AdminIA = () => {
     } else {
       toast.success("Configurações salvas!");
       void load();
+    }
+  };
+
+  const openEditKey = (p: AIProvider) => {
+    setEditingProvider(p);
+    setEditingKey("");
+    setShowKey(false);
+  };
+
+  const closeEditKey = () => {
+    setEditingProvider(null);
+    setEditingKey("");
+    setShowKey(false);
+    setSavingKey(false);
+  };
+
+  const saveKey = async () => {
+    if (!editingProvider) return;
+    const trimmed = editingKey.trim();
+    if (trimmed.length < 8) {
+      toast.error("A chave parece muito curta. Verifique e tente novamente.");
+      return;
+    }
+    setSavingKey(true);
+    const { error } = await supabase
+      .from("ai_credentials")
+      .upsert(
+        { provider: editingProvider, api_key: trimmed, updated_at: new Date().toISOString() },
+        { onConflict: "provider" },
+      );
+    setSavingKey(false);
+    if (error) {
+      console.error("saveKey error", error);
+      toast.error("Não foi possível salvar a chave. Confira se você é admin.");
+      return;
+    }
+    toast.success(`Chave do ${getProvider(editingProvider)?.label} salva com sucesso.`);
+    closeEditKey();
+    void loadCredentials();
+  };
+
+  const deleteKey = async (p: AIProvider) => {
+    if (!confirm(`Remover a chave do ${getProvider(p)?.label}? O provedor deixará de funcionar.`)) {
+      return;
+    }
+    const { error } = await supabase.from("ai_credentials").delete().eq("provider", p);
+    if (error) {
+      toast.error("Erro ao remover chave.");
+      return;
+    }
+    toast.success("Chave removida.");
+    setTests((s) => ({ ...s, [p]: { status: "idle" } }));
+    void loadCredentials();
+  };
+
+  const copyPreview = async (p: AIProvider) => {
+    const preview = credentials[p]?.preview;
+    if (!preview) return;
+    try {
+      await navigator.clipboard.writeText(preview);
+      toast.success("Prévia copiada.");
+    } catch {
+      toast.error("Não foi possível copiar.");
     }
   };
 
@@ -325,10 +440,94 @@ const AdminIA = () => {
               }
               onTest={() => testProvider(p.id)}
               testState={tests[p.id]}
+              credential={credentials[p.id]}
+              onEditKey={() => openEditKey(p.id)}
+              onDeleteKey={() => deleteKey(p.id)}
+              onCopyPreview={() => copyPreview(p.id)}
             />
           ))}
         </div>
       )}
+
+      {/* Dialog para inserir/atualizar a chave */}
+      <Dialog open={editingProvider !== null} onOpenChange={(open) => !open && closeEditKey()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-gold" />
+              {editingProvider && credentials[editingProvider]?.configured ? "Atualizar" : "Adicionar"} chave —{" "}
+              {editingProvider && getProvider(editingProvider)?.label}
+            </DialogTitle>
+            <DialogDescription>
+              {editingProvider && getProvider(editingProvider)?.apiKeyHint}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {editingProvider && getProvider(editingProvider)?.docsUrl && (
+              <a
+                href={getProvider(editingProvider)?.docsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-gold hover:underline"
+              >
+                Abrir painel de chaves do provedor <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="api-key-input">
+                Chave de API ({editingProvider && getProvider(editingProvider)?.secretName})
+              </Label>
+              <div className="relative">
+                <Input
+                  id="api-key-input"
+                  type={showKey ? "text" : "password"}
+                  value={editingKey}
+                  onChange={(e) => setEditingKey(e.target.value)}
+                  placeholder="Cole sua chave aqui..."
+                  className="pr-10 font-mono text-sm"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showKey ? "Ocultar" : "Mostrar"}
+                >
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A chave fica criptografada na base e só é acessada pelas funções server-side.
+                Apenas administradores podem ler ou alterar.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={closeEditKey} disabled={savingKey}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={saveKey}
+              disabled={savingKey || editingKey.trim().length < 8}
+              className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+            >
+              {savingKey ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Salvar chave
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 };
@@ -341,6 +540,10 @@ interface ProviderCardProps {
   onTestModelChange: (v: string) => void;
   onTest: () => void;
   testState: TestState;
+  credential: { configured: boolean; preview?: string; updatedAt?: string };
+  onEditKey: () => void;
+  onDeleteKey: () => void;
+  onCopyPreview: () => void;
 }
 
 const ProviderCard = ({
@@ -351,6 +554,10 @@ const ProviderCard = ({
   onTestModelChange,
   onTest,
   testState,
+  credential,
+  onEditKey,
+  onDeleteKey,
+  onCopyPreview,
 }: ProviderCardProps) => {
   return (
     <div
@@ -372,9 +579,13 @@ const ProviderCard = ({
               <span className="rounded-full bg-gold/15 text-gold px-2 py-0.5 text-[10px] font-semibold border border-gold/40">
                 Sem chave necessária
               </span>
+            ) : credential.configured ? (
+              <span className="rounded-full bg-gold/15 text-gold px-2 py-0.5 text-[10px] font-semibold border border-gold/40 inline-flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Chave configurada
+              </span>
             ) : (
-              <span className="rounded-full bg-surface-elevated text-muted-foreground px-2 py-0.5 text-[10px] font-medium border border-sidebar-border">
-                Requer chave
+              <span className="rounded-full bg-destructive/10 text-destructive px-2 py-0.5 text-[10px] font-semibold border border-destructive/30 inline-flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> Sem chave
               </span>
             )}
           </div>
@@ -406,8 +617,8 @@ const ProviderCard = ({
               <span>{provider.apiKeyHint}</span>
             </div>
           ) : (
-            <>
-              <div className="rounded-md bg-surface-elevated border border-sidebar-border p-3 space-y-2">
+            <div className="space-y-2">
+              <div className="rounded-md bg-surface-elevated border border-sidebar-border p-3 space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <code className="text-xs font-mono text-gold">
                     {provider.secretName}
@@ -423,15 +634,63 @@ const ProviderCard = ({
                     </a>
                   )}
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  {provider.apiKeyHint}
-                </p>
+
+                {credential.configured ? (
+                  <div className="flex items-center justify-between gap-2 rounded bg-background/50 border border-gold/20 px-2.5 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <KeyRound className="h-3.5 w-3.5 text-gold shrink-0" />
+                      <code className="text-xs font-mono truncate">{credential.preview}</code>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onCopyPreview}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label="Copiar prévia"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {provider.apiKeyHint}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    onClick={onEditKey}
+                    className="h-8 bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold flex-1 min-w-[120px]"
+                  >
+                    {credential.configured ? (
+                      <>
+                        <Pencil className="h-3.5 w-3.5 mr-1.5" /> Atualizar chave
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="h-3.5 w-3.5 mr-1.5" /> Adicionar chave
+                      </>
+                    )}
+                  </Button>
+                  {credential.configured && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={onDeleteKey}
+                      className="h-8 border-destructive/40 text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remover
+                    </Button>
+                  )}
+                </div>
+
+                {credential.updatedAt && (
+                  <p className="text-[10px] text-muted-foreground pt-1">
+                    Atualizada em {new Date(credential.updatedAt).toLocaleString("pt-BR")}
+                  </p>
+                )}
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                A chave é armazenada de forma segura no backend. Adicione-a pelas
-                configurações do projeto e clique em "Testar conexão" abaixo para validar.
-              </p>
-            </>
+            </div>
           )}
         </div>
 
@@ -456,7 +715,10 @@ const ProviderCard = ({
 
             <Button
               onClick={onTest}
-              disabled={testState.status === "testing"}
+              disabled={
+                testState.status === "testing" ||
+                (!provider.managed && !credential.configured)
+              }
               variant="outline"
               className="w-full h-9 border-gold/40 hover:bg-gold/10"
             >
@@ -498,10 +760,17 @@ const ProviderCard = ({
               </div>
             )}
 
-            {testState.status === "idle" && !provider.managed && (
+            {testState.status === "idle" && !provider.managed && !credential.configured && (
               <div className="rounded-md border border-sidebar-border bg-surface-elevated/50 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                Nunca testado. Adicione a chave e clique acima.
+                Adicione a chave acima para liberar o teste.
+              </div>
+            )}
+
+            {testState.status === "idle" && !provider.managed && credential.configured && (
+              <div className="rounded-md border border-sidebar-border bg-surface-elevated/50 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                Pronto para testar. Clique no botão acima.
               </div>
             )}
           </div>
