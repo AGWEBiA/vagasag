@@ -448,7 +448,8 @@ const BancoTalentos = () => {
             return (
               <article
                 key={t.id}
-                className="rounded-lg border border-border bg-card p-4 hover:border-gold/30 transition-colors animate-fade-in"
+                onClick={() => setViewing(t)}
+                className="rounded-lg border border-border bg-card p-4 hover:border-gold/30 transition-colors animate-fade-in cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
