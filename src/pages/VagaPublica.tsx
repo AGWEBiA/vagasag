@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CARGO_LABEL } from "@/lib/seniority";
+import { ESCALA_LABEL, type VagaPergunta } from "@/lib/perguntas";
 import { toast } from "sonner";
 
 interface Vaga {
@@ -49,6 +50,10 @@ const VagaPublica = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [vaga, setVaga] = useState<Vaga | null>(null);
+  const [perguntas, setPerguntas] = useState<VagaPergunta[]>([]);
+  const [respostas, setRespostas] = useState<Record<string, { texto?: string; numero?: number }>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -77,7 +82,19 @@ const VagaPublica = () => {
       .maybeSingle();
     setVaga((data as Vaga) ?? null);
     if (data) document.title = `${(data as Vaga).titulo} | Seniority Hub`;
+
+    const { data: ps } = await supabase
+      .from("vaga_perguntas")
+      .select("*")
+      .eq("vaga_id", id)
+      .order("ordem", { ascending: true });
+    setPerguntas((ps ?? []) as VagaPergunta[]);
+
     setLoading(false);
+  };
+
+  const setResposta = (pid: string, patch: { texto?: string; numero?: number }) => {
+    setRespostas((r) => ({ ...r, [pid]: { ...r[pid], ...patch } }));
   };
 
   const submit = async (e: React.FormEvent) => {
