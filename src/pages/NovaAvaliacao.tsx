@@ -87,11 +87,22 @@ const NovaAvaliacao = () => {
   const { data: people, isLoading } = useQuery({
     queryKey: ["people-with-assessments"],
     queryFn: async () => {
-      const { data: cands, error } = await supabase
-        .from("candidates")
-        .select("id, nome, cargo, origem, created_at")
-        .order("created_at", { ascending: false });
+      const [{ data: cands, error }, { data: candidaturas, error: candErr }, { data: vagas }] =
+        await Promise.all([
+          supabase
+            .from("candidates")
+            .select("id, nome, cargo, origem, created_at")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("candidaturas")
+            .select("id, nome, email, candidate_id, vaga_id, created_at")
+            .is("candidate_id", null)
+            .order("created_at", { ascending: false }),
+          supabase.from("vagas").select("id, cargo"),
+        ]);
       if (error) throw error;
+      if (candErr) throw candErr;
+
       const ids = (cands ?? []).map((c) => c.id);
       let assessmentsByCandidate = new Map<
         string,
@@ -120,7 +131,8 @@ const NovaAvaliacao = () => {
           assessmentsByCandidate.set(a.candidate_id, arr);
         }
       }
-      return (cands ?? []).map<PersonRow>((c) => {
+
+      const fromCandidates = (cands ?? []).map<PersonRow>((c) => {
         const list = assessmentsByCandidate.get(c.id) ?? [];
         const last = list[0] ?? null;
         return {
@@ -140,6 +152,20 @@ const NovaAvaliacao = () => {
             : null,
         };
       });
+
+      // Talentos do banco que ainda não viraram "candidate"
+      const vagaCargo = new Map((vagas ?? []).map((v) => [v.id, v.cargo]));
+      const fromCandidaturas = (candidaturas ?? []).map<PersonRow>((c) => ({
+        id: `cand:${c.id}`,
+        nome: c.nome,
+        cargo: vagaCargo.get(c.vaga_id) ?? "copywriter",
+        origem: "candidato" as Origem,
+        created_at: c.created_at,
+        assessmentsCount: 0,
+        lastAssessment: null,
+      }));
+
+      return [...fromCandidates, ...fromCandidaturas];
     },
   });
 
@@ -169,8 +195,48 @@ const NovaAvaliacao = () => {
   ) => {
     setRunningId(candidateId);
     try {
+      let realCandidateId = candidateId;
+
+      // Promover candidatura → candidate quando id virtual
+      if (candidateId.startsWith("cand:")) {
+        const candidaturaId = candidateId.slice(5);
+        const { data: cand, error: cErr } = await supabase
+          .from("candidaturas")
+          .select(
+            "id, nome, email, dados_profissionais, informacoes_adicionais, vaga_id, vagas(cargo)",
+          )
+          .eq("id", candidaturaId)
+          .single();
+        if (cErr || !cand) throw new Error("Talento não encontrado.");
+
+        const { data: userRes } = await supabase.auth.getUser();
+        const userId = userRes.user?.id;
+        if (!userId) throw new Error("Sessão expirada.");
+
+        const cargo = (cand as any).vagas?.cargo ?? "copywriter";
+        const { data: created, error: insErr } = await supabase
+          .from("candidates")
+          .insert({
+            nome: cand.nome,
+            cargo,
+            dados_profissionais: cand.dados_profissionais,
+            informacoes_adicionais: cand.informacoes_adicionais,
+            origem: "candidato",
+            created_by: userId,
+          })
+          .select("id")
+          .single();
+        if (insErr || !created) throw insErr ?? new Error("Falha ao criar candidato.");
+
+        realCandidateId = created.id;
+        await supabase
+          .from("candidaturas")
+          .update({ candidate_id: realCandidateId })
+          .eq("id", candidaturaId);
+      }
+
       const { data, error } = await supabase.functions.invoke("assess-candidate", {
-        body: { candidateId },
+        body: { candidateId: realCandidateId },
       });
       if (error) throw error;
       if (!data?.assessment?.id) throw new Error("Resposta inválida da IA.");
