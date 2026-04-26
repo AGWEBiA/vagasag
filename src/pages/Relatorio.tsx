@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Calendar,
+  UserPlus,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ interface Assessment {
   resumo_executivo: string;
   model_used: string;
   created_at: string;
-  candidates: { id: string; nome: string; cargo: string } | null;
+  candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
 
 const Relatorio = () => {
@@ -64,7 +65,7 @@ const Relatorio = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assessments")
-        .select("*, candidates(id, nome, cargo)")
+        .select("*, candidates(id, nome, cargo, origem)")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
@@ -134,6 +135,19 @@ const Relatorio = () => {
                   month: "long",
                   year: "numeric",
                 })}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${
+                  data.candidates?.origem === "time"
+                    ? "bg-gold/10 text-gold border-gold/30"
+                    : "bg-surface-elevated text-body border-sidebar-border"
+                }`}
+              >
+                {data.candidates?.origem === "time" ? (
+                  <><Users className="h-3 w-3" /> Time</>
+                ) : (
+                  <><UserPlus className="h-3 w-3" /> Candidato</>
+                )}
               </span>
             </div>
           </div>

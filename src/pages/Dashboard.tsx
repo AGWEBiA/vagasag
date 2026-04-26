@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -17,8 +17,11 @@ import {
   Calendar,
   ArrowRight,
   TrendingUp,
+  Layers,
+  UserPlus,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CARGO_LABEL,
@@ -36,28 +39,48 @@ interface AssessmentRow {
   senioridade_detectada: Senioridade;
   confidence_score: number;
   created_at: string;
-  candidates: { id: string; nome: string; cargo: string } | null;
+  candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
+
+type OrigemFilter = "all" | "time" | "candidato";
 
 const Dashboard = () => {
   useEffect(() => {
     document.title = "Dashboard | Seniority Hub";
   }, []);
 
+  const [origemFilter, setOrigemFilter] = useState<OrigemFilter>("all");
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard-assessments"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assessments")
-        .select("id, senioridade_detectada, confidence_score, created_at, candidates(id, nome, cargo)")
+        .select("id, senioridade_detectada, confidence_score, created_at, candidates(id, nome, cargo, origem)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as unknown as AssessmentRow[];
     },
   });
 
+  const allList = data ?? [];
+
+  const origemCounts = useMemo(
+    () => ({
+      all: allList.length,
+      time: allList.filter((a) => a.candidates?.origem === "time").length,
+      candidato: allList.filter((a) => a.candidates?.origem === "candidato").length,
+    }),
+    [allList],
+  );
+
+  const filteredList = useMemo(() => {
+    if (origemFilter === "all") return allList;
+    return allList.filter((a) => a.candidates?.origem === origemFilter);
+  }, [allList, origemFilter]);
+
   const stats = useMemo(() => {
-    const list = data ?? [];
+    const list = filteredList;
     const total = list.length;
     const avgConfidence =
       total > 0
@@ -81,7 +104,7 @@ const Dashboard = () => {
     const maxCargo = topCargos[0]?.[1] ?? 1;
 
     return { total, avgConfidence, cargos: cargos.size, week, dist, topCargos, maxCargo };
-  }, [data]);
+  }, [filteredList]);
 
   const distData = [
     { name: "Júnior", value: stats.dist.Junior, color: "hsl(var(--junior))" },
@@ -89,18 +112,45 @@ const Dashboard = () => {
     { name: "Sênior", value: stats.dist.Senior, color: "hsl(var(--senior))" },
   ];
 
-  const recent = (data ?? []).slice(0, 5);
+  const recent = filteredList.slice(0, 5);
+
+  const filterLabel =
+    origemFilter === "time"
+      ? "Avaliações do time"
+      : origemFilter === "candidato"
+        ? "Avaliações de candidatos"
+        : "Visão geral das avaliações de senioridade.";
 
   return (
     <AppShell>
-      <header className="mb-8 animate-fade-in">
+      <header className="mb-6 animate-fade-in">
         <h1 className="font-display text-4xl font-semibold">
           Dashboard
         </h1>
         <p className="text-muted-foreground mt-1">
-          Visão geral das avaliações de senioridade.
+          {filterLabel}
         </p>
       </header>
+
+      <Tabs value={origemFilter} onValueChange={(v) => setOrigemFilter(v as OrigemFilter)} className="mb-6">
+        <TabsList className="bg-surface-elevated border border-sidebar-border h-auto p-1">
+          <TabsTrigger value="all" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <Layers className="h-4 w-4" />
+            Todos
+            <span className="ml-1 text-[10px] font-mono opacity-70">({origemCounts.all})</span>
+          </TabsTrigger>
+          <TabsTrigger value="time" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <Users className="h-4 w-4" />
+            Time
+            <span className="ml-1 text-[10px] font-mono opacity-70">({origemCounts.time})</span>
+          </TabsTrigger>
+          <TabsTrigger value="candidato" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <UserPlus className="h-4 w-4" />
+            Candidatos
+            <span className="ml-1 text-[10px] font-mono opacity-70">({origemCounts.candidato})</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         <MetricCard
@@ -250,7 +300,22 @@ const Dashboard = () => {
                         >
                           {getInitials(a.candidates?.nome ?? "?")}
                         </div>
-                        <span className="font-medium">{a.candidates?.nome}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium leading-tight">{a.candidates?.nome}</span>
+                          <span
+                            className={`mt-0.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                              a.candidates?.origem === "time"
+                                ? "bg-gold/10 text-gold border-gold/30"
+                                : "bg-surface-elevated text-muted-foreground border-sidebar-border"
+                            }`}
+                          >
+                            {a.candidates?.origem === "time" ? (
+                              <><Users className="h-2.5 w-2.5" /> Time</>
+                            ) : (
+                              <><UserPlus className="h-2.5 w-2.5" /> Candidato</>
+                            )}
+                          </span>
+                        </div>
                       </Link>
                     </td>
                     <td className="py-3 text-muted-foreground">

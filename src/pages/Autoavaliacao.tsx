@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Loader2, Info, LogOut, Gem, CheckCircle2 } from "lucide-react";
+import { Sparkles, Loader2, Info, LogOut, Gem, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,33 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 
+const COOLDOWN_SECONDS = 60;
+const HOURLY_LIMIT = 5;
+const HOUR_MS = 60 * 60 * 1000;
+
+const storageKeyFor = (userId: string) => `autoaval:submissions:${userId}`;
+
+const readSubmissions = (userId: string): number[] => {
+  try {
+    const raw = localStorage.getItem(storageKeyFor(userId));
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    const now = Date.now();
+    return arr.filter((t: unknown) => typeof t === "number" && now - t < HOUR_MS);
+  } catch {
+    return [];
+  }
+};
+
+const writeSubmissions = (userId: string, arr: number[]) => {
+  try {
+    localStorage.setItem(storageKeyFor(userId), JSON.stringify(arr));
+  } catch {
+    /* ignore */
+  }
+};
+
 const Autoavaliacao = () => {
   const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
@@ -29,6 +56,8 @@ const Autoavaliacao = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [hourlyCount, setHourlyCount] = useState(0);
 
   useEffect(() => {
     document.title = "Autoavaliação | Seniority Hub";
@@ -37,6 +66,28 @@ const Autoavaliacao = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/login?redirect=/autoavaliacao");
   }, [authLoading, user, navigate]);
+
+  // Recarrega o estado de envios quando usuário muda
+  useEffect(() => {
+    if (!user) return;
+    const subs = readSubmissions(user.id);
+    setHourlyCount(subs.length);
+    const last = subs[subs.length - 1];
+    if (last) {
+      const elapsed = Math.floor((Date.now() - last) / 1000);
+      const remaining = Math.max(0, COOLDOWN_SECONDS - elapsed);
+      setCooldownRemaining(remaining);
+    }
+  }, [user]);
+
+  // Tick do contador de cooldown
+  useEffect(() => {
+    if (cooldownRemaining <= 0) return;
+    const id = setInterval(() => {
+      setCooldownRemaining((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldownRemaining]);
 
   useEffect(() => {
     if (user) {
@@ -58,7 +109,31 @@ const Autoavaliacao = () => {
 
   const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
+    if (!user) return;
     if (!validate()) return;
+
+    // Reavalia limites com dados frescos do localStorage
+    const subs = readSubmissions(user.id);
+    const last = subs[subs.length - 1];
+    if (last) {
+      const elapsed = Math.floor((Date.now() - last) / 1000);
+      const remaining = COOLDOWN_SECONDS - elapsed;
+      if (remaining > 0) {
+        setCooldownRemaining(remaining);
+        toast.error(
+          `Aguarde ${remaining}s antes de enviar outra autoavaliação.`,
+        );
+        return;
+      }
+    }
+    if (subs.length >= HOURLY_LIMIT) {
+      toast.error(
+        `Limite de ${HOURLY_LIMIT} envios por hora atingido. Tente novamente mais tarde.`,
+      );
+      setHourlyCount(subs.length);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("assess-candidate", {
@@ -72,6 +147,13 @@ const Autoavaliacao = () => {
       });
       if (error) throw error;
       if (!data?.assessment?.id) throw new Error("Resposta inválida");
+
+      // Registra envio bem-sucedido
+      const updated = [...subs, Date.now()];
+      writeSubmissions(user.id, updated);
+      setHourlyCount(updated.length);
+      setCooldownRemaining(COOLDOWN_SECONDS);
+
       setEnviado(true);
       toast.success("Autoavaliação enviada!");
     } catch (err: any) {
@@ -85,6 +167,10 @@ const Autoavaliacao = () => {
       setSubmitting(false);
     }
   };
+
+  const limitReached = hourlyCount >= HOURLY_LIMIT;
+  const inCooldown = cooldownRemaining > 0;
+  const blockSubmit = submitting || inCooldown || limitReached;
 
   if (authLoading || roleLoading) {
     return (
@@ -263,18 +349,60 @@ const Autoavaliacao = () => {
               </div>
             )}
 
+            {!submitting && limitReached && (
+              <div className="flex items-start gap-3 rounded-lg bg-destructive/10 border border-destructive/30 p-4 animate-fade-in">
+                <Clock className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium text-destructive">
+                    Limite de envios atingido
+                  </div>
+                  <div className="text-body/80 mt-0.5">
+                    Você já enviou {HOURLY_LIMIT} autoavaliações na última hora. Aguarde
+                    para enviar novamente.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!submitting && !limitReached && inCooldown && (
+              <div className="flex items-start gap-3 rounded-lg bg-surface-elevated border border-gold/30 p-4 animate-fade-in">
+                <Clock className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium text-gold">
+                    Aguarde {cooldownRemaining}s antes de enviar novamente
+                  </div>
+                  <div className="text-body/80 mt-0.5">
+                    Para evitar envios duplicados, aplicamos um intervalo de{" "}
+                    {COOLDOWN_SECONDS} segundos entre envios.
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
-              disabled={submitting}
-              className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-12 text-base font-semibold"
+              disabled={blockSubmit}
+              className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-12 text-base font-semibold disabled:opacity-60"
             >
               {submitting ? (
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : inCooldown ? (
+                <Clock className="h-5 w-5 mr-2" />
               ) : (
                 <Sparkles className="h-5 w-5 mr-2" />
               )}
-              {submitting ? "Enviando..." : "Enviar autoavaliação"}
+              {submitting
+                ? "Enviando..."
+                : limitReached
+                  ? "Limite atingido"
+                  : inCooldown
+                    ? `Aguarde ${cooldownRemaining}s`
+                    : "Enviar autoavaliação"}
             </Button>
+
+            <p className="text-[11px] text-muted-foreground text-center">
+              Envios usados nesta hora: {hourlyCount}/{HOURLY_LIMIT}
+            </p>
           </form>
         )}
       </main>
