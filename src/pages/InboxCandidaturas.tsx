@@ -228,6 +228,34 @@ const InboxCandidaturas = () => {
                 <StatusBadge status={selected.status} />
               </div>
 
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-gold" />
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Estágio
+                </span>
+                <Select
+                  value={selected.estagio_id ?? ""}
+                  onValueChange={(v) => changeEstagio(selected, v)}
+                >
+                  <SelectTrigger className="h-8 w-56">
+                    <SelectValue placeholder="Sem estágio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {estagios.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: e.cor }}
+                          />
+                          {e.nome}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid gap-2 text-sm">
                 <Contact icon={Mail} label={selected.email} />
                 {selected.telefone && <Contact icon={Phone} label={selected.telefone} />}
