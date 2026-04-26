@@ -80,10 +80,24 @@ const AdminIA = () => {
     anthropic: { status: "idle" },
     groq: { status: "idle" },
   });
+  // Credentials state — stores whether each provider has a key saved + last 4 chars preview
+  const [credentials, setCredentials] = useState<
+    Record<AIProvider, { configured: boolean; preview?: string; updatedAt?: string }>
+  >({
+    lovable: { configured: true, preview: "managed" },
+    openai: { configured: false },
+    anthropic: { configured: false },
+    groq: { configured: false },
+  });
+  const [editingProvider, setEditingProvider] = useState<AIProvider | null>(null);
+  const [editingKey, setEditingKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [savingKey, setSavingKey] = useState(false);
 
   useEffect(() => {
     document.title = "Configuração de IA | Seniority Hub";
     void load();
+    void loadCredentials();
   }, []);
 
   const load = async () => {
@@ -114,6 +128,30 @@ const AdminIA = () => {
       setEnabled(en);
     }
     setLoading(false);
+  };
+
+  const loadCredentials = async () => {
+    const { data, error } = await supabase
+      .from("ai_credentials")
+      .select("provider, api_key, updated_at");
+    if (error) {
+      console.error("loadCredentials error", error);
+      return;
+    }
+    setCredentials((prev) => {
+      const next = { ...prev };
+      (data ?? []).forEach((row: { provider: string; api_key: string; updated_at: string }) => {
+        const p = row.provider as AIProvider;
+        if (p in next) {
+          next[p] = {
+            configured: true,
+            preview: `${row.api_key.slice(0, 4)}…${row.api_key.slice(-4)}`,
+            updatedAt: row.updated_at,
+          };
+        }
+      });
+      return next;
+    });
   };
 
   const handleProviderChange = (p: AIProvider) => {
@@ -158,6 +196,69 @@ const AdminIA = () => {
     } else {
       toast.success("Configurações salvas!");
       void load();
+    }
+  };
+
+  const openEditKey = (p: AIProvider) => {
+    setEditingProvider(p);
+    setEditingKey("");
+    setShowKey(false);
+  };
+
+  const closeEditKey = () => {
+    setEditingProvider(null);
+    setEditingKey("");
+    setShowKey(false);
+    setSavingKey(false);
+  };
+
+  const saveKey = async () => {
+    if (!editingProvider) return;
+    const trimmed = editingKey.trim();
+    if (trimmed.length < 8) {
+      toast.error("A chave parece muito curta. Verifique e tente novamente.");
+      return;
+    }
+    setSavingKey(true);
+    const { error } = await supabase
+      .from("ai_credentials")
+      .upsert(
+        { provider: editingProvider, api_key: trimmed, updated_at: new Date().toISOString() },
+        { onConflict: "provider" },
+      );
+    setSavingKey(false);
+    if (error) {
+      console.error("saveKey error", error);
+      toast.error("Não foi possível salvar a chave. Confira se você é admin.");
+      return;
+    }
+    toast.success(`Chave do ${getProvider(editingProvider)?.label} salva com sucesso.`);
+    closeEditKey();
+    void loadCredentials();
+  };
+
+  const deleteKey = async (p: AIProvider) => {
+    if (!confirm(`Remover a chave do ${getProvider(p)?.label}? O provedor deixará de funcionar.`)) {
+      return;
+    }
+    const { error } = await supabase.from("ai_credentials").delete().eq("provider", p);
+    if (error) {
+      toast.error("Erro ao remover chave.");
+      return;
+    }
+    toast.success("Chave removida.");
+    setTests((s) => ({ ...s, [p]: { status: "idle" } }));
+    void loadCredentials();
+  };
+
+  const copyPreview = async (p: AIProvider) => {
+    const preview = credentials[p]?.preview;
+    if (!preview) return;
+    try {
+      await navigator.clipboard.writeText(preview);
+      toast.success("Prévia copiada.");
+    } catch {
+      toast.error("Não foi possível copiar.");
     }
   };
 
