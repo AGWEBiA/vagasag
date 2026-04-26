@@ -18,6 +18,8 @@ import BancoTalentos from "./pages/BancoTalentos.tsx";
 import AdminIA from "./pages/AdminIA.tsx";
 import AdminUsuarios from "./pages/AdminUsuarios.tsx";
 import AdminPerguntas from "./pages/AdminPerguntas.tsx";
+import AdminPipeline from "./pages/AdminPipeline.tsx";
+import VagaPipeline from "./pages/VagaPipeline.tsx";
 import Autoavaliacao from "./pages/Autoavaliacao.tsx";
 import PortalVagas from "./pages/PortalVagas.tsx";
 import VagaPublica from "./pages/VagaPublica.tsx";
