@@ -434,22 +434,36 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
       pilares.visaoEstrategica.nota * 0.2 +
       pilares.liderancaAutonomia.nota * 0.15;
 
-    const { data: candidate, error: candErr } = await supabase
-      .from("candidates")
-      .insert({
-        nome,
-        cargo,
-        dados_profissionais: dadosProfissionais,
-        informacoes_adicionais: informacoesAdicionais || null,
-        created_by: userData.user.id,
-        origem: origemValue,
-      })
-      .select()
-      .single();
-
-    if (candErr || !candidate) {
-      console.error("Erro inserindo candidato", candErr);
-      return jsonResponse({ error: "Erro ao salvar candidato." }, 500);
+    let candidate: { id: string; nome: string; cargo: string; origem: string };
+    if (existingCandidate) {
+      const { data: c, error: cErr } = await supabase
+        .from("candidates")
+        .select("id, nome, cargo, origem")
+        .eq("id", existingCandidate.id)
+        .single();
+      if (cErr || !c) {
+        console.error("Erro recarregando candidato", cErr);
+        return jsonResponse({ error: "Erro ao carregar candidato." }, 500);
+      }
+      candidate = c;
+    } else {
+      const { data: c, error: candErr } = await supabase
+        .from("candidates")
+        .insert({
+          nome,
+          cargo,
+          dados_profissionais: dadosProfissionais,
+          informacoes_adicionais: informacoesAdicionais || null,
+          created_by: userData.user.id,
+          origem: origemValue,
+        })
+        .select("id, nome, cargo, origem")
+        .single();
+      if (candErr || !c) {
+        console.error("Erro inserindo candidato", candErr);
+        return jsonResponse({ error: "Erro ao salvar candidato." }, 500);
+      }
+      candidate = c;
     }
 
     const { data: assessment, error: assErr } = await supabase
