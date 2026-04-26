@@ -160,6 +160,33 @@ export type Database = {
         }
         Relationships: []
       }
+      candidatura_respostas: {
+        Row: {
+          candidatura_id: string
+          created_at: string
+          id: string
+          resposta_numero: number | null
+          resposta_texto: string | null
+          vaga_pergunta_id: string
+        }
+        Insert: {
+          candidatura_id: string
+          created_at?: string
+          id?: string
+          resposta_numero?: number | null
+          resposta_texto?: string | null
+          vaga_pergunta_id: string
+        }
+        Update: {
+          candidatura_id?: string
+          created_at?: string
+          id?: string
+          resposta_numero?: number | null
+          resposta_texto?: string | null
+          vaga_pergunta_id?: string
+        }
+        Relationships: []
+      }
       candidaturas: {
         Row: {
           candidate_id: string | null
@@ -319,6 +346,42 @@ export type Database = {
         }
         Relationships: []
       }
+      question_bank: {
+        Row: {
+          ativa: boolean
+          cargos_sugeridos: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          opcoes: Json
+          texto: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          cargos_sugeridos?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          opcoes?: Json
+          texto: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          cargos_sugeridos?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          opcoes?: Json
+          texto?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -361,6 +424,48 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vaga_perguntas: {
+        Row: {
+          created_at: string
+          id: string
+          obrigatoria: boolean
+          opcoes: Json
+          ordem: number
+          question_bank_id: string | null
+          texto: string
+          tipo: string
+          updated_at: string
+          usar_na_ia: boolean
+          vaga_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          obrigatoria?: boolean
+          opcoes?: Json
+          ordem?: number
+          question_bank_id?: string | null
+          texto: string
+          tipo?: string
+          updated_at?: string
+          usar_na_ia?: boolean
+          vaga_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          obrigatoria?: boolean
+          opcoes?: Json
+          ordem?: number
+          question_bank_id?: string | null
+          texto?: string
+          tipo?: string
+          updated_at?: string
+          usar_na_ia?: boolean
+          vaga_id?: string
         }
         Relationships: []
       }
