@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_credentials: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          label: string | null
+          provider: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          provider: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ai_settings: {
         Row: {
           enabled_providers: Json
