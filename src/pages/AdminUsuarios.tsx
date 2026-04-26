@@ -362,7 +362,9 @@ const AdminUsuarios = () => {
             <TableBody>
               {filtered.map((u) => {
                 const isMe = u.id === currentUser?.id;
-                const role = (u.roles[0] ?? "colaborador") as AppRole;
+                const userRoles = (u.roles.length > 0
+                  ? u.roles
+                  : (["colaborador"] as AppRole[])) as AppRole[];
                 return (
                   <TableRow key={u.id}>
                     <TableCell>
@@ -377,31 +379,71 @@ const AdminUsuarios = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                            ROLE_BADGE[role],
-                          )}
-                        >
-                          {ROLE_LABELS[role]}
-                        </span>
-                        <Select
-                          value={role}
-                          onValueChange={(v) => handleSetRole(u, v as AppRole)}
-                          disabled={updatingRole === u.id || isMe}
-                        >
-                          <SelectTrigger className="h-7 w-[140px] text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROLE_OPTIONS.map((r) => (
-                              <SelectItem key={r} value={r}>
-                                {ROLE_LABELS[r]}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap gap-1">
+                          {userRoles.map((r) => (
+                            <span
+                              key={r}
+                              className={cn(
+                                "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                ROLE_BADGE[r],
+                              )}
+                            >
+                              {ROLE_LABELS[r]}
+                            </span>
+                          ))}
+                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs hover:bg-gold/10"
+                              disabled={updatingRole === u.id}
+                              title={isMe ? "Cuidado ao alterar seus próprios papéis" : "Editar papéis"}
+                            >
+                              <Pencil className="h-3 w-3 mr-1" /> Editar
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-3" align="start">
+                            <div className="space-y-2">
+                              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Papéis do usuário
+                              </div>
+                              {ROLE_OPTIONS.map((r) => {
+                                const checked = userRoles.includes(r);
+                                return (
+                                  <label
+                                    key={r}
+                                    className="flex items-start gap-2 rounded-md p-2 hover:bg-surface-elevated cursor-pointer"
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(v) => {
+                                        const next = v
+                                          ? Array.from(new Set([...userRoles, r]))
+                                          : userRoles.filter((x) => x !== r);
+                                        void handleSetRoles(u, next as AppRole[]);
+                                      }}
+                                      className="mt-0.5"
+                                    />
+                                    <div className="flex flex-col">
+                                      <span className="text-xs font-medium">{ROLE_LABELS[r]}</span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {ROLE_DESCRIPTIONS[r]}
+                                      </span>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                              {isMe && (
+                                <p className="text-[10px] text-destructive pt-1">
+                                  Você não pode remover seu próprio papel de admin.
+                                </p>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                         {updatingRole === u.id && (
                           <Loader2 className="h-3 w-3 animate-spin text-gold" />
                         )}
