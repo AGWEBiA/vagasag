@@ -105,25 +105,65 @@ const VagaPublica = () => {
       toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos.");
       return;
     }
+    // Validar perguntas obrigatórias
+    for (const p of perguntas) {
+      if (!p.obrigatoria) continue;
+      const r = respostas[p.id];
+      const ok =
+        p.tipo === "escala"
+          ? typeof r?.numero === "number"
+          : (r?.texto ?? "").trim().length > 0;
+      if (!ok) {
+        toast.error(`Responda: "${p.texto}"`);
+        return;
+      }
+    }
     setSubmitting(true);
-    const { error } = await supabase.from("candidaturas").insert({
-      vaga_id: vaga.id,
-      nome: parsed.data.nome,
-      email: parsed.data.email,
-      telefone: parsed.data.telefone || null,
-      linkedin: parsed.data.linkedin || null,
-      portfolio: parsed.data.portfolio || null,
-      dados_profissionais: parsed.data.dados_profissionais,
-      informacoes_adicionais: parsed.data.informacoes_adicionais || null,
-    });
-    setSubmitting(false);
-    if (error) {
+    const { data: cand, error } = await supabase
+      .from("candidaturas")
+      .insert({
+        vaga_id: vaga.id,
+        nome: parsed.data.nome,
+        email: parsed.data.email,
+        telefone: parsed.data.telefone || null,
+        linkedin: parsed.data.linkedin || null,
+        portfolio: parsed.data.portfolio || null,
+        dados_profissionais: parsed.data.dados_profissionais,
+        informacoes_adicionais: parsed.data.informacoes_adicionais || null,
+      })
+      .select("id")
+      .single();
+    if (error || !cand) {
+      setSubmitting(false);
       console.error(error);
       toast.error("Não foi possível enviar sua candidatura.");
-    } else {
-      setSuccess(true);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
+    // Inserir respostas
+    const respostasRows = perguntas
+      .map((p) => {
+        const r = respostas[p.id];
+        if (!r) return null;
+        const hasText = (r.texto ?? "").trim().length > 0;
+        const hasNum = typeof r.numero === "number";
+        if (!hasText && !hasNum) return null;
+        return {
+          candidatura_id: cand.id,
+          vaga_pergunta_id: p.id,
+          resposta_texto: hasText ? r.texto!.trim() : null,
+          resposta_numero: hasNum ? r.numero! : null,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    if (respostasRows.length > 0) {
+      const { error: rErr } = await supabase
+        .from("candidatura_respostas")
+        .insert(respostasRows);
+      if (rErr) console.error("Erro respostas:", rErr);
+    }
+    setSubmitting(false);
+    setSuccess(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
