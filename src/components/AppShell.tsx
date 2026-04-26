@@ -9,6 +9,7 @@ import {
   Cpu,
   Users,
   Users2,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -26,6 +27,7 @@ const BASE_NAV = [
 
 const ADMIN_NAV = [
   { to: "/admin/usuarios", label: "Usuários", icon: Users, badge: "Admin" },
+  { to: "/admin/perguntas", label: "Perguntas", icon: HelpCircle, badge: "Admin" },
   { to: "/admin/ia", label: "Configuração de IA", icon: Cpu, badge: "Admin" },
 ];
 
