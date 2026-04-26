@@ -385,6 +385,14 @@ const Vagas = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="pt-3 border-t border-sidebar-border">
+              <VagaPerguntasEditor
+                vagaId={editing?.id ?? null}
+                cargo={form.cargo || null}
+                onDraftChange={setPerguntasDraft}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
