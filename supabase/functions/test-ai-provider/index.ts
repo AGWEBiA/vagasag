@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,13 +12,46 @@ type Provider = "lovable" | "openai" | "anthropic" | "groq";
 interface TestRequest {
   provider: Provider;
   model: string;
+  // Optional override: if present, use this key (for the "test before save" flow)
+  apiKeyOverride?: string;
 }
 
 const TEST_PROMPT = "Reply with the single word: pong";
 
-async function testLovable(model: string) {
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) throw new Error("LOVABLE_API_KEY não configurada no backend.");
+const PROVIDER_TO_SECRET: Record<Provider, string> = {
+  lovable: "LOVABLE_API_KEY",
+  openai: "OPENAI_API_KEY",
+  anthropic: "ANTHROPIC_API_KEY",
+  groq: "GROQ_API_KEY",
+};
+
+async function loadKey(provider: Provider, override?: string): Promise<string> {
+  if (override && override.trim().length > 0) return override.trim();
+
+  // 1. Try DB-stored credential first
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  if (supabaseUrl && serviceKey) {
+    const admin = createClient(supabaseUrl, serviceKey);
+    const { data } = await admin
+      .from("ai_credentials")
+      .select("api_key")
+      .eq("provider", provider)
+      .maybeSingle();
+    if (data?.api_key) return data.api_key;
+  }
+
+  // 2. Fallback to env (for LOVABLE_API_KEY mainly)
+  const env = Deno.env.get(PROVIDER_TO_SECRET[provider]);
+  if (env) return env;
+
+  throw new Error(
+    `Chave do provedor ${provider} não configurada. Adicione-a no painel de Configuração de IA.`,
+  );
+}
+
+async function testLovable(model: string, override?: string) {
+  const key = await loadKey("lovable", override);
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -33,9 +67,8 @@ async function testLovable(model: string) {
   return await parseResponse(r, "Lovable AI Gateway");
 }
 
-async function testOpenAI(model: string) {
-  const key = Deno.env.get("OPENAI_API_KEY");
-  if (!key) throw new Error("OPENAI_API_KEY não configurada. Adicione a chave nas configurações.");
+async function testOpenAI(model: string, override?: string) {
+  const key = await loadKey("openai", override);
   const r = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -51,9 +84,8 @@ async function testOpenAI(model: string) {
   return await parseResponse(r, "OpenAI");
 }
 
-async function testAnthropic(model: string) {
-  const key = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!key) throw new Error("ANTHROPIC_API_KEY não configurada. Adicione a chave nas configurações.");
+async function testAnthropic(model: string, override?: string) {
+  const key = await loadKey("anthropic", override);
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -70,9 +102,8 @@ async function testAnthropic(model: string) {
   return await parseResponse(r, "Anthropic");
 }
 
-async function testGroq(model: string) {
-  const key = Deno.env.get("GROQ_API_KEY");
-  if (!key) throw new Error("GROQ_API_KEY não configurada. Adicione a chave nas configurações.");
+async function testGroq(model: string, override?: string) {
+  const key = await loadKey("groq", override);
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -112,16 +143,16 @@ serve(async (req) => {
     let result;
     switch (body.provider) {
       case "lovable":
-        result = await testLovable(body.model);
+        result = await testLovable(body.model, body.apiKeyOverride);
         break;
       case "openai":
-        result = await testOpenAI(body.model);
+        result = await testOpenAI(body.model, body.apiKeyOverride);
         break;
       case "anthropic":
-        result = await testAnthropic(body.model);
+        result = await testAnthropic(body.model, body.apiKeyOverride);
         break;
       case "groq":
-        result = await testGroq(body.model);
+        result = await testGroq(body.model, body.apiKeyOverride);
         break;
       default:
         throw new Error(`Provedor desconhecido: ${body.provider}`);
@@ -136,7 +167,7 @@ serve(async (req) => {
     const message = e instanceof Error ? e.message : "Erro desconhecido";
     console.error("test-ai-provider error:", message);
     return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 200, // 200 para o cliente sempre poder ler o JSON
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
