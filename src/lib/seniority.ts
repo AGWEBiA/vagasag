@@ -6,6 +6,9 @@ export const CARGOS = [
   { value: "desenvolvedor", label: "Desenvolvedor" },
   { value: "social_media_manager", label: "Social Media Manager" },
   { value: "seo_specialist", label: "SEO Specialist" },
+  { value: "atendimento_suporte", label: "Atendimento / Suporte" },
+  { value: "inside_sales", label: "Inside Sales" },
+  { value: "gestor_projetos", label: "Gestor de Projetos" },
 ] as const;
 
 export type CargoValue = (typeof CARGOS)[number]["value"];
