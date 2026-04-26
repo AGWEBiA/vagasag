@@ -349,18 +349,60 @@ const Autoavaliacao = () => {
               </div>
             )}
 
+            {!submitting && limitReached && (
+              <div className="flex items-start gap-3 rounded-lg bg-destructive/10 border border-destructive/30 p-4 animate-fade-in">
+                <Clock className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium text-destructive">
+                    Limite de envios atingido
+                  </div>
+                  <div className="text-body/80 mt-0.5">
+                    Você já enviou {HOURLY_LIMIT} autoavaliações na última hora. Aguarde
+                    para enviar novamente.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!submitting && !limitReached && inCooldown && (
+              <div className="flex items-start gap-3 rounded-lg bg-surface-elevated border border-gold/30 p-4 animate-fade-in">
+                <Clock className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium text-gold">
+                    Aguarde {cooldownRemaining}s antes de enviar novamente
+                  </div>
+                  <div className="text-body/80 mt-0.5">
+                    Para evitar envios duplicados, aplicamos um intervalo de{" "}
+                    {COOLDOWN_SECONDS} segundos entre envios.
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
-              disabled={submitting}
-              className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-12 text-base font-semibold"
+              disabled={blockSubmit}
+              className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-12 text-base font-semibold disabled:opacity-60"
             >
               {submitting ? (
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : inCooldown ? (
+                <Clock className="h-5 w-5 mr-2" />
               ) : (
                 <Sparkles className="h-5 w-5 mr-2" />
               )}
-              {submitting ? "Enviando..." : "Enviar autoavaliação"}
+              {submitting
+                ? "Enviando..."
+                : limitReached
+                  ? "Limite atingido"
+                  : inCooldown
+                    ? `Aguarde ${cooldownRemaining}s`
+                    : "Enviar autoavaliação"}
             </Button>
+
+            <p className="text-[11px] text-muted-foreground text-center">
+              Envios usados nesta hora: {hourlyCount}/{HOURLY_LIMIT}
+            </p>
           </form>
         )}
       </main>
