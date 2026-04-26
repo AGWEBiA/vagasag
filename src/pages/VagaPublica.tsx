@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CARGO_LABEL } from "@/lib/seniority";
 import { ESCALA_LABEL, type VagaPergunta } from "@/lib/perguntas";
+import { CVUploader, type ParsedCVFields } from "@/components/CVUploader";
 import { toast } from "sonner";
 
 interface Vaga {
