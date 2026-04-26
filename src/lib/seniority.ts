@@ -32,6 +32,12 @@ export const CARGO_HINTS: Record<string, string> = {
     "Inclua: plataformas gerenciadas, métricas de engajamento, estratégias de conteúdo, gestão de comunidade, campanhas e resultados mensuráveis.",
   seo_specialist:
     "Inclua: ferramentas (SEMrush, Ahrefs, GSC), tipos de SEO (on-page, técnico, off-page), resultados de posicionamento, auditorias realizadas e estratégias de link building.",
+  atendimento_suporte:
+    "Inclua: experiência com atendimento em lançamentos, ferramentas (CRM, helpdesk), volume de tickets, métricas de satisfação e atuação em períodos de alto volume.",
+  inside_sales:
+    "Inclua: experiência com vendas High Ticket, métodos de vendas, record de vendas, cursos realizados, projetos/lançamentos atendidos e habilidade em ligações.",
+  gestor_projetos:
+    "Inclua: metodologias (Agile, Scrum, Kanban), ferramentas (Asana, ClickUp, Notion), tipos de projetos gerenciados, equipes lideradas e métricas de entrega.",
 };
 
 export type Senioridade = "Junior" | "Pleno" | "Senior";
