@@ -27,6 +27,8 @@ import { CARGO_LABEL } from "@/lib/seniority";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RespostasCandidato } from "@/components/RespostasCandidato";
+import { CandidaturaTimeline } from "@/components/CandidaturaTimeline";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PipelineEstagio } from "@/lib/pipeline";
 
 interface Vaga {
