@@ -54,6 +54,7 @@ const NovaAvaliacao = () => {
           cargo,
           dadosProfissionais: dados.trim(),
           informacoesAdicionais: info.trim() || undefined,
+          origem,
         },
       });
       if (error) throw error;
