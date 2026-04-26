@@ -440,10 +440,94 @@ const AdminIA = () => {
               }
               onTest={() => testProvider(p.id)}
               testState={tests[p.id]}
+              credential={credentials[p.id]}
+              onEditKey={() => openEditKey(p.id)}
+              onDeleteKey={() => deleteKey(p.id)}
+              onCopyPreview={() => copyPreview(p.id)}
             />
           ))}
         </div>
       )}
+
+      {/* Dialog para inserir/atualizar a chave */}
+      <Dialog open={editingProvider !== null} onOpenChange={(open) => !open && closeEditKey()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-gold" />
+              {editingProvider && credentials[editingProvider]?.configured ? "Atualizar" : "Adicionar"} chave —{" "}
+              {editingProvider && getProvider(editingProvider)?.label}
+            </DialogTitle>
+            <DialogDescription>
+              {editingProvider && getProvider(editingProvider)?.apiKeyHint}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {editingProvider && getProvider(editingProvider)?.docsUrl && (
+              <a
+                href={getProvider(editingProvider)?.docsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-gold hover:underline"
+              >
+                Abrir painel de chaves do provedor <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="api-key-input">
+                Chave de API ({editingProvider && getProvider(editingProvider)?.secretName})
+              </Label>
+              <div className="relative">
+                <Input
+                  id="api-key-input"
+                  type={showKey ? "text" : "password"}
+                  value={editingKey}
+                  onChange={(e) => setEditingKey(e.target.value)}
+                  placeholder="Cole sua chave aqui..."
+                  className="pr-10 font-mono text-sm"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showKey ? "Ocultar" : "Mostrar"}
+                >
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A chave fica criptografada na base e só é acessada pelas funções server-side.
+                Apenas administradores podem ler ou alterar.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={closeEditKey} disabled={savingKey}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={saveKey}
+              disabled={savingKey || editingKey.trim().length < 8}
+              className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+            >
+              {savingKey ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Salvar chave
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 };
