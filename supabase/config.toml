@@ -1,1 +1,4 @@
 project_id = "cpxwczcijqjdkjzhiwkq"
+
+[functions.assess-candidate]
+verify_jwt = true
