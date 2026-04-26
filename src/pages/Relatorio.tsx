@@ -65,7 +65,7 @@ const Relatorio = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assessments")
-        .select("*, candidates(id, nome, cargo)")
+        .select("*, candidates(id, nome, cargo, origem)")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
