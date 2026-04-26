@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Sparkles, History as HistoryIcon } from "lucide-react";
+import { Search, Sparkles, History as HistoryIcon, Users, UserPlus, Layers } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -65,6 +66,15 @@ const Historico = () => {
     });
   }, [data, search, cargoFilter, seniorityFilter, origemFilter]);
 
+  const counts = useMemo(() => {
+    const all = data ?? [];
+    return {
+      all: all.length,
+      time: all.filter((r) => r.candidates?.origem === "time").length,
+      candidato: all.filter((r) => r.candidates?.origem === "candidato").length,
+    };
+  }, [data]);
+
   return (
     <AppShell>
       <header className="mb-8 animate-fade-in">
@@ -73,6 +83,26 @@ const Historico = () => {
           Todas as avaliações realizadas pela equipe.
         </p>
       </header>
+
+      <Tabs value={origemFilter} onValueChange={setOrigemFilter} className="mb-4">
+        <TabsList className="bg-surface-elevated border border-sidebar-border h-auto p-1">
+          <TabsTrigger value="all" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <Layers className="h-4 w-4" />
+            Todos
+            <span className="ml-1 text-[10px] font-mono opacity-70">({counts.all})</span>
+          </TabsTrigger>
+          <TabsTrigger value="time" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <Users className="h-4 w-4" />
+            Time
+            <span className="ml-1 text-[10px] font-mono opacity-70">({counts.time})</span>
+          </TabsTrigger>
+          <TabsTrigger value="candidato" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <UserPlus className="h-4 w-4" />
+            Candidatos
+            <span className="ml-1 text-[10px] font-mono opacity-70">({counts.candidato})</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="surface-card rounded-xl p-4 mb-6 grid gap-3 md:grid-cols-3">
         <div className="relative">
@@ -162,7 +192,22 @@ const Historico = () => {
                         >
                           {getInitials(a.candidates?.nome ?? "?")}
                         </div>
-                        <span className="font-medium">{a.candidates?.nome}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium leading-tight">{a.candidates?.nome}</span>
+                          <span
+                            className={`mt-0.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                              a.candidates?.origem === "time"
+                                ? "bg-gold/10 text-gold border-gold/30"
+                                : "bg-surface-elevated text-muted-foreground border-sidebar-border"
+                            }`}
+                          >
+                            {a.candidates?.origem === "time" ? (
+                              <><Users className="h-2.5 w-2.5" /> Time</>
+                            ) : (
+                              <><UserPlus className="h-2.5 w-2.5" /> Candidato</>
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
