@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
   Inbox,
+  Layers,
   Loader2,
   Mail,
   Phone,
@@ -19,6 +27,7 @@ import { CARGO_LABEL } from "@/lib/seniority";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RespostasCandidato } from "@/components/RespostasCandidato";
+import type { PipelineEstagio } from "@/lib/pipeline";
 
 interface Vaga {
   id: string;
@@ -38,6 +47,7 @@ interface Candidatura {
   status: string;
   candidate_id: string | null;
   created_at: string;
+  estagio_id: string | null;
 }
 
 const InboxCandidaturas = () => {
