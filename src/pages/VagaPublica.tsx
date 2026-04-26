@@ -98,6 +98,37 @@ const VagaPublica = () => {
     setRespostas((r) => ({ ...r, [pid]: { ...r[pid], ...patch } }));
   };
 
+  const aplicarCV = (f: ParsedCVFields) => {
+    setForm((prev) => {
+      const merged = { ...prev };
+      // só preenche o que estiver vazio para não sobrescrever o que o user digitou
+      const fill = (k: keyof typeof merged, v?: string) => {
+        if (v && v.trim() && !prev[k]?.trim()) merged[k] = v.trim();
+      };
+      fill("nome", f.nome);
+      fill("email", f.email);
+      fill("telefone", f.telefone);
+      fill("linkedin", f.linkedin);
+      fill("portfolio", f.portfolio);
+      // Resumo profissional sempre é o mais valioso — se vazio, preenche
+      if (f.dados_profissionais && !prev.dados_profissionais.trim()) {
+        merged.dados_profissionais = f.dados_profissionais.trim();
+      }
+      // Adiciona skills/idiomas/formação ao campo de info adicional se vier vazio
+      if (!prev.informacoes_adicionais.trim()) {
+        const extras: string[] = [];
+        if (f.skills?.length) extras.push(`Skills: ${f.skills.join(", ")}`);
+        if (f.idiomas?.length) extras.push(`Idiomas: ${f.idiomas.join(", ")}`);
+        if (f.formacao) extras.push(`Formação: ${f.formacao}`);
+        if (typeof f.anos_experiencia === "number" && f.anos_experiencia > 0) {
+          extras.push(`Experiência estimada: ${f.anos_experiencia} ano(s)`);
+        }
+        if (extras.length) merged.informacoes_adicionais = extras.join("\n");
+      }
+      return merged;
+    });
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vaga) return;
