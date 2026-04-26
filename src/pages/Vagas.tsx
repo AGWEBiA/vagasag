@@ -97,6 +97,7 @@ const Vagas = () => {
   const openNew = () => {
     setEditing(null);
     setForm(empty);
+    setPerguntasDraft([]);
     setOpen(true);
   };
 
