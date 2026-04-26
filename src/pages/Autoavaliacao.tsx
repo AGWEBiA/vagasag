@@ -136,17 +136,15 @@ const Autoavaliacao = () => {
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("assess-candidate", {
-        body: {
-          nome: nome.trim(),
-          cargo,
-          dadosProfissionais: dados.trim(),
-          informacoesAdicionais: info.trim() || undefined,
-          origem: "time",
-        },
+      const { error } = await supabase.from("candidates").insert({
+        nome: nome.trim(),
+        cargo,
+        dados_profissionais: dados.trim(),
+        informacoes_adicionais: info.trim() || null,
+        origem: "time",
+        created_by: user.id,
       });
       if (error) throw error;
-      if (!data?.assessment?.id) throw new Error("Resposta inválida");
 
       // Registra envio bem-sucedido
       const updated = [...subs, Date.now()];
@@ -155,13 +153,11 @@ const Autoavaliacao = () => {
       setCooldownRemaining(COOLDOWN_SECONDS);
 
       setEnviado(true);
-      toast.success("Autoavaliação enviada!");
+      toast.success("Autoavaliação enviada! A liderança fará a análise em breve.");
     } catch (err: any) {
       console.error(err);
       const msg =
-        err?.context?.error ||
-        err?.message ||
-        "Erro ao enviar autoavaliação. Tente novamente.";
+        err?.message || "Erro ao enviar autoavaliação. Tente novamente.";
       toast.error(typeof msg === "string" ? msg : "Erro ao enviar.");
     } finally {
       setSubmitting(false);
