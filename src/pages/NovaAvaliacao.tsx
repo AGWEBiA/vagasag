@@ -17,12 +17,15 @@ import { CARGOS, CARGO_HINTS } from "@/lib/seniority";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type Origem = "candidato" | "time";
+
 const NovaAvaliacao = () => {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [cargo, setCargo] = useState("");
   const [dados, setDados] = useState("");
   const [info, setInfo] = useState("");
+  const [origem, setOrigem] = useState<Origem>("candidato");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
