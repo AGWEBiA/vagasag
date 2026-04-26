@@ -109,7 +109,31 @@ const Autoavaliacao = () => {
 
   const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
+    if (!user) return;
     if (!validate()) return;
+
+    // Reavalia limites com dados frescos do localStorage
+    const subs = readSubmissions(user.id);
+    const last = subs[subs.length - 1];
+    if (last) {
+      const elapsed = Math.floor((Date.now() - last) / 1000);
+      const remaining = COOLDOWN_SECONDS - elapsed;
+      if (remaining > 0) {
+        setCooldownRemaining(remaining);
+        toast.error(
+          `Aguarde ${remaining}s antes de enviar outra autoavaliação.`,
+        );
+        return;
+      }
+    }
+    if (subs.length >= HOURLY_LIMIT) {
+      toast.error(
+        `Limite de ${HOURLY_LIMIT} envios por hora atingido. Tente novamente mais tarde.`,
+      );
+      setHourlyCount(subs.length);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("assess-candidate", {
@@ -123,6 +147,13 @@ const Autoavaliacao = () => {
       });
       if (error) throw error;
       if (!data?.assessment?.id) throw new Error("Resposta inválida");
+
+      // Registra envio bem-sucedido
+      const updated = [...subs, Date.now()];
+      writeSubmissions(user.id, updated);
+      setHourlyCount(updated.length);
+      setCooldownRemaining(COOLDOWN_SECONDS);
+
       setEnviado(true);
       toast.success("Autoavaliação enviada!");
     } catch (err: any) {
@@ -136,6 +167,10 @@ const Autoavaliacao = () => {
       setSubmitting(false);
     }
   };
+
+  const limitReached = hourlyCount >= HOURLY_LIMIT;
+  const inCooldown = cooldownRemaining > 0;
+  const blockSubmit = submitting || inCooldown || limitReached;
 
   if (authLoading || roleLoading) {
     return (
