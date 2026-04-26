@@ -55,11 +55,16 @@ const App = () => (
               path="/admin/candidaturas/:vagaId"
               element={<ProtectedRoute><InboxCandidaturas /></ProtectedRoute>}
             />
+            <Route
+              path="/vagas-admin/:vagaId/pipeline"
+              element={<ProtectedRoute><VagaPipeline /></ProtectedRoute>}
+            />
 
             {/* Admin only */}
             <Route path="/admin/ia" element={<AdminRoute><AdminIA /></AdminRoute>} />
             <Route path="/admin/usuarios" element={<AdminRoute><AdminUsuarios /></AdminRoute>} />
             <Route path="/admin/perguntas" element={<ProtectedRoute><AdminPerguntas /></ProtectedRoute>} />
+            <Route path="/admin/pipeline" element={<AdminRoute><AdminPipeline /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
