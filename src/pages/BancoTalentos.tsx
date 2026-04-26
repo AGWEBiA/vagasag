@@ -544,7 +544,14 @@ const BancoTalentos = () => {
                       </p>
                     )}
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => openEdit(t)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(t);
+                    }}
+                  >
                     <Pencil className="h-3.5 w-3.5 mr-1" /> Gerir
                   </Button>
                 </div>
