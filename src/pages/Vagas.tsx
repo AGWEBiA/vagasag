@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox } from "lucide-react";
+import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -248,13 +248,22 @@ const Vagas = () => {
               </div>
               <p className="text-sm text-body line-clamp-3">{v.descricao}</p>
               <div className="flex items-center justify-between pt-2 border-t border-sidebar-border mt-auto">
-                <Link
-                  to={`/admin/candidaturas/${v.id}`}
-                  className="inline-flex items-center gap-1.5 text-xs text-gold hover:underline"
-                >
-                  <Inbox className="h-3.5 w-3.5" />
-                  {counts[v.id] ?? 0} candidatura(s)
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link
+                    to={`/admin/candidaturas/${v.id}`}
+                    className="inline-flex items-center gap-1.5 text-xs text-gold hover:underline"
+                  >
+                    <Inbox className="h-3.5 w-3.5" />
+                    {counts[v.id] ?? 0}
+                  </Link>
+                  <Link
+                    to={`/vagas-admin/${v.id}/pipeline`}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold"
+                    title="Pipeline Kanban"
+                  >
+                    <Layers className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
                 <div className="flex gap-1">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
                     <Pencil className="h-3.5 w-3.5" />

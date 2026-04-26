@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
   Inbox,
+  Layers,
   Loader2,
   Mail,
   Phone,
@@ -19,6 +27,7 @@ import { CARGO_LABEL } from "@/lib/seniority";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RespostasCandidato } from "@/components/RespostasCandidato";
+import type { PipelineEstagio } from "@/lib/pipeline";
 
 interface Vaga {
   id: string;
@@ -38,13 +47,17 @@ interface Candidatura {
   status: string;
   candidate_id: string | null;
   created_at: string;
+  estagio_id: string | null;
 }
 
 const InboxCandidaturas = () => {
   const { vagaId } = useParams<{ vagaId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const candParam = searchParams.get("cand");
   const [vaga, setVaga] = useState<Vaga | null>(null);
   const [items, setItems] = useState<Candidatura[]>([]);
+  const [estagios, setEstagios] = useState<PipelineEstagio[]>([]);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState<string | null>(null);
   const [selected, setSelected] = useState<Candidatura | null>(null);
@@ -57,18 +70,49 @@ const InboxCandidaturas = () => {
   const load = async () => {
     if (!vagaId) return;
     setLoading(true);
-    const [{ data: v }, { data: cs }] = await Promise.all([
+    const [{ data: v }, { data: cs }, { data: es }] = await Promise.all([
       supabase.from("vagas").select("id,titulo,cargo").eq("id", vagaId).maybeSingle(),
       supabase
         .from("candidaturas")
         .select("*")
         .eq("vaga_id", vagaId)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("pipeline_estagios")
+        .select("*")
+        .eq("ativo", true)
+        .order("ordem", { ascending: true }),
     ]);
     setVaga(v as Vaga | null);
-    setItems((cs ?? []) as Candidatura[]);
-    if (!selected && cs && cs.length > 0) setSelected(cs[0] as Candidatura);
+    const list = (cs ?? []) as Candidatura[];
+    setItems(list);
+    setEstagios((es ?? []) as PipelineEstagio[]);
+    if (candParam) {
+      const found = list.find((c) => c.id === candParam);
+      setSelected(found ?? list[0] ?? null);
+    } else if (list.length > 0) {
+      setSelected((prev) => prev ?? list[0]);
+    }
     setLoading(false);
+  };
+
+  const changeEstagio = async (cand: Candidatura, estagioId: string) => {
+    setItems((prev) =>
+      prev.map((c) => (c.id === cand.id ? { ...c, estagio_id: estagioId } : c)),
+    );
+    if (selected?.id === cand.id) {
+      setSelected({ ...cand, estagio_id: estagioId });
+    }
+    const { error } = await supabase
+      .from("candidaturas")
+      .update({ estagio_id: estagioId })
+      .eq("id", cand.id);
+    if (error) {
+      toast.error("Não foi possível atualizar estágio");
+      void load();
+    } else {
+      toast.success("Estágio atualizado");
+    }
   };
 
   const evaluate = async (c: Candidatura) => {
@@ -106,7 +150,7 @@ const InboxCandidaturas = () => {
 
   return (
     <AppShell>
-      <header className="mb-6 animate-fade-in flex items-start justify-between gap-4">
+      <header className="mb-6 animate-fade-in flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
             <Link to="/vagas-admin">
@@ -125,6 +169,11 @@ const InboxCandidaturas = () => {
             </p>
           )}
         </div>
+        <Button asChild variant="outline">
+          <Link to={`/vagas-admin/${vagaId}/pipeline`}>
+            <Layers className="h-4 w-4 mr-2" /> Visão Kanban
+          </Link>
+        </Button>
       </header>
 
       {loading ? (
@@ -177,6 +226,34 @@ const InboxCandidaturas = () => {
                   </div>
                 </div>
                 <StatusBadge status={selected.status} />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-gold" />
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Estágio
+                </span>
+                <Select
+                  value={selected.estagio_id ?? ""}
+                  onValueChange={(v) => changeEstagio(selected, v)}
+                >
+                  <SelectTrigger className="h-8 w-56">
+                    <SelectValue placeholder="Sem estágio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {estagios.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: e.cor }}
+                          />
+                          {e.nome}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid gap-2 text-sm">

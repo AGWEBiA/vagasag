@@ -18,6 +18,8 @@ import BancoTalentos from "./pages/BancoTalentos.tsx";
 import AdminIA from "./pages/AdminIA.tsx";
 import AdminUsuarios from "./pages/AdminUsuarios.tsx";
 import AdminPerguntas from "./pages/AdminPerguntas.tsx";
+import AdminPipeline from "./pages/AdminPipeline.tsx";
+import VagaPipeline from "./pages/VagaPipeline.tsx";
 import Autoavaliacao from "./pages/Autoavaliacao.tsx";
 import PortalVagas from "./pages/PortalVagas.tsx";
 import VagaPublica from "./pages/VagaPublica.tsx";
@@ -53,11 +55,16 @@ const App = () => (
               path="/admin/candidaturas/:vagaId"
               element={<ProtectedRoute><InboxCandidaturas /></ProtectedRoute>}
             />
+            <Route
+              path="/vagas-admin/:vagaId/pipeline"
+              element={<ProtectedRoute><VagaPipeline /></ProtectedRoute>}
+            />
 
             {/* Admin only */}
             <Route path="/admin/ia" element={<AdminRoute><AdminIA /></AdminRoute>} />
             <Route path="/admin/usuarios" element={<AdminRoute><AdminUsuarios /></AdminRoute>} />
             <Route path="/admin/perguntas" element={<ProtectedRoute><AdminPerguntas /></ProtectedRoute>} />
+            <Route path="/admin/pipeline" element={<AdminRoute><AdminPipeline /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
