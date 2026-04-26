@@ -15,6 +15,8 @@ import Relatorio from "./pages/Relatorio.tsx";
 import Vagas from "./pages/Vagas.tsx";
 import InboxCandidaturas from "./pages/InboxCandidaturas.tsx";
 import AdminIA from "./pages/AdminIA.tsx";
+import AdminUsuarios from "./pages/AdminUsuarios.tsx";
+import Autoavaliacao from "./pages/Autoavaliacao.tsx";
 import PortalVagas from "./pages/PortalVagas.tsx";
 import VagaPublica from "./pages/VagaPublica.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -34,8 +36,11 @@ const App = () => (
             <Route path="/vagas" element={<PortalVagas />} />
             <Route path="/vagas/:id" element={<VagaPublica />} />
 
-            {/* Authenticated */}
+            {/* Authenticated (qualquer login) */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/autoavaliacao" element={<ProtectedRoute><Autoavaliacao /></ProtectedRoute>} />
+
+            {/* Painel interno */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/nova-avaliacao" element={<ProtectedRoute><NovaAvaliacao /></ProtectedRoute>} />
             <Route path="/historico" element={<ProtectedRoute><Historico /></ProtectedRoute>} />
@@ -48,6 +53,7 @@ const App = () => (
 
             {/* Admin only */}
             <Route path="/admin/ia" element={<AdminRoute><AdminIA /></AdminRoute>} />
+            <Route path="/admin/usuarios" element={<AdminRoute><AdminUsuarios /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
