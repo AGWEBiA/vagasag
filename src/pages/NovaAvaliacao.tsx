@@ -195,8 +195,48 @@ const NovaAvaliacao = () => {
   ) => {
     setRunningId(candidateId);
     try {
+      let realCandidateId = candidateId;
+
+      // Promover candidatura → candidate quando id virtual
+      if (candidateId.startsWith("cand:")) {
+        const candidaturaId = candidateId.slice(5);
+        const { data: cand, error: cErr } = await supabase
+          .from("candidaturas")
+          .select(
+            "id, nome, email, dados_profissionais, informacoes_adicionais, vaga_id, vagas(cargo)",
+          )
+          .eq("id", candidaturaId)
+          .single();
+        if (cErr || !cand) throw new Error("Talento não encontrado.");
+
+        const { data: userRes } = await supabase.auth.getUser();
+        const userId = userRes.user?.id;
+        if (!userId) throw new Error("Sessão expirada.");
+
+        const cargo = (cand as any).vagas?.cargo ?? "copywriter";
+        const { data: created, error: insErr } = await supabase
+          .from("candidates")
+          .insert({
+            nome: cand.nome,
+            cargo,
+            dados_profissionais: cand.dados_profissionais,
+            informacoes_adicionais: cand.informacoes_adicionais,
+            origem: "candidato",
+            created_by: userId,
+          })
+          .select("id")
+          .single();
+        if (insErr || !created) throw insErr ?? new Error("Falha ao criar candidato.");
+
+        realCandidateId = created.id;
+        await supabase
+          .from("candidaturas")
+          .update({ candidate_id: realCandidateId })
+          .eq("id", candidaturaId);
+      }
+
       const { data, error } = await supabase.functions.invoke("assess-candidate", {
-        body: { candidateId },
+        body: { candidateId: realCandidateId },
       });
       if (error) throw error;
       if (!data?.assessment?.id) throw new Error("Resposta inválida da IA.");
