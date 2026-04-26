@@ -23,55 +23,16 @@ Sua missão é analisar o perfil profissional de um candidato e determinar com p
 FRAMEWORK DE AVALIAÇÃO — 4 PILARES:
 
 1. PROFUNDIDADE TÉCNICA (peso: 35%)
-   - Domínio das ferramentas e plataformas específicas do cargo
-   - Qualidade técnica e precisão na execução
-   - Capacidade de resolver problemas complexos da área
-   - Atualização com tendências e melhores práticas
-
 2. ESCOPO DE IMPACTO (peso: 30%)
-   - Tamanho e complexidade dos projetos gerenciados
-   - Resultados mensuráveis e métricas alcançadas
-   - Alcance do trabalho (individual, equipe, empresa, mercado)
-   - Responsabilidade sobre orçamentos, clientes ou entregas críticas
-
 3. VISÃO ESTRATÉGICA (peso: 20%)
-   - Capacidade de pensar além da execução tática
-   - Contribuição para decisões de negócio e estratégia
-   - Visão de produto, cliente ou mercado
-   - Capacidade de propor soluções e não apenas executar tarefas
-
 4. LIDERANÇA E AUTONOMIA (peso: 15%)
-   - Nível de supervisão necessária para executar
-   - Capacidade de mentorear ou orientar outros
-   - Iniciativa e proatividade na resolução de problemas
-   - Gestão de stakeholders e comunicação
 
 CRITÉRIOS DE CLASSIFICAÇÃO:
+- JÚNIOR (0–4.9): Até 2 anos, executa tarefas com supervisão constante.
+- PLENO (5.0–7.4): 2 a 5 anos, autônomo em projetos de média complexidade.
+- SÊNIOR (7.5–10): +5 anos, lidera projetos complexos, visão estratégica.
 
-JÚNIOR (nota ponderada 0–4.9):
-- Até 2 anos de experiência prática
-- Executa tarefas bem definidas com supervisão constante
-- Domínio básico das ferramentas principais
-- Resultados limitados ao escopo individual
-
-PLENO (nota ponderada 5.0–7.4):
-- 2 a 5 anos de experiência sólida
-- Executa com autonomia projetos de média complexidade
-- Domínio avançado das ferramentas e boas práticas
-- Começa a influenciar decisões e orientar juniores
-
-SÊNIOR (nota ponderada 7.5–10):
-- Mais de 5 anos com histórico comprovado de resultados
-- Lidera projetos complexos e equipes
-- Visão estratégica e capacidade de impactar o negócio
-- Referência técnica e mentora outros profissionais
-
-INSTRUÇÕES:
-- Avalie com base nas evidências fornecidas, não em suposições
-- Seja criterioso: não promova candidatos sem evidências sólidas
-- Considere o contexto do cargo específico
-- Identifique gaps reais que impedem a progressão de nível
-- Sugira perguntas de entrevista específicas para validar o nível detectado
+Avalie com base em evidências, não em suposições. Identifique gaps reais. Sugira perguntas de entrevista específicas.
 
 Retorne EXCLUSIVAMENTE um JSON válido com a estrutura solicitada via tool/function calling.`;
 
@@ -85,39 +46,23 @@ const RESPONSE_SCHEMA = {
       properties: {
         profundidadeTecnica: {
           type: "object",
-          properties: {
-            nota: { type: "number" },
-            justificativa: { type: "string" },
-          },
+          properties: { nota: { type: "number" }, justificativa: { type: "string" } },
           required: ["nota", "justificativa"],
-          additionalProperties: false,
         },
         escopoImpacto: {
           type: "object",
-          properties: {
-            nota: { type: "number" },
-            justificativa: { type: "string" },
-          },
+          properties: { nota: { type: "number" }, justificativa: { type: "string" } },
           required: ["nota", "justificativa"],
-          additionalProperties: false,
         },
         visaoEstrategica: {
           type: "object",
-          properties: {
-            nota: { type: "number" },
-            justificativa: { type: "string" },
-          },
+          properties: { nota: { type: "number" }, justificativa: { type: "string" } },
           required: ["nota", "justificativa"],
-          additionalProperties: false,
         },
         liderancaAutonomia: {
           type: "object",
-          properties: {
-            nota: { type: "number" },
-            justificativa: { type: "string" },
-          },
+          properties: { nota: { type: "number" }, justificativa: { type: "string" } },
           required: ["nota", "justificativa"],
-          additionalProperties: false,
         },
       },
       required: [
@@ -126,7 +71,6 @@ const RESPONSE_SCHEMA = {
         "visaoEstrategica",
         "liderancaAutonomia",
       ],
-      additionalProperties: false,
     },
     pontosFortesJson: { type: "array", items: { type: "string" } },
     gapsIdentificadosJson: { type: "array", items: { type: "string" } },
@@ -142,22 +86,168 @@ const RESPONSE_SCHEMA = {
     "perguntasEntrevistaJson",
     "resumoExecutivo",
   ],
-  additionalProperties: false,
 };
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+// ---------- Provider adapters ----------
+
+async function callLovable(model: string, userPrompt: string) {
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) throw new Error("LOVABLE_API_KEY ausente.");
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "submit_assessment",
+            description: "Submete a avaliação estruturada do candidato.",
+            parameters: RESPONSE_SCHEMA,
+          },
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "submit_assessment" } },
+    }),
+  });
+  return parseOpenAIToolCall(resp);
+}
+
+async function callOpenAI(model: string, userPrompt: string) {
+  const key = Deno.env.get("OPENAI_API_KEY");
+  if (!key) throw new Error("OPENAI_API_KEY não configurada. Peça ao admin para adicionar.");
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "submit_assessment",
+            description: "Submete a avaliação estruturada do candidato.",
+            parameters: RESPONSE_SCHEMA,
+          },
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "submit_assessment" } },
+    }),
+  });
+  return parseOpenAIToolCall(resp);
+}
+
+async function callGroq(model: string, userPrompt: string) {
+  const key = Deno.env.get("GROQ_API_KEY");
+  if (!key) throw new Error("GROQ_API_KEY não configurada. Peça ao admin para adicionar.");
+  const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "submit_assessment",
+            description: "Submete a avaliação estruturada do candidato.",
+            parameters: RESPONSE_SCHEMA,
+          },
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "submit_assessment" } },
+    }),
+  });
+  return parseOpenAIToolCall(resp);
+}
+
+async function callAnthropic(model: string, userPrompt: string) {
+  const key = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!key) throw new Error("ANTHROPIC_API_KEY não configurada. Peça ao admin para adicionar.");
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      tools: [
+        {
+          name: "submit_assessment",
+          description: "Submete a avaliação estruturada do candidato.",
+          input_schema: RESPONSE_SCHEMA,
+        },
+      ],
+      tool_choice: { type: "tool", name: "submit_assessment" },
+      messages: [{ role: "user", content: userPrompt }],
+    }),
+  });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new ProviderError(resp.status, txt);
   }
+  const data = await resp.json();
+  const block = data.content?.find((c: any) => c.type === "tool_use");
+  if (!block?.input) throw new Error("Resposta inválida do Anthropic.");
+  return block.input;
+}
+
+class ProviderError extends Error {
+  status: number;
+  body: string;
+  constructor(status: number, body: string) {
+    super(`Provider HTTP ${status}: ${body}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
+async function parseOpenAIToolCall(resp: Response) {
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new ProviderError(resp.status, txt);
+  }
+  const data = await resp.json();
+  const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) {
+    console.error("Sem tool_calls", JSON.stringify(data));
+    throw new Error("Resposta da IA sem tool call.");
+  }
+  return typeof args === "string" ? JSON.parse(args) : args;
+}
+
+// ---------- Main ----------
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!authHeader) return jsonResponse({ error: "Missing authorization" }, 401);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -166,15 +256,16 @@ Deno.serve(async (req) => {
     });
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userData.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (userErr || !userData.user) return jsonResponse({ error: "Unauthorized" }, 401);
 
     const body = await req.json();
-    const { nome, cargo, dadosProfissionais, informacoesAdicionais } = body ?? {};
+    const {
+      nome,
+      cargo,
+      dadosProfissionais,
+      informacoesAdicionais,
+      candidaturaId,
+    } = body ?? {};
 
     if (
       typeof nome !== "string" ||
@@ -184,14 +275,22 @@ Deno.serve(async (req) => {
       typeof dadosProfissionais !== "string" ||
       dadosProfissionais.trim().length < 50
     ) {
-      return new Response(
-        JSON.stringify({ error: "Dados de entrada inválidos." }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return jsonResponse({ error: "Dados de entrada inválidos." }, 400);
     }
+
+    // Load AI settings
+    const { data: settings, error: settingsErr } = await supabase
+      .from("ai_settings")
+      .select("provider, model")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (settingsErr) console.warn("ai_settings read error", settingsErr);
+
+    const provider = (settings?.provider as string) || "lovable";
+    const model = (settings?.model as string) || "google/gemini-2.5-flash";
 
     const cargoLabel = CARGO_LABELS[cargo];
     const userPrompt = `Cargo avaliado: ${cargoLabel}
@@ -200,112 +299,43 @@ Nome do candidato: ${nome}
 DADOS PROFISSIONAIS:
 ${dadosProfissionais}
 
-${
-      informacoesAdicionais
-        ? `INFORMAÇÕES ADICIONAIS:\n${informacoesAdicionais}`
-        : ""
-    }
+${informacoesAdicionais ? `INFORMAÇÕES ADICIONAIS:\n${informacoesAdicionais}` : ""}
 
 Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "AI gateway não configurado." }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    const model = "google/gemini-2.5-flash";
-    const aiResp = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userPrompt },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "submit_assessment",
-                description: "Submete a avaliação estruturada do candidato.",
-                parameters: RESPONSE_SCHEMA,
-              },
-            },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "submit_assessment" },
-          },
-        }),
-      },
-    );
-
-    if (!aiResp.ok) {
-      const errText = await aiResp.text();
-      console.error("AI gateway error", aiResp.status, errText);
-      if (aiResp.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em instantes." }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      if (aiResp.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos de IA insuficientes. Recarregue no workspace Lovable." }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      return new Response(
-        JSON.stringify({ error: "Falha ao consultar a IA." }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    const aiJson = await aiResp.json();
-    const toolCall =
-      aiJson.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!toolCall) {
-      console.error("Resposta sem tool_call", JSON.stringify(aiJson));
-      return new Response(
-        JSON.stringify({ error: "Resposta inválida da IA." }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
     let parsed: any;
     try {
-      parsed = JSON.parse(toolCall);
-    } catch (_e) {
-      return new Response(
-        JSON.stringify({ error: "JSON inválido retornado pela IA." }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+      if (provider === "openai") parsed = await callOpenAI(model, userPrompt);
+      else if (provider === "anthropic") parsed = await callAnthropic(model, userPrompt);
+      else if (provider === "groq") parsed = await callGroq(model, userPrompt);
+      else parsed = await callLovable(model, userPrompt);
+    } catch (e) {
+      if (e instanceof ProviderError) {
+        if (e.status === 429) {
+          return jsonResponse(
+            { error: "Limite de requisições atingido. Tente novamente em instantes." },
+            429,
+          );
+        }
+        if (e.status === 402) {
+          return jsonResponse(
+            { error: "Créditos de IA insuficientes. Recarregue no workspace Lovable." },
+            402,
+          );
+        }
+        if (e.status === 401 || e.status === 403) {
+          return jsonResponse(
+            { error: `Credenciais do provedor ${provider} inválidas. Atualize a chave.` },
+            500,
+          );
+        }
+        console.error("Provider error", e.status, e.body);
+        return jsonResponse({ error: `Falha ao consultar a IA (${provider}).` }, 500);
+      }
+      console.error("AI call failed", e);
+      return jsonResponse(
+        { error: e instanceof Error ? e.message : "Falha ao consultar a IA." },
+        500,
       );
     }
 
@@ -316,7 +346,6 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
       pilares.visaoEstrategica.nota * 0.2 +
       pilares.liderancaAutonomia.nota * 0.15;
 
-    // Insert candidate
     const { data: candidate, error: candErr } = await supabase
       .from("candidates")
       .insert({
@@ -331,13 +360,7 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
 
     if (candErr || !candidate) {
       console.error("Erro inserindo candidato", candErr);
-      return new Response(
-        JSON.stringify({ error: "Erro ao salvar candidato." }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return jsonResponse({ error: "Erro ao salvar candidato." }, 500);
     }
 
     const { data: assessment, error: assErr } = await supabase
@@ -352,37 +375,27 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
         gaps_identificados: parsed.gapsIdentificadosJson,
         perguntas_entrevista: parsed.perguntasEntrevistaJson,
         resumo_executivo: parsed.resumoExecutivo,
-        model_used: model,
+        model_used: `${provider}:${model}`,
       })
       .select()
       .single();
 
     if (assErr || !assessment) {
       console.error("Erro inserindo assessment", assErr);
-      return new Response(
-        JSON.stringify({ error: "Erro ao salvar avaliação." }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return jsonResponse({ error: "Erro ao salvar avaliação." }, 500);
     }
 
-    return new Response(
-      JSON.stringify({ candidate, assessment }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    // Link to candidatura if provided
+    if (candidaturaId) {
+      await supabase
+        .from("candidaturas")
+        .update({ candidate_id: candidate.id, status: "avaliado" })
+        .eq("id", candidaturaId);
+    }
+
+    return jsonResponse({ candidate, assessment });
   } catch (err) {
     console.error("Unhandled error", err);
-    return new Response(
-      JSON.stringify({ error: "Erro interno." }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return jsonResponse({ error: "Erro interno." }, 500);
   }
 });
