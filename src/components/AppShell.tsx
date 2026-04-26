@@ -128,7 +128,15 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         <nav
           className={cn(
             "md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sidebar-border bg-sidebar grid",
-            NAV.length === 5 ? "grid-cols-5" : NAV.length === 4 ? "grid-cols-4" : "grid-cols-3",
+            NAV.length >= 7
+              ? "grid-cols-7"
+              : NAV.length === 6
+              ? "grid-cols-6"
+              : NAV.length === 5
+              ? "grid-cols-5"
+              : NAV.length === 4
+              ? "grid-cols-4"
+              : "grid-cols-3",
           )}
         >
           {NAV.map(({ to, label, icon: Icon }) => (
