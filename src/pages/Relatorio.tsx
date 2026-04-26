@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Calendar,
+  UserPlus,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
