@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Trophy,
@@ -13,10 +13,20 @@ import {
   AlertTriangle,
   Calendar,
   UserPlus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CARGO_LABEL,
@@ -37,6 +47,12 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Users,
 };
 
+const SENIORIDADE_RANK: Record<Senioridade, number> = {
+  Junior: 1,
+  Pleno: 2,
+  Senior: 3,
+};
+
 interface PilarData {
   nota: number;
   justificativa: string;
@@ -54,11 +70,13 @@ interface Assessment {
   resumo_executivo: string;
   model_used: string;
   created_at: string;
+  candidate_id: string;
   candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
 
 const Relatorio = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ["assessment", id],
@@ -73,6 +91,38 @@ const Relatorio = () => {
     },
     enabled: !!id,
   });
+
+  const candidateId = data?.candidate_id ?? data?.candidates?.id ?? null;
+
+  const { data: history } = useQuery({
+    queryKey: ["assessment-history", candidateId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("assessments")
+        .select(
+          "id, senioridade_detectada, confidence_score, nota_ponderada, analise_pilares, created_at",
+        )
+        .eq("candidate_id", candidateId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        senioridade_detectada: Senioridade;
+        confidence_score: number;
+        nota_ponderada: number;
+        analise_pilares: Record<string, PilarData>;
+        created_at: string;
+      }>;
+    },
+    enabled: !!candidateId,
+  });
+
+  const previous = useMemo(() => {
+    if (!data || !history) return null;
+    const idx = history.findIndex((h) => h.id === data.id);
+    if (idx < 0 || idx >= history.length - 1) return null;
+    return history[idx + 1];
+  }, [data, history]);
 
   useEffect(() => {
     document.title = data?.candidates?.nome
