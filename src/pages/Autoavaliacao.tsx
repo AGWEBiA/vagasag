@@ -230,8 +230,8 @@ const Autoavaliacao = () => {
             <CheckCircle2 className="h-12 w-12 text-gold mx-auto" />
             <h2 className="font-display text-2xl font-semibold">Recebido!</h2>
             <p className="text-muted-foreground max-w-md mx-auto text-sm">
-              Sua autoavaliação foi enviada e já está disponível para a liderança. Você
-              pode fechar esta página.
+              Sua autoavaliação foi registrada. A liderança fará a análise e
+              acompanhará seu desenvolvimento. Você pode fechar esta página.
             </p>
             <Button
               variant="outline"
