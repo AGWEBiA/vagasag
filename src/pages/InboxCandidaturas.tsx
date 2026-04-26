@@ -150,7 +150,7 @@ const InboxCandidaturas = () => {
 
   return (
     <AppShell>
-      <header className="mb-6 animate-fade-in flex items-start justify-between gap-4">
+      <header className="mb-6 animate-fade-in flex items-start justify-between gap-4 flex-wrap">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
             <Link to="/vagas-admin">
@@ -169,6 +169,11 @@ const InboxCandidaturas = () => {
             </p>
           )}
         </div>
+        <Button asChild variant="outline">
+          <Link to={`/vagas-admin/${vagaId}/pipeline`}>
+            <Layers className="h-4 w-4 mr-2" /> Visão Kanban
+          </Link>
+        </Button>
       </header>
 
       {loading ? (
