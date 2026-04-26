@@ -461,7 +461,8 @@ const Autoavaliacao = () => {
             <p className="text-[11px] text-muted-foreground text-center">
               Envios usados nesta hora: {hourlyCount}/{HOURLY_LIMIT}
             </p>
-          </form>
+            </form>
+          </>
         )}
       </main>
     </div>
