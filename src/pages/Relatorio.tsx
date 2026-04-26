@@ -54,7 +54,7 @@ interface Assessment {
   resumo_executivo: string;
   model_used: string;
   created_at: string;
-  candidates: { id: string; nome: string; cargo: string } | null;
+  candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
 
 const Relatorio = () => {
