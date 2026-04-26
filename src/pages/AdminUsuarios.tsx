@@ -170,21 +170,27 @@ const AdminUsuarios = () => {
     }
   };
 
-  const handleSetRole = async (u: UserRow, role: AppRole) => {
-    if (u.roles[0] === role) return;
+  const handleSetRoles = async (u: UserRow, roles: AppRole[]) => {
+    const sorted = [...roles].sort();
+    const currentSorted = [...u.roles].sort();
+    if (sorted.join(",") === currentSorted.join(",")) return;
+    if (roles.length === 0) {
+      toast.error("Selecione ao menos um papel.");
+      return;
+    }
     setUpdatingRole(u.id);
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "set_role", user_id: u.id, role },
+        body: { action: "set_roles", user_id: u.id, roles },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`Papel atualizado para ${ROLE_LABELS[role]}.`);
+      toast.success(`Papéis atualizados: ${roles.map((r) => ROLE_LABELS[r]).join(", ")}.`);
       setUsers((prev) =>
-        prev.map((row) => (row.id === u.id ? { ...row, roles: [role] } : row)),
+        prev.map((row) => (row.id === u.id ? { ...row, roles: data?.roles ?? roles } : row)),
       );
     } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao atualizar papel.");
+      toast.error(e?.message ?? "Erro ao atualizar papéis.");
     } finally {
       setUpdatingRole(null);
     }
