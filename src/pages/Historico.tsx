@@ -66,6 +66,15 @@ const Historico = () => {
     });
   }, [data, search, cargoFilter, seniorityFilter, origemFilter]);
 
+  const counts = useMemo(() => {
+    const all = data ?? [];
+    return {
+      all: all.length,
+      time: all.filter((r) => r.candidates?.origem === "time").length,
+      candidato: all.filter((r) => r.candidates?.origem === "candidato").length,
+    };
+  }, [data]);
+
   return (
     <AppShell>
       <header className="mb-8 animate-fade-in">
@@ -74,6 +83,26 @@ const Historico = () => {
           Todas as avaliações realizadas pela equipe.
         </p>
       </header>
+
+      <Tabs value={origemFilter} onValueChange={setOrigemFilter} className="mb-4">
+        <TabsList className="bg-surface-elevated border border-sidebar-border h-auto p-1">
+          <TabsTrigger value="all" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <Layers className="h-4 w-4" />
+            Todos
+            <span className="ml-1 text-[10px] font-mono opacity-70">({counts.all})</span>
+          </TabsTrigger>
+          <TabsTrigger value="time" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <Users className="h-4 w-4" />
+            Time
+            <span className="ml-1 text-[10px] font-mono opacity-70">({counts.time})</span>
+          </TabsTrigger>
+          <TabsTrigger value="candidato" className="data-[state=active]:bg-gradient-gold data-[state=active]:text-gold-foreground gap-2 px-4 py-2">
+            <UserPlus className="h-4 w-4" />
+            Candidatos
+            <span className="ml-1 text-[10px] font-mono opacity-70">({counts.candidato})</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="surface-card rounded-xl p-4 mb-6 grid gap-3 md:grid-cols-3">
         <div className="relative">
