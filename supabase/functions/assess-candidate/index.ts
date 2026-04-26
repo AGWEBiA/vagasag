@@ -357,6 +357,7 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
         dados_profissionais: dadosProfissionais,
         informacoes_adicionais: informacoesAdicionais || null,
         created_by: userData.user.id,
+        origem: origemValue,
       })
       .select()
       .single();
