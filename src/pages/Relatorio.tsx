@@ -218,6 +218,38 @@ const Relatorio = () => {
         </p>
       </header>
 
+      {/* Histórico de versões + comparação */}
+      {history && history.length > 1 && (
+        <section className="surface-card rounded-xl p-4 md:p-6 mb-6 animate-fade-in">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+                <HistoryIcon className="h-4 w-4 text-gold" />
+                Histórico desta pessoa
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {history.length} avaliações registradas. Selecione uma versão para visualizar.
+              </p>
+            </div>
+            <Select value={data.id} onValueChange={(v) => navigate(`/relatorio/${v}`)}>
+              <SelectTrigger className="w-full md:w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {history.map((h, idx) => (
+                  <SelectItem key={h.id} value={h.id}>
+                    {idx === 0 ? "Mais recente · " : `v${history.length - idx} · `}
+                    {new Date(h.created_at).toLocaleDateString("pt-BR")} ·{" "}
+                    {SENIORIDADE_LABEL[h.senioridade_detectada]} ({h.nota_ponderada.toFixed(1)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {previous && <ComparisonBlock current={data} previous={previous} />}
+        </section>
+      )}
+
       {/* Section 2 — Métricas */}
       <section className="grid gap-4 md:grid-cols-3 mb-6">
         <MetricBox
