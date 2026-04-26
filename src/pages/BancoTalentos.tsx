@@ -111,7 +111,8 @@ const BancoTalentos = () => {
   const [periodoFilter, setPeriodoFilter] = useState<string>("todos");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Edição
+  // Visualização e Edição
+  const [viewing, setViewing] = useState<Talento | null>(null);
   const [editing, setEditing] = useState<Talento | null>(null);
   const [editForm, setEditForm] = useState({
     talent_status: "candidato",
