@@ -160,6 +160,39 @@ export type Database = {
         }
         Relationships: []
       }
+      candidatura_eventos: {
+        Row: {
+          ator_id: string | null
+          ator_nome: string | null
+          candidatura_id: string
+          created_at: string
+          dados: Json
+          descricao: string | null
+          id: string
+          tipo: string
+        }
+        Insert: {
+          ator_id?: string | null
+          ator_nome?: string | null
+          candidatura_id: string
+          created_at?: string
+          dados?: Json
+          descricao?: string | null
+          id?: string
+          tipo: string
+        }
+        Update: {
+          ator_id?: string | null
+          ator_nome?: string | null
+          candidatura_id?: string
+          created_at?: string
+          dados?: Json
+          descricao?: string | null
+          id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       candidatura_respostas: {
         Row: {
           candidatura_id: string
@@ -193,6 +226,8 @@ export type Database = {
           created_at: string
           dados_profissionais: string
           email: string
+          estagio_atualizado_em: string
+          estagio_id: string | null
           id: string
           informacoes_adicionais: string | null
           linkedin: string | null
@@ -211,6 +246,8 @@ export type Database = {
           created_at?: string
           dados_profissionais: string
           email: string
+          estagio_atualizado_em?: string
+          estagio_id?: string | null
           id?: string
           informacoes_adicionais?: string | null
           linkedin?: string | null
@@ -229,6 +266,8 @@ export type Database = {
           created_at?: string
           dados_profissionais?: string
           email?: string
+          estagio_atualizado_em?: string
+          estagio_id?: string | null
           id?: string
           informacoes_adicionais?: string | null
           linkedin?: string | null
@@ -248,6 +287,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidaturas_estagio_id_fkey"
+            columns: ["estagio_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_estagios"
             referencedColumns: ["id"]
           },
           {
@@ -343,6 +389,39 @@ export type Database = {
           id?: string
           token?: string
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      pipeline_estagios: {
+        Row: {
+          ativo: boolean
+          cor: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          tipo?: string
+          updated_at?: string
         }
         Relationships: []
       }
