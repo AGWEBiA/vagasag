@@ -105,7 +105,7 @@ const Relatorio = () => {
         .eq("candidate_id", candidateId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Array<{
+      return (data ?? []) as unknown as Array<{
         id: string;
         senioridade_detectada: Senioridade;
         confidence_score: number;
