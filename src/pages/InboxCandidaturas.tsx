@@ -53,8 +53,11 @@ interface Candidatura {
 const InboxCandidaturas = () => {
   const { vagaId } = useParams<{ vagaId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const candParam = searchParams.get("cand");
   const [vaga, setVaga] = useState<Vaga | null>(null);
   const [items, setItems] = useState<Candidatura[]>([]);
+  const [estagios, setEstagios] = useState<PipelineEstagio[]>([]);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState<string | null>(null);
   const [selected, setSelected] = useState<Candidatura | null>(null);
@@ -67,18 +70,49 @@ const InboxCandidaturas = () => {
   const load = async () => {
     if (!vagaId) return;
     setLoading(true);
-    const [{ data: v }, { data: cs }] = await Promise.all([
+    const [{ data: v }, { data: cs }, { data: es }] = await Promise.all([
       supabase.from("vagas").select("id,titulo,cargo").eq("id", vagaId).maybeSingle(),
       supabase
         .from("candidaturas")
         .select("*")
         .eq("vaga_id", vagaId)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("pipeline_estagios")
+        .select("*")
+        .eq("ativo", true)
+        .order("ordem", { ascending: true }),
     ]);
     setVaga(v as Vaga | null);
-    setItems((cs ?? []) as Candidatura[]);
-    if (!selected && cs && cs.length > 0) setSelected(cs[0] as Candidatura);
+    const list = (cs ?? []) as Candidatura[];
+    setItems(list);
+    setEstagios((es ?? []) as PipelineEstagio[]);
+    if (candParam) {
+      const found = list.find((c) => c.id === candParam);
+      setSelected(found ?? list[0] ?? null);
+    } else if (list.length > 0) {
+      setSelected((prev) => prev ?? list[0]);
+    }
     setLoading(false);
+  };
+
+  const changeEstagio = async (cand: Candidatura, estagioId: string) => {
+    setItems((prev) =>
+      prev.map((c) => (c.id === cand.id ? { ...c, estagio_id: estagioId } : c)),
+    );
+    if (selected?.id === cand.id) {
+      setSelected({ ...cand, estagio_id: estagioId });
+    }
+    const { error } = await supabase
+      .from("candidaturas")
+      .update({ estagio_id: estagioId })
+      .eq("id", cand.id);
+    if (error) {
+      toast.error("Não foi possível atualizar estágio");
+      void load();
+    } else {
+      toast.success("Estágio atualizado");
+    }
   };
 
   const evaluate = async (c: Candidatura) => {
