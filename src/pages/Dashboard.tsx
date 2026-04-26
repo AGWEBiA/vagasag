@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -17,8 +17,11 @@ import {
   Calendar,
   ArrowRight,
   TrendingUp,
+  Layers,
+  UserPlus,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CARGO_LABEL,
@@ -36,8 +39,10 @@ interface AssessmentRow {
   senioridade_detectada: Senioridade;
   confidence_score: number;
   created_at: string;
-  candidates: { id: string; nome: string; cargo: string } | null;
+  candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
+
+type OrigemFilter = "all" | "time" | "candidato";
 
 const Dashboard = () => {
   useEffect(() => {
