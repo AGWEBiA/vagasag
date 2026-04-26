@@ -136,6 +136,19 @@ const Relatorio = () => {
                   year: "numeric",
                 })}
               </span>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${
+                  data.candidates?.origem === "time"
+                    ? "bg-gold/10 text-gold border-gold/30"
+                    : "bg-surface-elevated text-body border-sidebar-border"
+                }`}
+              >
+                {data.candidates?.origem === "time" ? (
+                  <><Users className="h-3 w-3" /> Time</>
+                ) : (
+                  <><UserPlus className="h-3 w-3" /> Candidato</>
+                )}
+              </span>
             </div>
           </div>
 
