@@ -561,6 +561,170 @@ const BancoTalentos = () => {
         </div>
       )}
 
+      {/* View details dialog */}
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          {viewing && (() => {
+            const vagaV = vagas.find((v) => v.id === viewing.vaga_id);
+            const assV = viewing.candidate_id ? assessmentsByEmail[viewing.candidate_id] : undefined;
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                      <DialogTitle className="text-2xl font-display">
+                        {viewing.nome}
+                      </DialogTitle>
+                      <DialogDescription className="mt-1">
+                        {vagaV ? `Candidatura para ${vagaV.titulo}` : "Candidatura"} ·{" "}
+                        {new Date(viewing.created_at).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </DialogDescription>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <Badge
+                        className={cn("border", STATUS_BADGE[viewing.talent_status])}
+                        variant="outline"
+                      >
+                        {STATUS_OPTIONS.find((s) => s.value === viewing.talent_status)?.label ??
+                          viewing.talent_status}
+                      </Badge>
+                      {assV && (
+                        <Badge variant="outline" className="border-gold/30 text-gold capitalize">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          {assV.senioridade_detectada} · {Number(assV.nota_ponderada).toFixed(1)}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </DialogHeader>
+
+                <div className="space-y-5 mt-2">
+                  {/* Contato */}
+                  <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-border bg-card/50 p-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <a href={`mailto:${viewing.email}`} className="hover:text-gold truncate">
+                        {viewing.email}
+                      </a>
+                    </div>
+                    {viewing.telefone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{viewing.telefone}</span>
+                      </div>
+                    )}
+                    {viewing.linkedin && (
+                      <a
+                        href={viewing.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm hover:text-gold truncate"
+                      >
+                        <Linkedin className="h-4 w-4 text-muted-foreground" />
+                        {viewing.linkedin}
+                      </a>
+                    )}
+                    {viewing.portfolio && (
+                      <a
+                        href={viewing.portfolio}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm hover:text-gold truncate"
+                      >
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        {viewing.portfolio}
+                      </a>
+                    )}
+                  </section>
+
+                  {/* Tags & Skills */}
+                  {(viewing.tags?.length || viewing.skills?.length) ? (
+                    <section>
+                      <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                        Tags & Habilidades
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {viewing.tags?.map((tag) => (
+                          <Badge
+                            key={`v-tag-${tag}`}
+                            variant="outline"
+                            className="border-gold/30 text-gold"
+                          >
+                            <TagIcon className="h-3 w-3 mr-1" />
+                            {tag}
+                          </Badge>
+                        ))}
+                        {viewing.skills?.map((s) => (
+                          <Badge key={`v-skill-${s}`} variant="secondary">
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    </section>
+                  ) : null}
+
+                  {/* Dados profissionais */}
+                  <section>
+                    <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5" />
+                      Currículo / Dados profissionais
+                    </h4>
+                    <div className="rounded-lg border border-border bg-card/50 p-4 text-sm whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+                      {viewing.dados_profissionais || (
+                        <span className="text-muted-foreground italic">Sem dados.</span>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Informações adicionais */}
+                  {viewing.informacoes_adicionais && (
+                    <section>
+                      <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                        Informações adicionais
+                      </h4>
+                      <div className="rounded-lg border border-border bg-card/50 p-4 text-sm whitespace-pre-wrap leading-relaxed">
+                        {viewing.informacoes_adicionais}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Anotações internas */}
+                  {viewing.notes && (
+                    <section>
+                      <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                        Anotações internas
+                      </h4>
+                      <div className="rounded-lg border border-gold/20 bg-gold/5 p-4 text-sm whitespace-pre-wrap leading-relaxed italic">
+                        {viewing.notes}
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                <DialogFooter className="mt-4">
+                  <Button variant="ghost" onClick={() => setViewing(null)}>
+                    Fechar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const t = viewing;
+                      setViewing(null);
+                      openEdit(t);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" /> Gerir talento
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg">
