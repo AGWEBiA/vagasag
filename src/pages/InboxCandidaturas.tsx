@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CARGO_LABEL } from "@/lib/seniority";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RespostasCandidato } from "@/components/RespostasCandidato";
 
 interface Vaga {
   id: string;
@@ -208,6 +209,13 @@ const InboxCandidaturas = () => {
                   </p>
                 </div>
               )}
+
+              <div>
+                <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
+                  Respostas do candidato
+                </h3>
+                <RespostasCandidato candidaturaId={selected.id} />
+              </div>
 
               <div className="flex gap-2 pt-3 border-t border-sidebar-border">
                 {selected.candidate_id ? (
