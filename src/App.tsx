@@ -14,6 +14,7 @@ import Historico from "./pages/Historico.tsx";
 import Relatorio from "./pages/Relatorio.tsx";
 import Vagas from "./pages/Vagas.tsx";
 import InboxCandidaturas from "./pages/InboxCandidaturas.tsx";
+import BancoTalentos from "./pages/BancoTalentos.tsx";
 import AdminIA from "./pages/AdminIA.tsx";
 import AdminUsuarios from "./pages/AdminUsuarios.tsx";
 import Autoavaliacao from "./pages/Autoavaliacao.tsx";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/historico" element={<ProtectedRoute><Historico /></ProtectedRoute>} />
             <Route path="/relatorio/:id" element={<ProtectedRoute><Relatorio /></ProtectedRoute>} />
             <Route path="/vagas-admin" element={<ProtectedRoute><Vagas /></ProtectedRoute>} />
+            <Route path="/banco-talentos" element={<ProtectedRoute><BancoTalentos /></ProtectedRoute>} />
             <Route
               path="/admin/candidaturas/:vagaId"
               element={<ProtectedRoute><InboxCandidaturas /></ProtectedRoute>}

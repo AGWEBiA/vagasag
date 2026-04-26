@@ -8,6 +8,7 @@ import {
   Briefcase,
   Cpu,
   Users,
+  Users2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -20,6 +21,7 @@ const BASE_NAV = [
   { to: "/nova-avaliacao", label: "Nova Avaliação", icon: Sparkles, badge: "IA" },
   { to: "/historico", label: "Histórico", icon: History },
   { to: "/vagas-admin", label: "Vagas", icon: Briefcase },
+  { to: "/banco-talentos", label: "Talentos", icon: Users2 },
 ];
 
 const ADMIN_NAV = [
