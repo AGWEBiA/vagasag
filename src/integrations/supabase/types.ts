@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_settings: {
+        Row: {
+          enabled_providers: Json
+          id: string
+          is_active: boolean
+          model: string
+          provider: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled_providers?: Json
+          id?: string
+          is_active?: boolean
+          model?: string
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled_providers?: Json
+          id?: string
+          is_active?: boolean
+          model?: string
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           analise_pilares: Json
@@ -97,15 +127,150 @@ export type Database = {
         }
         Relationships: []
       }
+      candidaturas: {
+        Row: {
+          candidate_id: string | null
+          created_at: string
+          dados_profissionais: string
+          email: string
+          id: string
+          informacoes_adicionais: string | null
+          linkedin: string | null
+          nome: string
+          portfolio: string | null
+          status: string
+          telefone: string | null
+          vaga_id: string
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string
+          dados_profissionais: string
+          email: string
+          id?: string
+          informacoes_adicionais?: string | null
+          linkedin?: string | null
+          nome: string
+          portfolio?: string | null
+          status?: string
+          telefone?: string | null
+          vaga_id: string
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string
+          dados_profissionais?: string
+          email?: string
+          id?: string
+          informacoes_adicionais?: string | null
+          linkedin?: string | null
+          nome?: string
+          portfolio?: string | null
+          status?: string
+          telefone?: string | null
+          vaga_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidaturas_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidaturas_vaga_id_fkey"
+            columns: ["vaga_id"]
+            isOneToOne: false
+            referencedRelation: "vagas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vagas: {
+        Row: {
+          beneficios: string | null
+          cargo: string
+          created_at: string
+          created_by: string
+          descricao: string
+          faixa_salarial: string | null
+          id: string
+          localizacao: string | null
+          modalidade: string
+          requisitos: string | null
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          beneficios?: string | null
+          cargo: string
+          created_at?: string
+          created_by: string
+          descricao: string
+          faixa_salarial?: string | null
+          id?: string
+          localizacao?: string | null
+          modalidade?: string
+          requisitos?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          beneficios?: string | null
+          cargo?: string
+          created_at?: string
+          created_by?: string
+          descricao?: string
+          faixa_salarial?: string | null
+          id?: string
+          localizacao?: string | null
+          modalidade?: string
+          requisitos?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "recrutador" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -232,6 +397,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "recrutador", "user"],
+    },
   },
 } as const
