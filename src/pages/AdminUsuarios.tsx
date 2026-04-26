@@ -168,6 +168,12 @@ const AdminUsuarios = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success("Usuário criado!");
+      setCreatedInfo({
+        email: newEmail.trim(),
+        password: newPassword,
+        role: newRole,
+        full_name: newName.trim() || undefined,
+      });
       setCreateOpen(false);
       setNewEmail("");
       setNewName("");
