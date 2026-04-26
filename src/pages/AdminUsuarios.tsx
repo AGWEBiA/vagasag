@@ -106,6 +106,14 @@ const AdminUsuarios = () => {
   const [newRole, setNewRole] = useState<AppRole>("colaborador");
   const [creating, setCreating] = useState(false);
 
+  // credentials shown after successful creation
+  const [createdInfo, setCreatedInfo] = useState<{
+    email: string;
+    password: string;
+    role: AppRole;
+    full_name?: string;
+  } | null>(null);
+
   // bulk
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
