@@ -7,6 +7,9 @@ export interface AIProviderInfo {
   secretName?: string; // null for lovable (managed)
   models: { value: string; label: string; hint?: string }[];
   badge?: string;
+  docsUrl?: string;
+  apiKeyHint?: string;
+  managed?: boolean; // true for lovable (no key needed)
 }
 
 export const AI_PROVIDERS: AIProviderInfo[] = [
