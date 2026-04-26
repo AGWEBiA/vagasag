@@ -488,6 +488,7 @@ const BancoTalentos = () => {
                           href={t.linkedin}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1 hover:text-gold"
                         >
                           <Linkedin className="h-3 w-3" /> LinkedIn
@@ -498,6 +499,7 @@ const BancoTalentos = () => {
                           href={t.portfolio}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1 hover:text-gold"
                         >
                           <Globe className="h-3 w-3" /> Portfólio
