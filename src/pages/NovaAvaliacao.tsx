@@ -17,12 +17,15 @@ import { CARGOS, CARGO_HINTS } from "@/lib/seniority";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type Origem = "candidato" | "time";
+
 const NovaAvaliacao = () => {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [cargo, setCargo] = useState("");
   const [dados, setDados] = useState("");
   const [info, setInfo] = useState("");
+  const [origem, setOrigem] = useState<Origem>("candidato");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,6 +54,7 @@ const NovaAvaliacao = () => {
           cargo,
           dadosProfissionais: dados.trim(),
           informacoesAdicionais: info.trim() || undefined,
+          origem,
         },
       });
       if (error) throw error;
@@ -80,8 +84,44 @@ const NovaAvaliacao = () => {
 
       <form onSubmit={handleSubmit} className="surface-card rounded-xl p-6 md:p-8 space-y-6 max-w-3xl">
         <div className="space-y-2">
+          <Label>Tipo de avaliação</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setOrigem("candidato")}
+              disabled={submitting}
+              className={`rounded-lg border p-3 text-left transition-all ${
+                origem === "candidato"
+                  ? "border-gold/60 bg-pleno-bg/30 shadow-gold"
+                  : "border-sidebar-border bg-surface-elevated hover:border-gold/30"
+              }`}
+            >
+              <div className="text-sm font-semibold">Candidato externo</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Pessoa em processo seletivo
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrigem("time")}
+              disabled={submitting}
+              className={`rounded-lg border p-3 text-left transition-all ${
+                origem === "time"
+                  ? "border-gold/60 bg-pleno-bg/30 shadow-gold"
+                  : "border-sidebar-border bg-surface-elevated hover:border-gold/30"
+              }`}
+            >
+              <div className="text-sm font-semibold">Membro do time</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Avaliação interna do colaborador
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="nome">
-            Nome do Candidato <span className="text-destructive">*</span>
+            Nome <span className="text-destructive">*</span>
           </Label>
           <Input
             id="nome"

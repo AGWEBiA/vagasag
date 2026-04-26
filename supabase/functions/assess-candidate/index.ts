@@ -265,6 +265,7 @@ Deno.serve(async (req) => {
       dadosProfissionais,
       informacoesAdicionais,
       candidaturaId,
+      origem,
     } = body ?? {};
 
     if (
@@ -277,6 +278,8 @@ Deno.serve(async (req) => {
     ) {
       return jsonResponse({ error: "Dados de entrada inválidos." }, 400);
     }
+
+    const origemValue = origem === "time" ? "time" : "candidato";
 
     // Load AI settings
     const { data: settings, error: settingsErr } = await supabase
@@ -354,6 +357,7 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
         dados_profissionais: dadosProfissionais,
         informacoes_adicionais: informacoesAdicionais || null,
         created_by: userData.user.id,
+        origem: origemValue,
       })
       .select()
       .single();

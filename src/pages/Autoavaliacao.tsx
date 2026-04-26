@@ -1,0 +1,285 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, Loader2, Info, LogOut, Gem, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CARGOS, CARGO_HINTS } from "@/lib/seniority";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { toast } from "sonner";
+
+const Autoavaliacao = () => {
+  const navigate = useNavigate();
+  const { user, signOut, loading: authLoading } = useAuth();
+  const { hasPanelAccess, loading: roleLoading } = useUserRole();
+  const [nome, setNome] = useState("");
+  const [cargo, setCargo] = useState("");
+  const [dados, setDados] = useState("");
+  const [info, setInfo] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  useEffect(() => {
+    document.title = "Autoavaliação | Seniority Hub";
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && !user) navigate("/login?redirect=/autoavaliacao");
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      const meta = (user.user_metadata ?? {}) as { full_name?: string };
+      if (meta.full_name && !nome) setNome(meta.full_name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!nome.trim()) e.nome = "Informe seu nome.";
+    if (!cargo) e.cargo = "Selecione seu cargo.";
+    if (dados.trim().length < 50)
+      e.dados = "Inclua pelo menos 50 caracteres descrevendo sua experiência.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("assess-candidate", {
+        body: {
+          nome: nome.trim(),
+          cargo,
+          dadosProfissionais: dados.trim(),
+          informacoesAdicionais: info.trim() || undefined,
+          origem: "time",
+        },
+      });
+      if (error) throw error;
+      if (!data?.assessment?.id) throw new Error("Resposta inválida");
+      setEnviado(true);
+      toast.success("Autoavaliação enviada!");
+    } catch (err: any) {
+      console.error(err);
+      const msg =
+        err?.context?.error ||
+        err?.message ||
+        "Erro ao enviar autoavaliação. Tente novamente.";
+      toast.error(typeof msg === "string" ? msg : "Erro ao enviar.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (authLoading || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-sidebar-border bg-surface-elevated/60 backdrop-blur sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Gem className="h-5 w-5 text-gold" />
+            <span className="font-display text-lg font-semibold">Seniority Hub</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {hasPanelAccess && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/dashboard")}
+                className="text-xs"
+              >
+                Ir para o painel
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {user?.email}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => signOut().then(() => navigate("/login"))}
+              aria-label="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-6 py-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pleno-bg text-gold text-xs font-medium mb-3 border border-gold/30">
+            <Sparkles className="h-3 w-3" /> Autoavaliação do time
+          </div>
+          <h1 className="font-display text-3xl md:text-4xl font-semibold">
+            Conte sobre sua trajetória
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Suas respostas vão ajudar a liderança a entender seu nível atual e mapear
+            oportunidades de crescimento. Apenas administradores e líderes verão sua
+            avaliação.
+          </p>
+        </div>
+
+        {enviado ? (
+          <div className="surface-card rounded-xl p-8 text-center space-y-4 animate-fade-in">
+            <CheckCircle2 className="h-12 w-12 text-gold mx-auto" />
+            <h2 className="font-display text-2xl font-semibold">Recebido!</h2>
+            <p className="text-muted-foreground max-w-md mx-auto text-sm">
+              Sua autoavaliação foi enviada e já está disponível para a liderança. Você
+              pode fechar esta página.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEnviado(false);
+                setDados("");
+                setInfo("");
+                setCargo("");
+              }}
+            >
+              Enviar outra
+            </Button>
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="surface-card rounded-xl p-6 md:p-8 space-y-6"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="nome">
+                Seu nome completo <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex: Maria Souza"
+                disabled={submitting}
+              />
+              {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cargo">
+                Seu cargo atual <span className="text-destructive">*</span>
+              </Label>
+              <Select value={cargo} onValueChange={setCargo} disabled={submitting}>
+                <SelectTrigger id="cargo">
+                  <SelectValue placeholder="Selecione o cargo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CARGOS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.cargo && (
+                <p className="text-xs text-destructive">{errors.cargo}</p>
+              )}
+              {cargo && (
+                <div className="mt-2 flex gap-2 rounded-md bg-surface-elevated border border-gold/20 p-3 text-xs text-body animate-fade-in">
+                  <Info className="h-4 w-4 text-gold shrink-0 mt-0.5" />
+                  <span>{CARGO_HINTS[cargo]}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dados">
+                Sua experiência profissional{" "}
+                <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id="dados"
+                value={dados}
+                onChange={(e) => setDados(e.target.value)}
+                rows={10}
+                placeholder="Descreva: anos de experiência, projetos relevantes, ferramentas dominadas, métricas e resultados, certificações, contextos onde liderou ou tomou decisões..."
+                disabled={submitting}
+                className="resize-none"
+              />
+              <div className="flex justify-between text-xs">
+                <p className="text-muted-foreground">
+                  Quanto mais detalhe (com números e exemplos), mais precisa será a leitura.
+                </p>
+                <span
+                  className={dados.length < 50 ? "text-muted-foreground" : "text-senior"}
+                >
+                  {dados.length} chars
+                </span>
+              </div>
+              {errors.dados && (
+                <p className="text-xs text-destructive">{errors.dados}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="info">Algo mais que queira contar (opcional)</Label>
+              <Textarea
+                id="info"
+                value={info}
+                onChange={(e) => setInfo(e.target.value)}
+                rows={3}
+                placeholder="Aspirações, áreas em que quer crescer, formatos de trabalho preferidos..."
+                disabled={submitting}
+                className="resize-none"
+              />
+            </div>
+
+            {submitting && (
+              <div className="flex items-start gap-3 rounded-lg bg-pleno-bg border border-gold/30 p-4 animate-fade-in">
+                <Loader2 className="h-5 w-5 text-gold animate-spin shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <div className="font-medium text-gold">Enviando...</div>
+                  <div className="text-body/80 mt-0.5">
+                    Estamos analisando suas respostas. Isso leva alguns segundos.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-12 text-base font-semibold"
+            >
+              {submitting ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-5 w-5 mr-2" />
+              )}
+              {submitting ? "Enviando..." : "Enviar autoavaliação"}
+            </Button>
+          </form>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default Autoavaliacao;

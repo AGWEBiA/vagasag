@@ -30,13 +30,14 @@ interface Row {
   senioridade_detectada: Senioridade;
   confidence_score: number;
   created_at: string;
-  candidates: { id: string; nome: string; cargo: string } | null;
+  candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
 
 const Historico = () => {
   const [search, setSearch] = useState("");
   const [cargoFilter, setCargoFilter] = useState("all");
   const [seniorityFilter, setSeniorityFilter] = useState("all");
+  const [origemFilter, setOrigemFilter] = useState("all");
 
   useEffect(() => {
     document.title = "Histórico | Seniority Hub";
@@ -47,7 +48,7 @@ const Historico = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assessments")
-        .select("id, senioridade_detectada, confidence_score, created_at, candidates(id, nome, cargo)")
+        .select("id, senioridade_detectada, confidence_score, created_at, candidates(id, nome, cargo, origem)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as unknown as Row[];
@@ -59,9 +60,10 @@ const Historico = () => {
       if (search && !r.candidates?.nome.toLowerCase().includes(search.toLowerCase())) return false;
       if (cargoFilter !== "all" && r.candidates?.cargo !== cargoFilter) return false;
       if (seniorityFilter !== "all" && r.senioridade_detectada !== seniorityFilter) return false;
+      if (origemFilter !== "all" && r.candidates?.origem !== origemFilter) return false;
       return true;
     });
-  }, [data, search, cargoFilter, seniorityFilter]);
+  }, [data, search, cargoFilter, seniorityFilter, origemFilter]);
 
   return (
     <AppShell>
