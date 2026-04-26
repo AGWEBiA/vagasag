@@ -765,3 +765,186 @@ const ShareAutoavaliacaoCard = () => {
   );
 };
 
+
+interface CreatedInfo {
+  email: string;
+  password: string;
+  role: AppRole;
+  full_name?: string;
+}
+
+const CreatedCredentialsDialog = ({
+  info,
+  onClose,
+}: {
+  info: CreatedInfo | null;
+  onClose: () => void;
+}) => {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  if (!info) return null;
+
+  const autoavalUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/autoavaliacao`
+      : "/autoavaliacao";
+  const loginUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/login`
+      : "/login";
+
+  const isColaborador = info.role === "colaborador";
+  const targetUrl = isColaborador ? autoavalUrl : loginUrl;
+
+  const fullMessage = isColaborador
+    ? `Olá${info.full_name ? `, ${info.full_name}` : ""}! Seu acesso à autoavaliação do Seniority Hub está pronto.
+
+🔗 Link: ${autoavalUrl}
+📧 Email: ${info.email}
+🔑 Senha provisória: ${info.password}
+
+É só clicar no link, fazer login e preencher seus dados profissionais. Leva uns 5 minutos.`
+    : `Olá${info.full_name ? `, ${info.full_name}` : ""}! Seu acesso ao Seniority Hub está pronto.
+
+🔗 Link: ${loginUrl}
+📧 Email: ${info.email}
+🔑 Senha provisória: ${info.password}
+
+Você foi cadastrado como ${ROLE_LABELS[info.role]}.`;
+
+  const copy = async (label: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(label);
+      toast.success(`${label} copiado`);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  };
+
+  return (
+    <Dialog open={!!info} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-gold" />
+            Usuário criado — copie as credenciais
+          </DialogTitle>
+          <DialogDescription>
+            {isColaborador
+              ? "Envie o link da autoavaliação + as credenciais. A senha não será mostrada de novo."
+              : "Compartilhe o link de login + as credenciais. A senha não será mostrada de novo."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          <CredentialRow
+            label="Link"
+            value={targetUrl}
+            mono
+            onCopy={() => copy("Link", targetUrl)}
+            copied={copiedField === "Link"}
+          />
+          <CredentialRow
+            label="Email"
+            value={info.email}
+            mono
+            onCopy={() => copy("Email", info.email)}
+            copied={copiedField === "Email"}
+          />
+          <CredentialRow
+            label="Senha"
+            value={info.password}
+            mono
+            onCopy={() => copy("Senha", info.password)}
+            copied={copiedField === "Senha"}
+          />
+
+          <div className="rounded-md border border-gold/30 bg-pleno-bg/40 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gold">
+                Mensagem pronta para WhatsApp/E-mail
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs hover:bg-gold/10"
+                onClick={() => copy("Mensagem", fullMessage)}
+              >
+                {copiedField === "Mensagem" ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-senior" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5 mr-1" />
+                )}
+                {copiedField === "Mensagem" ? "Copiado" : "Copiar tudo"}
+              </Button>
+            </div>
+            <pre className="whitespace-pre-wrap text-[11px] text-body/90 font-mono leading-relaxed max-h-40 overflow-auto">
+              {fullMessage}
+            </pre>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={() => window.open(targetUrl, "_blank", "noopener,noreferrer")}
+            className="border-gold/40 hover:bg-gold/10"
+          >
+            <ExternalLink className="h-4 w-4 mr-1.5" /> Abrir link
+          </Button>
+          <Button
+            onClick={onClose}
+            className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+          >
+            Concluir
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const CredentialRow = ({
+  label,
+  value,
+  mono,
+  onCopy,
+  copied,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  onCopy: () => void;
+  copied: boolean;
+}) => (
+  <div className="space-y-1">
+    <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+      {label}
+    </Label>
+    <div className="flex gap-2">
+      <div
+        className={cn(
+          "flex-1 rounded-md border border-sidebar-border bg-background px-3 py-2 text-xs truncate",
+          mono && "font-mono",
+        )}
+      >
+        {value}
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={onCopy}
+        title={`Copiar ${label.toLowerCase()}`}
+      >
+        {copied ? (
+          <CheckCircle2 className="h-4 w-4 text-senior" />
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
+  </div>
+);
