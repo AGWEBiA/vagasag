@@ -18,6 +18,33 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 
+const COOLDOWN_SECONDS = 60;
+const HOURLY_LIMIT = 5;
+const HOUR_MS = 60 * 60 * 1000;
+
+const storageKeyFor = (userId: string) => `autoaval:submissions:${userId}`;
+
+const readSubmissions = (userId: string): number[] => {
+  try {
+    const raw = localStorage.getItem(storageKeyFor(userId));
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    const now = Date.now();
+    return arr.filter((t: unknown) => typeof t === "number" && now - t < HOUR_MS);
+  } catch {
+    return [];
+  }
+};
+
+const writeSubmissions = (userId: string, arr: number[]) => {
+  try {
+    localStorage.setItem(storageKeyFor(userId), JSON.stringify(arr));
+  } catch {
+    /* ignore */
+  }
+};
+
 const Autoavaliacao = () => {
   const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
@@ -29,6 +56,8 @@ const Autoavaliacao = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [hourlyCount, setHourlyCount] = useState(0);
 
   useEffect(() => {
     document.title = "Autoavaliação | Seniority Hub";
@@ -37,6 +66,28 @@ const Autoavaliacao = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/login?redirect=/autoavaliacao");
   }, [authLoading, user, navigate]);
+
+  // Recarrega o estado de envios quando usuário muda
+  useEffect(() => {
+    if (!user) return;
+    const subs = readSubmissions(user.id);
+    setHourlyCount(subs.length);
+    const last = subs[subs.length - 1];
+    if (last) {
+      const elapsed = Math.floor((Date.now() - last) / 1000);
+      const remaining = Math.max(0, COOLDOWN_SECONDS - elapsed);
+      setCooldownRemaining(remaining);
+    }
+  }, [user]);
+
+  // Tick do contador de cooldown
+  useEffect(() => {
+    if (cooldownRemaining <= 0) return;
+    const id = setInterval(() => {
+      setCooldownRemaining((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldownRemaining]);
 
   useEffect(() => {
     if (user) {
