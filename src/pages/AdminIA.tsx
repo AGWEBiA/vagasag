@@ -369,7 +369,7 @@ const ProviderCard = ({
               </span>
             )}
             {provider.managed ? (
-              <span className="rounded-full bg-emerald-500/15 text-emerald-400 px-2 py-0.5 text-[10px] font-semibold border border-emerald-500/30">
+              <span className="rounded-full bg-gold/15 text-gold px-2 py-0.5 text-[10px] font-semibold border border-gold/40">
                 Sem chave necessária
               </span>
             ) : (
@@ -401,8 +401,8 @@ const ProviderCard = ({
             Credenciais
           </Label>
           {provider.managed ? (
-            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs text-body flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="rounded-md border border-gold/40 bg-gold/5 p-3 text-xs text-body flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-gold shrink-0 mt-0.5" />
               <span>{provider.apiKeyHint}</span>
             </div>
           ) : (
@@ -474,10 +474,10 @@ const ProviderCard = ({
             </Button>
 
             {testState.status === "ok" && (
-              <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-xs flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="rounded-md border border-gold/40 bg-gold/5 p-2.5 text-xs flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-gold shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-medium text-emerald-400">Conexão OK</div>
+                  <div className="font-medium text-gold">Conexão OK</div>
                   <div className="text-muted-foreground text-[11px] mt-0.5">
                     {testState.message}
                     {testState.latency != null && ` · ${testState.latency}ms`}
