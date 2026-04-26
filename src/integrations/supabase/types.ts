@@ -14,7 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessments: {
+        Row: {
+          analise_pilares: Json
+          candidate_id: string
+          confidence_score: number
+          created_at: string
+          gaps_identificados: Json
+          id: string
+          model_used: string
+          nota_ponderada: number
+          perguntas_entrevista: Json
+          pontos_fortes: Json
+          resumo_executivo: string
+          senioridade_detectada: string
+        }
+        Insert: {
+          analise_pilares: Json
+          candidate_id: string
+          confidence_score: number
+          created_at?: string
+          gaps_identificados: Json
+          id?: string
+          model_used?: string
+          nota_ponderada: number
+          perguntas_entrevista: Json
+          pontos_fortes: Json
+          resumo_executivo: string
+          senioridade_detectada: string
+        }
+        Update: {
+          analise_pilares?: Json
+          candidate_id?: string
+          confidence_score?: number
+          created_at?: string
+          gaps_identificados?: Json
+          id?: string
+          model_used?: string
+          nota_ponderada?: number
+          perguntas_entrevista?: Json
+          pontos_fortes?: Json
+          resumo_executivo?: string
+          senioridade_detectada?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidates: {
+        Row: {
+          cargo: string
+          created_at: string
+          created_by: string | null
+          dados_profissionais: string
+          id: string
+          informacoes_adicionais: string | null
+          nome: string
+        }
+        Insert: {
+          cargo: string
+          created_at?: string
+          created_by?: string | null
+          dados_profissionais: string
+          id?: string
+          informacoes_adicionais?: string | null
+          nome: string
+        }
+        Update: {
+          cargo?: string
+          created_at?: string
+          created_by?: string | null
+          dados_profissionais?: string
+          id?: string
+          informacoes_adicionais?: string | null
+          nome?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
