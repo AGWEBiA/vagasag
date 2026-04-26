@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CARGO_LABEL } from "@/lib/seniority";
+import { ESCALA_LABEL, type VagaPergunta } from "@/lib/perguntas";
 import { toast } from "sonner";
 
 interface Vaga {
@@ -49,6 +50,10 @@ const VagaPublica = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [vaga, setVaga] = useState<Vaga | null>(null);
+  const [perguntas, setPerguntas] = useState<VagaPergunta[]>([]);
+  const [respostas, setRespostas] = useState<Record<string, { texto?: string; numero?: number }>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -77,7 +82,19 @@ const VagaPublica = () => {
       .maybeSingle();
     setVaga((data as Vaga) ?? null);
     if (data) document.title = `${(data as Vaga).titulo} | Seniority Hub`;
+
+    const { data: ps } = await supabase
+      .from("vaga_perguntas")
+      .select("*")
+      .eq("vaga_id", id)
+      .order("ordem", { ascending: true });
+    setPerguntas((ps ?? []) as VagaPergunta[]);
+
     setLoading(false);
+  };
+
+  const setResposta = (pid: string, patch: { texto?: string; numero?: number }) => {
+    setRespostas((r) => ({ ...r, [pid]: { ...r[pid], ...patch } }));
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -88,25 +105,65 @@ const VagaPublica = () => {
       toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos.");
       return;
     }
+    // Validar perguntas obrigatórias
+    for (const p of perguntas) {
+      if (!p.obrigatoria) continue;
+      const r = respostas[p.id];
+      const ok =
+        p.tipo === "escala"
+          ? typeof r?.numero === "number"
+          : (r?.texto ?? "").trim().length > 0;
+      if (!ok) {
+        toast.error(`Responda: "${p.texto}"`);
+        return;
+      }
+    }
     setSubmitting(true);
-    const { error } = await supabase.from("candidaturas").insert({
-      vaga_id: vaga.id,
-      nome: parsed.data.nome,
-      email: parsed.data.email,
-      telefone: parsed.data.telefone || null,
-      linkedin: parsed.data.linkedin || null,
-      portfolio: parsed.data.portfolio || null,
-      dados_profissionais: parsed.data.dados_profissionais,
-      informacoes_adicionais: parsed.data.informacoes_adicionais || null,
-    });
-    setSubmitting(false);
-    if (error) {
+    const { data: cand, error } = await supabase
+      .from("candidaturas")
+      .insert({
+        vaga_id: vaga.id,
+        nome: parsed.data.nome,
+        email: parsed.data.email,
+        telefone: parsed.data.telefone || null,
+        linkedin: parsed.data.linkedin || null,
+        portfolio: parsed.data.portfolio || null,
+        dados_profissionais: parsed.data.dados_profissionais,
+        informacoes_adicionais: parsed.data.informacoes_adicionais || null,
+      })
+      .select("id")
+      .single();
+    if (error || !cand) {
+      setSubmitting(false);
       console.error(error);
       toast.error("Não foi possível enviar sua candidatura.");
-    } else {
-      setSuccess(true);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
+    // Inserir respostas
+    const respostasRows = perguntas
+      .map((p) => {
+        const r = respostas[p.id];
+        if (!r) return null;
+        const hasText = (r.texto ?? "").trim().length > 0;
+        const hasNum = typeof r.numero === "number";
+        if (!hasText && !hasNum) return null;
+        return {
+          candidatura_id: cand.id,
+          vaga_pergunta_id: p.id,
+          resposta_texto: hasText ? r.texto!.trim() : null,
+          resposta_numero: hasNum ? r.numero! : null,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+    if (respostasRows.length > 0) {
+      const { error: rErr } = await supabase
+        .from("candidatura_respostas")
+        .insert(respostasRows);
+      if (rErr) console.error("Erro respostas:", rErr);
+    }
+    setSubmitting(false);
+    setSuccess(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -259,6 +316,78 @@ const VagaPublica = () => {
                   placeholder="Disponibilidade, pretensão salarial, observações..."
                 />
               </div>
+
+              {perguntas.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-sidebar-border">
+                  <div>
+                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-1">
+                      Perguntas adicionais
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Suas respostas ajudam na avaliação.
+                    </p>
+                  </div>
+                  {perguntas.map((p) => (
+                    <div key={p.id} className="space-y-2">
+                      <Label>
+                        {p.texto}
+                        {p.obrigatoria && <span className="text-gold ml-1">*</span>}
+                      </Label>
+                      {p.tipo === "texto" && (
+                        <Textarea
+                          rows={3}
+                          value={respostas[p.id]?.texto ?? ""}
+                          onChange={(e) =>
+                            setResposta(p.id, { texto: e.target.value })
+                          }
+                        />
+                      )}
+                      {p.tipo === "escolha" && (
+                        <div className="space-y-1.5">
+                          {p.opcoes.map((opt) => (
+                            <label
+                              key={opt}
+                              className="flex items-center gap-2 text-sm cursor-pointer"
+                            >
+                              <input
+                                type="radio"
+                                name={`q-${p.id}`}
+                                value={opt}
+                                checked={respostas[p.id]?.texto === opt}
+                                onChange={() => setResposta(p.id, { texto: opt })}
+                                className="accent-gold"
+                              />
+                              {opt}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                      {p.tipo === "escala" && (
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((n) => {
+                            const active = respostas[p.id]?.numero === n;
+                            return (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => setResposta(p.id, { numero: n })}
+                                className={`flex-1 rounded-md border py-2 text-sm font-medium transition ${
+                                  active
+                                    ? "bg-gradient-gold text-gold-foreground border-transparent shadow-gold"
+                                    : "border-sidebar-border bg-surface-elevated text-body hover:border-gold/40"
+                                }`}
+                                title={ESCALA_LABEL[n]}
+                              >
+                                {n}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <Button
                 type="submit"

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { RespostasCandidato } from "@/components/RespostasCandidato";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -692,7 +693,13 @@ const BancoTalentos = () => {
                     </section>
                   )}
 
-                  {/* Anotações internas */}
+                  <section>
+                    <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                      Respostas do candidato
+                    </h4>
+                    <RespostasCandidato candidaturaId={viewing.id} />
+                  </section>
+
                   {viewing.notes && (
                     <section>
                       <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">

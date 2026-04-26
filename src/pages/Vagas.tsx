@@ -26,6 +26,11 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { CARGOS, CARGO_LABEL } from "@/lib/seniority";
 import { cn } from "@/lib/utils";
+import {
+  VagaPerguntasEditor,
+  savePerguntasForVaga,
+  type DraftPergunta,
+} from "@/components/VagaPerguntasEditor";
 
 interface Vaga {
   id: string;
@@ -63,6 +68,7 @@ const Vagas = () => {
   const [editing, setEditing] = useState<Vaga | null>(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [perguntasDraft, setPerguntasDraft] = useState<DraftPergunta[]>([]);
 
   useEffect(() => {
     document.title = "Vagas | Seniority Hub";
@@ -91,6 +97,7 @@ const Vagas = () => {
   const openNew = () => {
     setEditing(null);
     setForm(empty);
+    setPerguntasDraft([]);
     setOpen(true);
   };
 
@@ -125,22 +132,34 @@ const Vagas = () => {
       faixa_salarial: form.faixa_salarial.trim() || null,
     };
     let error;
+    let vagaId = editing?.id;
     if (editing) {
       ({ error } = await supabase.from("vagas").update(payload).eq("id", editing.id));
     } else {
-      ({ error } = await supabase
+      const { data: inserted, error: insErr } = await supabase
         .from("vagas")
-        .insert({ ...payload, created_by: user.id }));
+        .insert({ ...payload, created_by: user.id })
+        .select("id")
+        .single();
+      error = insErr;
+      vagaId = inserted?.id;
     }
-    setSaving(false);
-    if (error) {
+    if (error || !vagaId) {
+      setSaving(false);
       toast.error("Erro ao salvar vaga.");
       console.error(error);
+      return;
+    }
+    const { error: pErr } = await savePerguntasForVaga(vagaId, perguntasDraft);
+    setSaving(false);
+    if (pErr) {
+      toast.error("Vaga salva, mas falhou ao salvar perguntas.");
+      console.error(pErr);
     } else {
       toast.success(editing ? "Vaga atualizada!" : "Vaga publicada!");
-      setOpen(false);
-      void load();
     }
+    setOpen(false);
+    void load();
   };
 
   const remove = async (v: Vaga) => {
@@ -366,6 +385,14 @@ const Vagas = () => {
                   <SelectItem value="encerrada">Encerrada</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="pt-3 border-t border-sidebar-border">
+              <VagaPerguntasEditor
+                vagaId={editing?.id ?? null}
+                cargo={form.cargo || null}
+                onDraftChange={setPerguntasDraft}
+              />
             </div>
           </div>
           <DialogFooter>
