@@ -196,6 +196,38 @@ async function handleSetRole(
   return json({ ok: true });
 }
 
+async function handleSetRoles(
+  admin: ReturnType<typeof createClient>,
+  body: Extract<Action, { action: "set_roles" }>,
+  callerId: string,
+) {
+  if (!body.user_id) return json({ error: "user_id obrigatório" }, 400);
+  if (!Array.isArray(body.roles)) return json({ error: "roles deve ser um array" }, 400);
+
+  // Sanitiza e dedup
+  const cleanRoles = Array.from(
+    new Set(body.roles.filter((r): r is AppRole => ALLOWED_ROLES.includes(r))),
+  );
+  if (cleanRoles.length === 0) {
+    return json({ error: "Selecione ao menos um papel." }, 400);
+  }
+
+  // Não permite o admin remover o próprio papel admin (lockout safety)
+  if (body.user_id === callerId && !cleanRoles.includes("admin")) {
+    return json(
+      { error: "Você não pode remover o seu próprio papel de admin." },
+      400,
+    );
+  }
+
+  await admin.from("user_roles").delete().eq("user_id", body.user_id);
+  const { error } = await admin
+    .from("user_roles")
+    .insert(cleanRoles.map((role) => ({ user_id: body.user_id, role })));
+  if (error) throw error;
+  return json({ ok: true, roles: cleanRoles });
+}
+
 async function handleDelete(
   admin: ReturnType<typeof createClient>,
   userIdToDelete: string,
