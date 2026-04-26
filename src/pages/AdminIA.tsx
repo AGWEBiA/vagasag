@@ -540,6 +540,10 @@ interface ProviderCardProps {
   onTestModelChange: (v: string) => void;
   onTest: () => void;
   testState: TestState;
+  credential: { configured: boolean; preview?: string; updatedAt?: string };
+  onEditKey: () => void;
+  onDeleteKey: () => void;
+  onCopyPreview: () => void;
 }
 
 const ProviderCard = ({
@@ -550,6 +554,10 @@ const ProviderCard = ({
   onTestModelChange,
   onTest,
   testState,
+  credential,
+  onEditKey,
+  onDeleteKey,
+  onCopyPreview,
 }: ProviderCardProps) => {
   return (
     <div
@@ -571,9 +579,13 @@ const ProviderCard = ({
               <span className="rounded-full bg-gold/15 text-gold px-2 py-0.5 text-[10px] font-semibold border border-gold/40">
                 Sem chave necessária
               </span>
+            ) : credential.configured ? (
+              <span className="rounded-full bg-gold/15 text-gold px-2 py-0.5 text-[10px] font-semibold border border-gold/40 inline-flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" /> Chave configurada
+              </span>
             ) : (
-              <span className="rounded-full bg-surface-elevated text-muted-foreground px-2 py-0.5 text-[10px] font-medium border border-sidebar-border">
-                Requer chave
+              <span className="rounded-full bg-destructive/10 text-destructive px-2 py-0.5 text-[10px] font-semibold border border-destructive/30 inline-flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> Sem chave
               </span>
             )}
           </div>
@@ -605,8 +617,8 @@ const ProviderCard = ({
               <span>{provider.apiKeyHint}</span>
             </div>
           ) : (
-            <>
-              <div className="rounded-md bg-surface-elevated border border-sidebar-border p-3 space-y-2">
+            <div className="space-y-2">
+              <div className="rounded-md bg-surface-elevated border border-sidebar-border p-3 space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <code className="text-xs font-mono text-gold">
                     {provider.secretName}
@@ -622,15 +634,63 @@ const ProviderCard = ({
                     </a>
                   )}
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  {provider.apiKeyHint}
-                </p>
+
+                {credential.configured ? (
+                  <div className="flex items-center justify-between gap-2 rounded bg-background/50 border border-gold/20 px-2.5 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <KeyRound className="h-3.5 w-3.5 text-gold shrink-0" />
+                      <code className="text-xs font-mono truncate">{credential.preview}</code>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onCopyPreview}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label="Copiar prévia"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {provider.apiKeyHint}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    onClick={onEditKey}
+                    className="h-8 bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold flex-1 min-w-[120px]"
+                  >
+                    {credential.configured ? (
+                      <>
+                        <Pencil className="h-3.5 w-3.5 mr-1.5" /> Atualizar chave
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="h-3.5 w-3.5 mr-1.5" /> Adicionar chave
+                      </>
+                    )}
+                  </Button>
+                  {credential.configured && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={onDeleteKey}
+                      className="h-8 border-destructive/40 text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remover
+                    </Button>
+                  )}
+                </div>
+
+                {credential.updatedAt && (
+                  <p className="text-[10px] text-muted-foreground pt-1">
+                    Atualizada em {new Date(credential.updatedAt).toLocaleString("pt-BR")}
+                  </p>
+                )}
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                A chave é armazenada de forma segura no backend. Adicione-a pelas
-                configurações do projeto e clique em "Testar conexão" abaixo para validar.
-              </p>
-            </>
+            </div>
           )}
         </div>
 
@@ -655,7 +715,10 @@ const ProviderCard = ({
 
             <Button
               onClick={onTest}
-              disabled={testState.status === "testing"}
+              disabled={
+                testState.status === "testing" ||
+                (!provider.managed && !credential.configured)
+              }
               variant="outline"
               className="w-full h-9 border-gold/40 hover:bg-gold/10"
             >
@@ -697,10 +760,17 @@ const ProviderCard = ({
               </div>
             )}
 
-            {testState.status === "idle" && !provider.managed && (
+            {testState.status === "idle" && !provider.managed && !credential.configured && (
               <div className="rounded-md border border-sidebar-border bg-surface-elevated/50 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                Nunca testado. Adicione a chave e clique acima.
+                Adicione a chave acima para liberar o teste.
+              </div>
+            )}
+
+            {testState.status === "idle" && !provider.managed && credential.configured && (
+              <div className="rounded-md border border-sidebar-border bg-surface-elevated/50 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                Pronto para testar. Clique no botão acima.
               </div>
             )}
           </div>
