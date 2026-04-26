@@ -35,6 +35,8 @@ import {
   Sparkles,
   Briefcase,
   CalendarDays,
+  FileText,
+  Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
