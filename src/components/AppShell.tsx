@@ -87,7 +87,9 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="truncate text-sm font-medium">{user?.email}</div>
-              <div className="text-xs text-muted-foreground">Recrutador</div>
+              <div className="text-xs text-muted-foreground">
+                {isAdmin ? "Admin Master" : "Recrutador"}
+              </div>
             </div>
           </div>
           <Button
@@ -119,7 +121,12 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         <div className="mx-auto max-w-7xl">{children}</div>
 
         {/* Mobile nav */}
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sidebar-border bg-sidebar grid grid-cols-3">
+        <nav
+          className={cn(
+            "md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sidebar-border bg-sidebar grid",
+            NAV.length === 5 ? "grid-cols-5" : NAV.length === 4 ? "grid-cols-4" : "grid-cols-3",
+          )}
+        >
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
