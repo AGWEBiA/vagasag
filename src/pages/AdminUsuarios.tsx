@@ -55,6 +55,9 @@ import {
   Copy,
   CheckCircle2,
   Pencil,
+  Link2,
+  ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -311,6 +314,8 @@ const AdminUsuarios = () => {
           </Button>
         </div>
       </header>
+
+      <ShareAutoavaliacaoCard />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -672,3 +677,71 @@ const AdminUsuarios = () => {
 };
 
 export default AdminUsuarios;
+
+const ShareAutoavaliacaoCard = () => {
+  const [copied, setCopied] = useState(false);
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/autoavaliacao`
+      : "/autoavaliacao";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("Link copiado!");
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      toast.error("Não foi possível copiar. Copie manualmente.");
+    }
+  };
+
+  return (
+    <div className="surface-card rounded-xl p-5 mb-6 border border-gold/30 bg-gradient-to-br from-pleno-bg/50 to-transparent animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gold/15 text-gold shrink-0">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-display text-lg font-semibold">
+            Compartilhe a autoavaliação com o time
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Envie este link para os colaboradores. Eles fazem login com a conta
+            criada aqui e enviam os dados; depois você roda a IA em{" "}
+            <strong>Nova Avaliação → aba Time</strong>.
+          </p>
+          <div className="mt-3 flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 flex items-center gap-2 rounded-md border border-sidebar-border bg-background px-3 py-2 text-xs font-mono truncate">
+              <Link2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="truncate">{url}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopy}
+                className="border-gold/40 hover:bg-gold/10"
+              >
+                {copied ? (
+                  <CheckCircle2 className="h-4 w-4 mr-1.5 text-senior" />
+                ) : (
+                  <Copy className="h-4 w-4 mr-1.5" />
+                )}
+                {copied ? "Copiado" : "Copiar link"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+              >
+                <ExternalLink className="h-4 w-4 mr-1.5" /> Abrir
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
