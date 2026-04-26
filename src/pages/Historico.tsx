@@ -192,7 +192,22 @@ const Historico = () => {
                         >
                           {getInitials(a.candidates?.nome ?? "?")}
                         </div>
-                        <span className="font-medium">{a.candidates?.nome}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium leading-tight">{a.candidates?.nome}</span>
+                          <span
+                            className={`mt-0.5 inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                              a.candidates?.origem === "time"
+                                ? "bg-gold/10 text-gold border-gold/30"
+                                : "bg-surface-elevated text-muted-foreground border-sidebar-border"
+                            }`}
+                          >
+                            {a.candidates?.origem === "time" ? (
+                              <><Users className="h-2.5 w-2.5" /> Time</>
+                            ) : (
+                              <><UserPlus className="h-2.5 w-2.5" /> Candidato</>
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
