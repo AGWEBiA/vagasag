@@ -246,10 +246,72 @@ const Autoavaliacao = () => {
             </Button>
           </div>
         ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="surface-card rounded-xl p-6 md:p-8 space-y-6"
-          >
+          <>
+            <div className="surface-card rounded-xl p-5 md:p-6 mb-6 border border-gold/30 bg-gradient-to-br from-pleno-bg/40 to-transparent animate-fade-in">
+              <h2 className="font-display text-base font-semibold mb-3 flex items-center gap-2">
+                <Info className="h-4 w-4 text-gold" />
+                Como preencher para a leitura ser precisa
+              </h2>
+              <ol className="space-y-2 text-sm text-body/90">
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20 text-gold text-[11px] font-bold shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <span>
+                    <strong>Conte seu tempo de experiência</strong> — total de anos na
+                    área e nesse cargo específico.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20 text-gold text-[11px] font-bold shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <span>
+                    <strong>Descreva projetos relevantes</strong> com contexto: o que
+                    fez, qual foi seu papel e o que entregou.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20 text-gold text-[11px] font-bold shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <span>
+                    <strong>Use números e resultados</strong> — métricas, percentuais,
+                    economia gerada, ROI, prazos batidos. Evidências valem mais que
+                    adjetivos.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20 text-gold text-[11px] font-bold shrink-0 mt-0.5">
+                    4
+                  </span>
+                  <span>
+                    <strong>Liste ferramentas e stacks</strong> que domina e em que
+                    nível (uso diário, ocasional, certificações).
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20 text-gold text-[11px] font-bold shrink-0 mt-0.5">
+                    5
+                  </span>
+                  <span>
+                    <strong>Mostre escopo de impacto</strong> — quem você influencia,
+                    decisões que tomou sozinho, situações em que liderou ou mentorou
+                    pessoas.
+                  </span>
+                </li>
+              </ol>
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-sidebar-border">
+                💡 Seja honesto. A análise compara contra um framework de 4 pilares
+                (técnica, impacto, estratégia, liderança) — exagerar não ajuda você
+                nem a liderança.
+              </p>
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="surface-card rounded-xl p-6 md:p-8 space-y-6"
+            >
             <div className="space-y-2">
               <Label htmlFor="nome">
                 Seu nome completo <span className="text-destructive">*</span>
