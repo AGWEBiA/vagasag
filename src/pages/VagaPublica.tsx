@@ -287,6 +287,8 @@ const VagaPublica = () => {
                 </p>
               </div>
 
+              <CVUploader onParsed={aplicarCV} />
+
               <div className="grid gap-4 md:grid-cols-2">
                 <Field
                   label="Nome completo *"
