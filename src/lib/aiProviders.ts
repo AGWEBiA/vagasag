@@ -7,6 +7,9 @@ export interface AIProviderInfo {
   secretName?: string; // null for lovable (managed)
   models: { value: string; label: string; hint?: string }[];
   badge?: string;
+  docsUrl?: string;
+  apiKeyHint?: string;
+  managed?: boolean; // true for lovable (no key needed)
 }
 
 export const AI_PROVIDERS: AIProviderInfo[] = [
@@ -16,6 +19,10 @@ export const AI_PROVIDERS: AIProviderInfo[] = [
     description:
       "Provedor padrão, sem chave de API. Acesso aos modelos Google Gemini e OpenAI GPT-5 já incluso no workspace.",
     badge: "Recomendado",
+    managed: true,
+    docsUrl: "https://docs.lovable.dev/features/ai",
+    apiKeyHint:
+      "Gerenciado automaticamente pelo Lovable Cloud. Nenhuma configuração necessária.",
     models: [
       { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", hint: "Rápido e equilibrado" },
       { value: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro", hint: "Máxima profundidade" },
@@ -31,6 +38,9 @@ export const AI_PROVIDERS: AIProviderInfo[] = [
     description:
       "Use sua chave da OpenAI para acessar GPT-4o, o1 e modelos avançados com cobrança direta.",
     secretName: "OPENAI_API_KEY",
+    docsUrl: "https://platform.openai.com/api-keys",
+    apiKeyHint:
+      "Crie uma chave em platform.openai.com → API Keys. Comece com sk-... e tenha saldo de billing ativo.",
     models: [
       { value: "gpt-4o", label: "GPT-4o" },
       { value: "gpt-4o-mini", label: "GPT-4o Mini" },
@@ -45,6 +55,9 @@ export const AI_PROVIDERS: AIProviderInfo[] = [
     description:
       "Excelente para análise textual longa, nuances e perfis com contexto extenso.",
     secretName: "ANTHROPIC_API_KEY",
+    docsUrl: "https://console.anthropic.com/settings/keys",
+    apiKeyHint:
+      "Gere a chave em console.anthropic.com → Settings → API Keys. Formato sk-ant-...",
     models: [
       { value: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
       { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
@@ -57,6 +70,9 @@ export const AI_PROVIDERS: AIProviderInfo[] = [
     description:
       "Inferência ultra-rápida com Llama 3.1 e Mixtral — ótimo para avaliações em massa.",
     secretName: "GROQ_API_KEY",
+    docsUrl: "https://console.groq.com/keys",
+    apiKeyHint:
+      "Crie a chave em console.groq.com → API Keys. Formato gsk_...",
     models: [
       { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
       { value: "llama-3.1-70b-versatile", label: "Llama 3.1 70B" },
