@@ -170,8 +170,12 @@ export type Database = {
           informacoes_adicionais: string | null
           linkedin: string | null
           nome: string
+          notes: string | null
           portfolio: string | null
+          skills: string[]
           status: string
+          tags: string[]
+          talent_status: string
           telefone: string | null
           vaga_id: string
         }
@@ -184,8 +188,12 @@ export type Database = {
           informacoes_adicionais?: string | null
           linkedin?: string | null
           nome: string
+          notes?: string | null
           portfolio?: string | null
+          skills?: string[]
           status?: string
+          tags?: string[]
+          talent_status?: string
           telefone?: string | null
           vaga_id: string
         }
@@ -198,8 +206,12 @@ export type Database = {
           informacoes_adicionais?: string | null
           linkedin?: string | null
           nome?: string
+          notes?: string | null
           portfolio?: string | null
+          skills?: string[]
           status?: string
+          tags?: string[]
+          talent_status?: string
           telefone?: string | null
           vaga_id?: string
         }
