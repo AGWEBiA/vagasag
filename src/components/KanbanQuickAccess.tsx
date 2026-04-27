@@ -131,7 +131,11 @@ export const KanbanQuickAccess = () => {
             </p>
           ) : filtradas.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhuma vaga corresponde a “{busca}”.
+              {busca.trim()
+                ? `Nenhuma vaga corresponde a "${busca}".`
+                : filtro === "abertas"
+                  ? "Nenhuma vaga aberta no momento. Mude para “Todas” para ver pausadas/encerradas."
+                  : "Nenhuma vaga encontrada."}
             </p>
           ) : (
             <div className="space-y-4 mt-2">
