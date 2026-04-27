@@ -61,7 +61,6 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import * as XLSX from "xlsx";
-import { useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
