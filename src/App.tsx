@@ -25,6 +25,7 @@ import Autoavaliacao from "./pages/Autoavaliacao.tsx";
 import PortalVagas from "./pages/PortalVagas.tsx";
 import VagaPublica from "./pages/VagaPublica.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
+import Ajuda from "./pages/Ajuda.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             {/* Authenticated (qualquer login) */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/autoavaliacao" element={<ProtectedRoute><Autoavaliacao /></ProtectedRoute>} />
+            <Route path="/ajuda" element={<ProtectedRoute><Ajuda /></ProtectedRoute>} />
 
             {/* Painel interno */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

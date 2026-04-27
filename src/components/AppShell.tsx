@@ -12,12 +12,14 @@ import {
   HelpCircle,
   Layers,
   BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
+import { KanbanQuickAccess } from "@/components/KanbanQuickAccess";
 
 const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +28,7 @@ const BASE_NAV = [
   { to: "/historico", label: "Histórico", icon: History },
   { to: "/vagas-admin", label: "Vagas", icon: Briefcase },
   { to: "/banco-talentos", label: "Talentos", icon: Users2 },
+  { to: "/ajuda", label: "Ajuda", icon: LifeBuoy },
 ];
 
 const ADMIN_NAV = [
@@ -128,6 +131,25 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
       </div>
 
       <main className="flex-1 min-w-0 md:p-8 p-4 pt-20 md:pt-8 bg-gradient-hero">
+        {/* Topbar desktop com atalhos rápidos */}
+        <div className="hidden md:flex items-center justify-end gap-2 mb-4">
+          <KanbanQuickAccess />
+          <NavLink to="/ajuda">
+            {({ isActive }) => (
+              <Button
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "border-gold/40 hover:text-gold",
+                  isActive && "text-gold",
+                )}
+              >
+                <LifeBuoy className="h-4 w-4 mr-1.5" />
+                Ajuda
+              </Button>
+            )}
+          </NavLink>
+        </div>
         <div className="mx-auto max-w-7xl">{children}</div>
 
         {/* Mobile nav */}
