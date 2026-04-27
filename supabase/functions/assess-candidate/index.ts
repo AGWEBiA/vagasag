@@ -22,16 +22,26 @@ Sua missão é analisar o perfil profissional de um candidato e determinar com p
 
 FRAMEWORK DE AVALIAÇÃO — 5 PILARES:
 
-1. PROFUNDIDADE TÉCNICA (peso: 30%) — domínio de ferramentas, métodos e entregas específicas do cargo.
-2. ESCOPO DE IMPACTO (peso: 25%) — tamanho dos projetos, orçamentos, times e resultados gerados.
-3. PERFIL COMPORTAMENTAL (peso: 20%) — caráter, integridade, proatividade, colaboração, abertura a feedback, resiliência diante de erros e conflitos. Baseie-se principalmente nas RESPOSTAS ÀS PERGUNTAS COMPORTAMENTAIS (questões situacionais e escalas), procurando sinais nas histórias contadas: tomada de iniciativa, responsabilidade pelos próprios erros, postura colaborativa vs. individualista, capacidade de pedir ajuda, reação a divergências. Sinalize red flags (transferir culpa, desvalorizar colegas, descrever erros sem aprendizado, evitar conflitos saudáveis, isolamento).
-4. VISÃO ESTRATÉGICA (peso: 15%) — capacidade de conectar execução a objetivos de negócio.
-5. LIDERANÇA E AUTONOMIA (peso: 10%) — autogestão, mentoria, capacidade de liderar iniciativas.
+1. PROFUNDIDADE TÉCNICA — domínio de ferramentas, métodos e entregas específicas do cargo.
+2. ESCOPO DE IMPACTO — tamanho dos projetos, orçamentos, times e resultados gerados.
+3. PERFIL COMPORTAMENTAL — caráter, integridade, proatividade, colaboração, abertura a feedback, resiliência diante de erros e conflitos. Baseie-se principalmente nas RESPOSTAS ÀS PERGUNTAS COMPORTAMENTAIS (questões situacionais e escalas), procurando sinais nas histórias contadas: tomada de iniciativa, responsabilidade pelos próprios erros, postura colaborativa vs. individualista, capacidade de pedir ajuda, reação a divergências. Sinalize red flags (transferir culpa, desvalorizar colegas, descrever erros sem aprendizado, evitar conflitos saudáveis, isolamento).
+4. VISÃO ESTRATÉGICA — capacidade de conectar execução a objetivos de negócio.
+5. LIDERANÇA E AUTONOMIA — autogestão, mentoria, capacidade de liderar iniciativas.
+
+Os pesos exatos de cada pilar podem variar — concentre-se em dar notas honestas (0-10) com justificativas claras. O cálculo da nota ponderada é feito posteriormente.
 
 CRITÉRIOS DE CLASSIFICAÇÃO DE SENIORIDADE:
 - JÚNIOR (0–4.9): Até 2 anos, executa tarefas com supervisão constante.
 - PLENO (5.0–7.4): 2 a 5 anos, autônomo em projetos de média complexidade.
 - SÊNIOR (7.5–10): +5 anos, lidera projetos complexos, visão estratégica.
+
+EVIDÊNCIAS COMPORTAMENTAIS (NOVO — OBRIGATÓRIO):
+Em "evidenciasComportamentais", forneça 3 a 5 trechos LITERAIS extraídos das respostas do candidato (ou dos dados profissionais) que mais influenciaram a nota do pilar Comportamental. Para cada evidência:
+- "trecho": citação literal (entre 10 e 280 caracteres) — pode ter pequenas elipses se necessário [...].
+- "traco": uma das tags ["proatividade","colaboracao","responsabilidade","abertura_a_feedback","resiliencia","autoconhecimento","red_flag"].
+- "impacto": "positivo" | "negativo" | "neutro".
+- "analise": 1-2 frases explicando como esse trecho impactou a nota comportamental.
+Se não houver respostas comportamentais suficientes, retorne array vazio e mencione isso na justificativa do pilar.
 
 REGRAS:
 - Avalie com base em evidências, não em suposições.
@@ -88,6 +98,30 @@ const RESPONSE_SCHEMA = {
     gapsIdentificadosJson: { type: "array", items: { type: "string" } },
     perguntasEntrevistaJson: { type: "array", items: { type: "string" } },
     resumoExecutivo: { type: "string" },
+    evidenciasComportamentais: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          trecho: { type: "string" },
+          traco: {
+            type: "string",
+            enum: [
+              "proatividade",
+              "colaboracao",
+              "responsabilidade",
+              "abertura_a_feedback",
+              "resiliencia",
+              "autoconhecimento",
+              "red_flag",
+            ],
+          },
+          impacto: { type: "string", enum: ["positivo", "negativo", "neutro"] },
+          analise: { type: "string" },
+        },
+        required: ["trecho", "traco", "impacto", "analise"],
+      },
+    },
   },
   required: [
     "senioridadeDetectada",
@@ -97,6 +131,7 @@ const RESPONSE_SCHEMA = {
     "gapsIdentificadosJson",
     "perguntasEntrevistaJson",
     "resumoExecutivo",
+    "evidenciasComportamentais",
   ],
 };
 
@@ -469,12 +504,31 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
     }
 
     const pilares = parsed.analisePilares;
+
+    // Carrega pesos globais (com fallback para defaults)
+    const { data: pesosRow } = await supabase
+      .from("assessment_pesos")
+      .select("tecnico, impacto, comportamental, estrategico, lideranca")
+      .eq("id", 1)
+      .maybeSingle();
+    const pesos = pesosRow ?? {
+      tecnico: 30,
+      impacto: 25,
+      comportamental: 20,
+      estrategico: 15,
+      lideranca: 10,
+    };
+
     const notaPonderada =
-      pilares.profundidadeTecnica.nota * 0.30 +
-      pilares.escopoImpacto.nota * 0.25 +
-      pilares.comportamental.nota * 0.20 +
-      pilares.visaoEstrategica.nota * 0.15 +
-      pilares.liderancaAutonomia.nota * 0.10;
+      pilares.profundidadeTecnica.nota * (Number(pesos.tecnico) / 100) +
+      pilares.escopoImpacto.nota * (Number(pesos.impacto) / 100) +
+      pilares.comportamental.nota * (Number(pesos.comportamental) / 100) +
+      pilares.visaoEstrategica.nota * (Number(pesos.estrategico) / 100) +
+      pilares.liderancaAutonomia.nota * (Number(pesos.lideranca) / 100);
+
+    const evidenciasComportamentais = Array.isArray(parsed.evidenciasComportamentais)
+      ? parsed.evidenciasComportamentais
+      : [];
 
     let candidate: { id: string; nome: string; cargo: string; origem: string };
     if (existingCandidate) {
@@ -520,6 +574,7 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
         gaps_identificados: parsed.gapsIdentificadosJson,
         perguntas_entrevista: parsed.perguntasEntrevistaJson,
         resumo_executivo: parsed.resumoExecutivo,
+        evidencias_comportamentais: evidenciasComportamentais,
         model_used: `${provider}:${model}`,
       })
       .select()
