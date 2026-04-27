@@ -486,7 +486,7 @@ const Analytics = () => {
                       </p>
                     </div>
                     <Button asChild variant="ghost" size="sm" className="shrink-0">
-                      <Link to={`/vagas/${c.vaga_id}/inbox`}>
+                      <Link to={`/admin/candidaturas/${c.vaga_id}`}>
                         Abrir <ArrowRight className="h-3.5 w-3.5 ml-1" />
                       </Link>
                     </Button>
