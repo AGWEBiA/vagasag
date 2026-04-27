@@ -340,9 +340,12 @@ const AdminUsuarios = () => {
       return;
     }
     const usersPayload = lines.map((line) => {
-      // formato: email, role, nome
-      const [email, role, ...rest] = line.split(",").map((p) => p.trim());
-      const fullName = rest.join(",").trim();
+      // formato: email, role, nome, senha
+      const parts = line.split(",").map((p) => p.trim());
+      const email = parts[0] ?? "";
+      const role = parts[1] ?? "";
+      const fullName = parts[2] ?? "";
+      const password = parts[3] ?? "";
       const validRole = ROLE_OPTIONS.includes(role as AppRole)
         ? (role as AppRole)
         : "colaborador";
@@ -350,6 +353,7 @@ const AdminUsuarios = () => {
         email,
         role: validRole,
         full_name: fullName || undefined,
+        password: password && password.length >= 8 ? password : undefined,
       };
     });
     setBulkBusy(true);
