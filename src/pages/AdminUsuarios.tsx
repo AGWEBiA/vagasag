@@ -758,8 +758,9 @@ const AdminUsuarios = () => {
           <DialogHeader>
             <DialogTitle>Importar lista de usuários</DialogTitle>
             <DialogDescription>
-              Uma linha por usuário no formato: <code className="text-gold">email, papel, nome</code>.
-              Senhas serão geradas automaticamente. Compartilhe-as conforme cada usuário for adicionado.
+              Uma linha por usuário no formato:{" "}
+              <code className="text-gold">email, papel, nome, senha</code>.
+              Se a senha for omitida (ou tiver menos de 8 caracteres), o sistema gera uma automaticamente.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -768,7 +769,7 @@ const AdminUsuarios = () => {
               <div className="flex-1 min-w-[180px]">
                 <p className="text-xs font-medium">Importar de arquivo</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Aceita <code>.csv</code>, <code>.xls</code> e <code>.xlsx</code>. Colunas: email, papel, nome.
+                  Aceita <code>.csv</code>, <code>.xls</code> e <code>.xlsx</code>. Colunas detectadas: email, papel, nome, senha.
                 </p>
               </div>
               <input
@@ -799,19 +800,20 @@ const AdminUsuarios = () => {
               rows={10}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
-              placeholder={`maria@empresa.com, colaborador, Maria Souza\njoao@empresa.com, recrutador, João Lima\nlider@empresa.com, lider, Ana Lider`}
+              placeholder={`maria@empresa.com, colaborador, Maria Souza, SenhaForte#1\njoao@empresa.com, recrutador, João Lima, OutraSenha!9\nlider@empresa.com, lider, Ana Lider`}
               className="font-mono text-xs resize-none"
             />
             <p className="text-[11px] text-muted-foreground">
-              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador".
+              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador". Senha precisa ter ao menos 8 caracteres.
             </p>
 
             {bulkResults && (
-              <div className="rounded-md border border-sidebar-border max-h-60 overflow-auto">
+              <div className="rounded-md border border-sidebar-border max-h-72 overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Email</TableHead>
+                      <TableHead>Senha</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -819,6 +821,23 @@ const AdminUsuarios = () => {
                     {bulkResults.map((r) => (
                       <TableRow key={r.email}>
                         <TableCell className="text-xs">{r.email}</TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {r.ok && r.password ? (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 hover:text-gold"
+                              onClick={() => {
+                                navigator.clipboard.writeText(r.password!);
+                                toast.success("Senha copiada");
+                              }}
+                              title="Copiar senha"
+                            >
+                              <Copy className="h-3 w-3" /> {r.password}
+                            </button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs">
                           {r.ok ? (
                             <span className="text-gold inline-flex items-center gap-1">
@@ -832,6 +851,26 @@ const AdminUsuarios = () => {
                     ))}
                   </TableBody>
                 </Table>
+                {bulkResults.some((r) => r.ok && r.password) && (
+                  <div className="p-2 border-t border-sidebar-border bg-surface-elevated/40">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => {
+                        const txt = bulkResults
+                          .filter((r) => r.ok && r.password)
+                          .map((r) => `${r.email}, ${r.password}`)
+                          .join("\n");
+                        navigator.clipboard.writeText(txt);
+                        toast.success("Lista email/senha copiada");
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" /> Copiar todos (email, senha)
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
