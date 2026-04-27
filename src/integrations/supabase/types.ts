@@ -74,12 +74,46 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_pesos: {
+        Row: {
+          comportamental: number
+          estrategico: number
+          id: number
+          impacto: number
+          lideranca: number
+          tecnico: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          comportamental?: number
+          estrategico?: number
+          id?: number
+          impacto?: number
+          lideranca?: number
+          tecnico?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          comportamental?: number
+          estrategico?: number
+          id?: number
+          impacto?: number
+          lideranca?: number
+          tecnico?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           analise_pilares: Json
           candidate_id: string
           confidence_score: number
           created_at: string
+          evidencias_comportamentais: Json
           gaps_identificados: Json
           id: string
           model_used: string
@@ -94,6 +128,7 @@ export type Database = {
           candidate_id: string
           confidence_score: number
           created_at?: string
+          evidencias_comportamentais?: Json
           gaps_identificados: Json
           id?: string
           model_used?: string
@@ -108,6 +143,7 @@ export type Database = {
           candidate_id?: string
           confidence_score?: number
           created_at?: string
+          evidencias_comportamentais?: Json
           gaps_identificados?: Json
           id?: string
           model_used?: string
