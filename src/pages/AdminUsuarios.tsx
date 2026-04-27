@@ -120,9 +120,17 @@ const AdminUsuarios = () => {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [bulkResults, setBulkResults] = useState<
-    { email: string; ok: boolean; error?: string }[] | null
+    { email: string; ok: boolean; error?: string; password?: string; full_name?: string; role?: AppRole }[] | null
   >(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+
+  // edit user
+  const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editRoles, setEditRoles] = useState<AppRole[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
 
   // delete
   const [toDelete, setToDelete] = useState<UserRow | null>(null);
@@ -234,6 +242,53 @@ const AdminUsuarios = () => {
     }
   };
 
+  const openEditUser = (u: UserRow) => {
+    setEditingUser(u);
+    setEditEmail(u.email ?? "");
+    setEditName(u.full_name ?? "");
+    setEditPassword("");
+    setEditRoles(u.roles.length > 0 ? u.roles : (["colaborador"] as AppRole[]));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingUser) return;
+    if (!editEmail.trim()) {
+      toast.error("Email é obrigatório.");
+      return;
+    }
+    if (editPassword && editPassword.length < 8) {
+      toast.error("Nova senha deve ter ao menos 8 caracteres.");
+      return;
+    }
+    if (editRoles.length === 0) {
+      toast.error("Selecione ao menos um papel.");
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const payload: any = {
+        action: "update_user",
+        user_id: editingUser.id,
+        email: editEmail.trim(),
+        full_name: editName.trim() || null,
+        roles: editRoles,
+      };
+      if (editPassword) payload.password = editPassword;
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: payload,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Usuário atualizado!");
+      setEditingUser(null);
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar usuário.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const normalizeRole = (raw: any): AppRole => {
@@ -279,16 +334,20 @@ const AdminUsuarios = () => {
         return;
       }
 
-      // Detecta cabeçalho (email/papel/nome)
+      // Detecta cabeçalho (email/papel/nome/senha)
       const first = rows[0].map((c) => String(c ?? "").trim().toLowerCase());
       const hasHeader = first.some((c) => c.includes("email") || c.includes("e-mail"));
-      let emailIdx = 0, roleIdx = 1, nameIdx = 2;
+      let emailIdx = 0, roleIdx = 1, nameIdx = 2, pwdIdx = 3;
       if (hasHeader) {
+        // reset; só usa o que encontrar
+        emailIdx = -1; roleIdx = -1; nameIdx = -1; pwdIdx = -1;
         first.forEach((c, i) => {
           if (c.includes("email") || c.includes("e-mail")) emailIdx = i;
           else if (c.includes("papel") || c.includes("role") || c.includes("perfil")) roleIdx = i;
           else if (c.includes("nome") || c.includes("name")) nameIdx = i;
+          else if (c.includes("senha") || c.includes("password") || c.includes("pwd")) pwdIdx = i;
         });
+        if (emailIdx === -1) emailIdx = 0;
         rows = rows.slice(1);
       }
 
@@ -296,9 +355,11 @@ const AdminUsuarios = () => {
         .map((r) => {
           const email = String(r[emailIdx] ?? "").trim();
           if (!email) return null;
-          const role = normalizeRole(r[roleIdx]);
-          const name = String(r[nameIdx] ?? "").trim();
-          return `${email}, ${role}${name ? `, ${name}` : ""}`;
+          const role = roleIdx >= 0 ? normalizeRole(r[roleIdx]) : "colaborador";
+          const name = nameIdx >= 0 ? String(r[nameIdx] ?? "").trim() : "";
+          const pwd = pwdIdx >= 0 ? String(r[pwdIdx] ?? "").trim() : "";
+          // formato: email, role, nome, senha
+          return `${email}, ${role}, ${name}, ${pwd}`;
         })
         .filter(Boolean) as string[];
 
@@ -326,9 +387,12 @@ const AdminUsuarios = () => {
       return;
     }
     const usersPayload = lines.map((line) => {
-      // formato: email, role, nome
-      const [email, role, ...rest] = line.split(",").map((p) => p.trim());
-      const fullName = rest.join(",").trim();
+      // formato: email, role, nome, senha
+      const parts = line.split(",").map((p) => p.trim());
+      const email = parts[0] ?? "";
+      const role = parts[1] ?? "";
+      const fullName = parts[2] ?? "";
+      const password = parts[3] ?? "";
       const validRole = ROLE_OPTIONS.includes(role as AppRole)
         ? (role as AppRole)
         : "colaborador";
@@ -336,6 +400,7 @@ const AdminUsuarios = () => {
         email,
         role: validRole,
         full_name: fullName || undefined,
+        password: password && password.length >= 8 ? password : undefined,
       };
     });
     setBulkBusy(true);
@@ -564,6 +629,14 @@ const AdminUsuarios = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => openEditUser(u)}
+                        title="Editar dados do usuário"
+                      >
+                        <Pencil className="h-4 w-4 text-gold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setToDelete(u)}
                         disabled={isMe}
                         title={isMe ? "Você não pode excluir a si mesmo" : "Excluir"}
@@ -685,8 +758,9 @@ const AdminUsuarios = () => {
           <DialogHeader>
             <DialogTitle>Importar lista de usuários</DialogTitle>
             <DialogDescription>
-              Uma linha por usuário no formato: <code className="text-gold">email, papel, nome</code>.
-              Senhas serão geradas automaticamente. Compartilhe-as conforme cada usuário for adicionado.
+              Uma linha por usuário no formato:{" "}
+              <code className="text-gold">email, papel, nome, senha</code>.
+              Se a senha for omitida (ou tiver menos de 8 caracteres), o sistema gera uma automaticamente.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -695,7 +769,7 @@ const AdminUsuarios = () => {
               <div className="flex-1 min-w-[180px]">
                 <p className="text-xs font-medium">Importar de arquivo</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Aceita <code>.csv</code>, <code>.xls</code> e <code>.xlsx</code>. Colunas: email, papel, nome.
+                  Aceita <code>.csv</code>, <code>.xls</code> e <code>.xlsx</code>. Colunas detectadas: email, papel, nome, senha.
                 </p>
               </div>
               <input
@@ -726,19 +800,20 @@ const AdminUsuarios = () => {
               rows={10}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
-              placeholder={`maria@empresa.com, colaborador, Maria Souza\njoao@empresa.com, recrutador, João Lima\nlider@empresa.com, lider, Ana Lider`}
+              placeholder={`maria@empresa.com, colaborador, Maria Souza, SenhaForte#1\njoao@empresa.com, recrutador, João Lima, OutraSenha!9\nlider@empresa.com, lider, Ana Lider`}
               className="font-mono text-xs resize-none"
             />
             <p className="text-[11px] text-muted-foreground">
-              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador".
+              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador". Senha precisa ter ao menos 8 caracteres.
             </p>
 
             {bulkResults && (
-              <div className="rounded-md border border-sidebar-border max-h-60 overflow-auto">
+              <div className="rounded-md border border-sidebar-border max-h-72 overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Email</TableHead>
+                      <TableHead>Senha</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -746,6 +821,23 @@ const AdminUsuarios = () => {
                     {bulkResults.map((r) => (
                       <TableRow key={r.email}>
                         <TableCell className="text-xs">{r.email}</TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {r.ok && r.password ? (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 hover:text-gold"
+                              onClick={() => {
+                                navigator.clipboard.writeText(r.password!);
+                                toast.success("Senha copiada");
+                              }}
+                              title="Copiar senha"
+                            >
+                              <Copy className="h-3 w-3" /> {r.password}
+                            </button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs">
                           {r.ok ? (
                             <span className="text-gold inline-flex items-center gap-1">
@@ -759,6 +851,26 @@ const AdminUsuarios = () => {
                     ))}
                   </TableBody>
                 </Table>
+                {bulkResults.some((r) => r.ok && r.password) && (
+                  <div className="p-2 border-t border-sidebar-border bg-surface-elevated/40">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => {
+                        const txt = bulkResults
+                          .filter((r) => r.ok && r.password)
+                          .map((r) => `${r.email}, ${r.password}`)
+                          .join("\n");
+                        navigator.clipboard.writeText(txt);
+                        toast.success("Lista email/senha copiada");
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" /> Copiar todos (email, senha)
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -778,7 +890,125 @@ const AdminUsuarios = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
+      {/* Edit user dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(o) => !o && setEditingUser(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+            <DialogDescription>
+              Atualize qualquer dado do usuário. Campos em branco mantêm o valor atual da senha.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_email">Email</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_name">Nome completo</Label>
+              <Input
+                id="edit_name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Maria Souza"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_pwd">Nova senha (opcional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit_pwd"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Deixe em branco para não alterar"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setEditPassword(generatePassword())}
+                  title="Gerar nova senha"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </Button>
+                {editPassword && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(editPassword);
+                      toast.success("Senha copiada");
+                    }}
+                    title="Copiar"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Mínimo de 8 caracteres. A senha antiga é descartada ao salvar.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Papéis</Label>
+              <div className="rounded-md border border-sidebar-border p-2 space-y-1">
+                {ROLE_OPTIONS.map((r) => {
+                  const checked = editRoles.includes(r);
+                  return (
+                    <label
+                      key={r}
+                      className="flex items-start gap-2 rounded-md p-2 hover:bg-surface-elevated cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setEditRoles((prev) =>
+                            v
+                              ? Array.from(new Set([...prev, r])) as AppRole[]
+                              : prev.filter((x) => x !== r),
+                          );
+                        }}
+                        className="mt-0.5"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium">{ROLE_LABELS[r]}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {ROLE_DESCRIPTIONS[r]}
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+              {editingUser?.id === currentUser?.id && (
+                <p className="text-[10px] text-destructive pt-1">
+                  Você não pode remover seu próprio papel de admin.
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUser(null)} disabled={editSaving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={editSaving}
+              className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+            >
+              {editSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Salvar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
