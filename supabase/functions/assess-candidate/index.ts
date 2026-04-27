@@ -60,6 +60,11 @@ const RESPONSE_SCHEMA = {
           properties: { nota: { type: "number" }, justificativa: { type: "string" } },
           required: ["nota", "justificativa"],
         },
+        comportamental: {
+          type: "object",
+          properties: { nota: { type: "number" }, justificativa: { type: "string" } },
+          required: ["nota", "justificativa"],
+        },
         visaoEstrategica: {
           type: "object",
           properties: { nota: { type: "number" }, justificativa: { type: "string" } },
@@ -74,6 +79,7 @@ const RESPONSE_SCHEMA = {
       required: [
         "profundidadeTecnica",
         "escopoImpacto",
+        "comportamental",
         "visaoEstrategica",
         "liderancaAutonomia",
       ],
