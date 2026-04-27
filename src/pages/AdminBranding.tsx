@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { refreshBranding, useBranding } from "@/hooks/useBranding";
 import { toast } from "sonner";
-import { Loader2, Upload, Palette } from "lucide-react";
+import { Loader2, Upload, Palette, Link2, Copy } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 
 const hexToHsl = (hex: string): string | null => {
@@ -54,6 +55,9 @@ const AdminBranding = () => {
   const [logoUrl, setLogoUrl] = useState(branding.logo_horizontal_url ?? "");
   const [markUrl, setMarkUrl] = useState(branding.logo_mark_url ?? "");
   const [faviconUrl, setFaviconUrl] = useState(branding.favicon_url ?? "");
+  const [autoavalSlug, setAutoavalSlug] = useState(branding.autoaval_slug ?? "");
+  const [autoavalTitulo, setAutoavalTitulo] = useState(branding.autoaval_titulo ?? "");
+  const [autoavalDescricao, setAutoavalDescricao] = useState(branding.autoaval_descricao ?? "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
 
@@ -66,7 +70,23 @@ const AdminBranding = () => {
     setLogoUrl(branding.logo_horizontal_url ?? "");
     setMarkUrl(branding.logo_mark_url ?? "");
     setFaviconUrl(branding.favicon_url ?? "");
+    setAutoavalSlug(branding.autoaval_slug ?? "");
+    setAutoavalTitulo(branding.autoaval_titulo ?? "");
+    setAutoavalDescricao(branding.autoaval_descricao ?? "");
   }, [branding]);
+
+  const slugify = (v: string) =>
+    v
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60);
+
+  const autoavalUrl = autoavalSlug
+    ? `${window.location.origin}/time/${autoavalSlug}`
+    : `${window.location.origin}/autoavaliacao`;
 
   const upload = async (file: File, key: "horizontal" | "mark" | "favicon") => {
     setUploading(key);
@@ -92,6 +112,7 @@ const AdminBranding = () => {
     setSaving(true);
     const primary_color_hsl = hexToHsl(primaryHex) ?? branding.primary_color_hsl;
     const accent_color_hsl = hexToHsl(accentHex) ?? branding.accent_color_hsl;
+    const cleanSlug = autoavalSlug ? slugify(autoavalSlug) : null;
     const { error } = await supabase
       .from("branding_settings")
       .update({
@@ -102,6 +123,9 @@ const AdminBranding = () => {
         favicon_url: faviconUrl || null,
         primary_color_hsl,
         accent_color_hsl,
+        autoaval_slug: cleanSlug,
+        autoaval_titulo: autoavalTitulo || null,
+        autoaval_descricao: autoavalDescricao || null,
       })
       .eq("id", 1);
     setSaving(false);
@@ -211,6 +235,73 @@ const AdminBranding = () => {
                   <FileBtn k="favicon" label="Enviar favicon" />
                   <Input placeholder="ou cole uma URL" value={faviconUrl} onChange={(e) => setFaviconUrl(e.target.value)} />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="h-5 w-5 text-primary" />
+                Autoavaliação do time
+              </CardTitle>
+              <CardDescription>
+                Personalize a URL, o título e a mensagem da página que os colaboradores vão acessar para se autoavaliar.
+                O login continua obrigatório.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>URL personalizada (slug)</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
+                    {window.location.origin}/time/
+                  </span>
+                  <Input
+                    value={autoavalSlug}
+                    onChange={(e) => setAutoavalSlug(slugify(e.target.value))}
+                    placeholder="ex: time-ag-webi"
+                    className="font-mono"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Apenas letras minúsculas, números e hífens. Deixe em branco para usar apenas <code>/autoavaliacao</code>.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-3">
+                <code className="text-xs md:text-sm break-all text-primary">{autoavalUrl}</code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(autoavalUrl);
+                    toast.success("Link copiado!");
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copiar
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Título da página</Label>
+                <Input
+                  value={autoavalTitulo}
+                  onChange={(e) => setAutoavalTitulo(e.target.value)}
+                  placeholder="Conte sobre sua trajetória"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Mensagem de boas-vindas</Label>
+                <Textarea
+                  value={autoavalDescricao}
+                  onChange={(e) => setAutoavalDescricao(e.target.value)}
+                  placeholder="Explique para o colaborador como a autoavaliação será usada..."
+                  rows={4}
+                />
               </div>
             </CardContent>
           </Card>
