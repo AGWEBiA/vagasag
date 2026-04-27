@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layers, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { CARGO_LABEL } from "@/lib/seniority";
 
@@ -20,6 +21,8 @@ interface VagaLite {
   status: string;
 }
 
+type FiltroStatus = "abertas" | "todas";
+
 /**
  * Botão fixo no header que abre um modal listando todas as vagas
  * abertas para acesso direto ao Kanban de cada uma.
@@ -28,6 +31,7 @@ export const KanbanQuickAccess = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<FiltroStatus>("abertas");
   const [vagas, setVagas] = useState<VagaLite[] | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,7 +48,17 @@ export const KanbanQuickAccess = () => {
     })();
   }, [open, vagas]);
 
-  const filtradas = (vagas ?? []).filter((v) => {
+  const totalAbertas = useMemo(
+    () => (vagas ?? []).filter((v) => v.status === "aberta").length,
+    [vagas],
+  );
+  const totalGeral = (vagas ?? []).length;
+
+  const baseList = filtro === "abertas"
+    ? (vagas ?? []).filter((v) => v.status === "aberta")
+    : (vagas ?? []);
+
+  const filtradas = baseList.filter((v) => {
     if (!busca.trim()) return true;
     const q = busca.toLowerCase();
     return (
@@ -81,9 +95,20 @@ export const KanbanQuickAccess = () => {
               Abrir Kanban de uma vaga
             </DialogTitle>
             <DialogDescription>
-              Escolha a vaga para ir direto ao pipeline.
+              Por padrão mostramos apenas vagas abertas.
             </DialogDescription>
           </DialogHeader>
+
+          <Tabs value={filtro} onValueChange={(v) => setFiltro(v as FiltroStatus)} className="mt-1">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="abertas">
+                Abertas ({totalAbertas})
+              </TabsTrigger>
+              <TabsTrigger value="todas">
+                Todas ({totalGeral})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <div className="relative mt-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -106,7 +131,11 @@ export const KanbanQuickAccess = () => {
             </p>
           ) : filtradas.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhuma vaga corresponde a “{busca}”.
+              {busca.trim()
+                ? `Nenhuma vaga corresponde a "${busca}".`
+                : filtro === "abertas"
+                  ? "Nenhuma vaga aberta no momento. Mude para “Todas” para ver pausadas/encerradas."
+                  : "Nenhuma vaga encontrada."}
             </p>
           ) : (
             <div className="space-y-4 mt-2">
