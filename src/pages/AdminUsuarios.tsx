@@ -234,6 +234,88 @@ const AdminUsuarios = () => {
     }
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const normalizeRole = (raw: any): AppRole => {
+    const v = String(raw ?? "").trim().toLowerCase();
+    return (ROLE_OPTIONS as string[]).includes(v) ? (v as AppRole) : "colaborador";
+  };
+
+  const handleFileImport = async (file: File) => {
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      const isCsv = ext === "csv" || file.type === "text/csv";
+      let rows: any[][] = [];
+
+      if (isCsv) {
+        const text = await file.text();
+        // Parse CSV (suporta vírgula ou ponto-vírgula, lida com aspas simples)
+        const sep = text.includes(";") && !text.split("\n")[0].includes(",") ? ";" : ",";
+        rows = text
+          .split(/\r?\n/)
+          .filter((l) => l.trim())
+          .map((line) => {
+            const cells: string[] = [];
+            let cur = "";
+            let inQ = false;
+            for (let i = 0; i < line.length; i++) {
+              const c = line[i];
+              if (c === '"') { inQ = !inQ; continue; }
+              if (c === sep && !inQ) { cells.push(cur); cur = ""; continue; }
+              cur += c;
+            }
+            cells.push(cur);
+            return cells.map((c) => c.trim());
+          });
+      } else {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: "" }) as any[][];
+      }
+
+      if (!rows.length) {
+        toast.error("Arquivo vazio.");
+        return;
+      }
+
+      // Detecta cabeçalho (email/papel/nome)
+      const first = rows[0].map((c) => String(c ?? "").trim().toLowerCase());
+      const hasHeader = first.some((c) => c.includes("email") || c.includes("e-mail"));
+      let emailIdx = 0, roleIdx = 1, nameIdx = 2;
+      if (hasHeader) {
+        first.forEach((c, i) => {
+          if (c.includes("email") || c.includes("e-mail")) emailIdx = i;
+          else if (c.includes("papel") || c.includes("role") || c.includes("perfil")) roleIdx = i;
+          else if (c.includes("nome") || c.includes("name")) nameIdx = i;
+        });
+        rows = rows.slice(1);
+      }
+
+      const lines = rows
+        .map((r) => {
+          const email = String(r[emailIdx] ?? "").trim();
+          if (!email) return null;
+          const role = normalizeRole(r[roleIdx]);
+          const name = String(r[nameIdx] ?? "").trim();
+          return `${email}, ${role}${name ? `, ${name}` : ""}`;
+        })
+        .filter(Boolean) as string[];
+
+      if (!lines.length) {
+        toast.error("Nenhum email válido encontrado no arquivo.");
+        return;
+      }
+
+      setBulkText(lines.join("\n"));
+      toast.success(`${lines.length} linha(s) carregada(s) do arquivo.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao ler o arquivo.");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleBulk = async () => {
     const lines = bulkText
       .split(/\r?\n/)
