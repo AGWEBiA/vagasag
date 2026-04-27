@@ -84,6 +84,8 @@ serve(async (req) => {
         return await handleSetRole(admin, body);
       case "set_roles":
         return await handleSetRoles(admin, body, userData.user.id);
+      case "update_user":
+        return await handleUpdateUser(admin, body, userData.user.id);
       case "delete":
         return await handleDelete(admin, body.user_id, userData.user.id);
       default:
