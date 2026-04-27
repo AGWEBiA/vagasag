@@ -422,6 +422,17 @@ const NovaAvaliacao = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal: ver respostas */}
+      <ViewAnswersDialog
+        person={viewing}
+        onClose={() => setViewing(null)}
+        onEvaluate={(p) => {
+          setViewing(null);
+          handleEvaluateClick(p);
+        }}
+        runningId={runningId}
+      />
     </AppShell>
   );
 };
