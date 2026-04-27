@@ -1010,6 +1010,88 @@ const ViewAnswersDialog = ({
 
   const isRunning = person ? runningId === person.id : false;
 
+  const handleDownloadPDF = () => {
+    if (!data || !person) return;
+    try {
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 40;
+      const maxWidth = pageWidth - marginX * 2;
+      let y = 50;
+
+      const ensureSpace = (h: number) => {
+        if (y + h > pageHeight - 40) {
+          doc.addPage();
+          y = 50;
+        }
+      };
+
+      const writeWrapped = (text: string, size: number, opts?: { bold?: boolean; color?: [number, number, number] }) => {
+        doc.setFont("helvetica", opts?.bold ? "bold" : "normal");
+        doc.setFontSize(size);
+        if (opts?.color) doc.setTextColor(...opts.color);
+        else doc.setTextColor(20, 20, 20);
+        const lines = doc.splitTextToSize(text || "—", maxWidth);
+        for (const line of lines) {
+          ensureSpace(size + 4);
+          doc.text(line, marginX, y);
+          y += size + 4;
+        }
+      };
+
+      // Cabeçalho
+      writeWrapped(data.nome || person.nome, 18, { bold: true });
+      y += 4;
+      const meta: string[] = [];
+      if (data.cargo) meta.push(`Cargo: ${CARGO_LABEL[data.cargo] ?? data.cargo}`);
+      if (data.email) meta.push(`E-mail: ${data.email}`);
+      if (data.vaga_titulo) meta.push(`Vaga: ${data.vaga_titulo}`);
+      meta.push(`Gerado em: ${new Date().toLocaleString("pt-BR")}`);
+      writeWrapped(meta.join("  ·  "), 9, { color: [110, 110, 110] });
+      y += 10;
+
+      if (data.dados_profissionais) {
+        writeWrapped("Dados profissionais", 12, { bold: true });
+        writeWrapped(data.dados_profissionais, 10);
+        y += 8;
+      }
+      if (data.informacoes_adicionais) {
+        writeWrapped("Informações adicionais", 12, { bold: true });
+        writeWrapped(data.informacoes_adicionais, 10);
+        y += 8;
+      }
+      if (data.perguntas.length > 0) {
+        writeWrapped(`Respostas do formulário (${data.perguntas.length})`, 12, { bold: true });
+        data.perguntas.forEach((q, i) => {
+          const tipo = (q.tipo as PerguntaTipo) ?? "texto";
+          const tipoLabel = TIPO_LABEL[tipo] ?? "Texto";
+          writeWrapped(`${i + 1}. ${q.pergunta}  [${tipoLabel}]`, 10, { bold: true });
+          let respStr = "—";
+          if (tipo === "escala" && typeof q.resposta === "number") {
+            respStr = `${q.resposta} / 5${ESCALA_LABEL[q.resposta] ? ` · ${ESCALA_LABEL[q.resposta]}` : ""}`;
+          } else if (q.resposta !== null && q.resposta !== "") {
+            respStr = String(q.resposta);
+          }
+          writeWrapped(respStr, 10);
+          y += 6;
+        });
+      }
+
+      const safeName = (data.nome || person.nome || "respostas")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      doc.save(`respostas-${safeName}.pdf`);
+      toast.success("PDF gerado!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar PDF.");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
