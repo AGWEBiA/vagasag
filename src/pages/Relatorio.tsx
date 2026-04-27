@@ -69,6 +69,13 @@ interface PilarData {
   justificativa: string;
 }
 
+interface EvidenciaComportamental {
+  trecho: string;
+  pergunta?: string;
+  trait?: string;
+  impacto?: string;
+}
+
 interface Assessment {
   id: string;
   senioridade_detectada: Senioridade;
@@ -82,6 +89,7 @@ interface Assessment {
   model_used: string;
   created_at: string;
   candidate_id: string;
+  evidencias_comportamentais: EvidenciaComportamental[] | null;
   candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
 
