@@ -188,7 +188,7 @@ export async function atualizarStatusEntrevista(
   status: EntrevistaStatus,
   notas?: string,
 ) {
-  const update: Record<string, unknown> = { status };
+  const update: { status: EntrevistaStatus; notas_pos_entrevista?: string } = { status };
   if (notas !== undefined) update.notas_pos_entrevista = notas;
   const { error } = await supabase.from("entrevistas").update(update).eq("id", id);
   return { error: error?.message ?? null };
