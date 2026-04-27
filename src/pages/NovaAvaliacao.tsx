@@ -81,6 +81,7 @@ const NovaAvaliacao = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [confirmReassess, setConfirmReassess] = useState<PersonRow | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<PersonRow | null>(null);
 
   useEffect(() => {
     document.title = "Nova Avaliação | Seniority Hub";
