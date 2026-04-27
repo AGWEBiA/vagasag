@@ -125,6 +125,9 @@ const BancoTalentos = () => {
     notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [reaproveitando, setReaproveitando] = useState<Talento | null>(null);
+  const [vagaDestino, setVagaDestino] = useState<string>("");
+  const [reaprSaving, setReaprSaving] = useState(false);
 
   useEffect(() => {
     document.title = "Banco de Talentos | Seniority Hub";
