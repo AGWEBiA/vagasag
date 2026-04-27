@@ -15,7 +15,10 @@ import {
   RefreshCw,
   Eye,
   FileText,
+  Download,
+  Filter,
 } from "lucide-react";
+import jsPDF from "jspdf";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
