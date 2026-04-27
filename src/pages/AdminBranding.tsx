@@ -97,7 +97,7 @@ const AdminBranding = () => {
     ? `${window.location.origin}/time/${autoavalSlug}`
     : `${window.location.origin}/autoavaliacao`;
 
-  const upload = async (file: File, key: "horizontal" | "mark" | "favicon") => {
+  const upload = async (file: File, key: "horizontal" | "mark" | "mobile" | "favicon") => {
     setUploading(key);
     try {
       const ext = file.name.split(".").pop() ?? "png";
@@ -108,6 +108,7 @@ const AdminBranding = () => {
       const url = data.publicUrl;
       if (key === "horizontal") setLogoUrl(url);
       if (key === "mark") setMarkUrl(url);
+      if (key === "mobile") setMobileUrl(url);
       if (key === "favicon") setFaviconUrl(url);
       toast.success("Imagem enviada");
     } catch (e: any) {
