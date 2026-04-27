@@ -49,6 +49,11 @@ interface DraftPergunta {
   usar_na_ia: boolean;
 }
 
+interface ReviewItem extends DraftPergunta {
+  selecionada: boolean;
+  jaExiste: boolean;
+}
+
 interface Props {
   /** ID da vaga (null quando ainda não foi criada). Quando null, persistência é diferida ao caller. */
   vagaId: string | null;
@@ -64,6 +69,12 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
   const [customOpen, setCustomOpen] = useState(false);
   const [bankSearch, setBankSearch] = useState("");
   const [filterByCargo, setFilterByCargo] = useState(true);
+
+  // Estado do modal "Revisar pacote comportamental"
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
 
   const [customForm, setCustomForm] = useState<DraftPergunta>({
     question_bank_id: null,
