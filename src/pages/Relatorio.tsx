@@ -219,6 +219,8 @@ const Relatorio = () => {
   }
 
   const s = data.senioridade_detectada;
+  const notaRecalculada = recomputeNotaPonderada(data.analise_pilares, pesos);
+  const evidencias = data.evidencias_comportamentais ?? [];
 
   return (
     <AppShell>
