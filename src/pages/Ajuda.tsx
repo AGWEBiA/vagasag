@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/BrandLogo";
+import { useBranding } from "@/hooks/useBranding";
 import {
   Accordion,
   AccordionContent,
@@ -19,6 +22,7 @@ import {
   Users2,
   Sparkles,
   Search,
+  Download,
 } from "lucide-react";
 
 interface Topico {
