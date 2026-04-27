@@ -467,6 +467,7 @@ const MetricBox = ({
   progressClass,
   accent,
   subtle,
+  hint,
 }: {
   label: string;
   value: string;
@@ -475,6 +476,7 @@ const MetricBox = ({
   progressClass?: string;
   accent?: boolean;
   subtle?: boolean;
+  hint?: string;
 }) => (
   <div
     className={`surface-card rounded-xl p-5 ${accent ? "ring-1 ring-gold/30 shadow-gold" : ""}`}
@@ -490,6 +492,9 @@ const MetricBox = ({
       <div className="mt-3 h-1.5 rounded-full bg-secondary overflow-hidden">
         <div className={`h-full ${progressClass}`} style={{ width: `${progress}%` }} />
       </div>
+    )}
+    {hint && (
+      <div className="mt-2 text-[11px] text-muted-foreground leading-snug">{hint}</div>
     )}
   </div>
 );
