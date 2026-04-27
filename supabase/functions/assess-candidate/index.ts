@@ -574,6 +574,7 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
         gaps_identificados: parsed.gapsIdentificadosJson,
         perguntas_entrevista: parsed.perguntasEntrevistaJson,
         resumo_executivo: parsed.resumoExecutivo,
+        evidencias_comportamentais: evidenciasComportamentais,
         model_used: `${provider}:${model}`,
       })
       .select()
