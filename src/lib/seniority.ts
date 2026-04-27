@@ -57,6 +57,10 @@ export const SENIORIDADE_LABEL: Record<Senioridade, string> = {
   Senior: "Sênior",
 };
 
+/**
+ * Pesos default — usados como fallback quando o admin ainda não configurou.
+ * Pesos efetivos vêm de `useAssessmentPesos()` (tabela assessment_pesos).
+ */
 export const PILARES = [
   {
     key: "profundidadeTecnica",
