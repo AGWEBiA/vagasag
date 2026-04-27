@@ -1,0 +1,1 @@
+ALTER TABLE public.candidates DROP CONSTRAINT IF EXISTS candidates_cargo_check;
