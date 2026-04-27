@@ -287,16 +287,20 @@ const AdminUsuarios = () => {
         return;
       }
 
-      // Detecta cabeçalho (email/papel/nome)
+      // Detecta cabeçalho (email/papel/nome/senha)
       const first = rows[0].map((c) => String(c ?? "").trim().toLowerCase());
       const hasHeader = first.some((c) => c.includes("email") || c.includes("e-mail"));
-      let emailIdx = 0, roleIdx = 1, nameIdx = 2;
+      let emailIdx = 0, roleIdx = 1, nameIdx = 2, pwdIdx = 3;
       if (hasHeader) {
+        // reset; só usa o que encontrar
+        emailIdx = -1; roleIdx = -1; nameIdx = -1; pwdIdx = -1;
         first.forEach((c, i) => {
           if (c.includes("email") || c.includes("e-mail")) emailIdx = i;
           else if (c.includes("papel") || c.includes("role") || c.includes("perfil")) roleIdx = i;
           else if (c.includes("nome") || c.includes("name")) nameIdx = i;
+          else if (c.includes("senha") || c.includes("password") || c.includes("pwd")) pwdIdx = i;
         });
+        if (emailIdx === -1) emailIdx = 0;
         rows = rows.slice(1);
       }
 
@@ -304,9 +308,11 @@ const AdminUsuarios = () => {
         .map((r) => {
           const email = String(r[emailIdx] ?? "").trim();
           if (!email) return null;
-          const role = normalizeRole(r[roleIdx]);
-          const name = String(r[nameIdx] ?? "").trim();
-          return `${email}, ${role}${name ? `, ${name}` : ""}`;
+          const role = roleIdx >= 0 ? normalizeRole(r[roleIdx]) : "colaborador";
+          const name = nameIdx >= 0 ? String(r[nameIdx] ?? "").trim() : "";
+          const pwd = pwdIdx >= 0 ? String(r[pwdIdx] ?? "").trim() : "";
+          // formato: email, role, nome, senha
+          return `${email}, ${role}, ${name}, ${pwd}`;
         })
         .filter(Boolean) as string[];
 
