@@ -1,24 +1,27 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Gem, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useBranding } from "@/hooks/useBranding";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const Login = () => {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+  const branding = useBranding();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    document.title = "Acesso Restrito | Seniority Hub";
-  }, []);
+    document.title = `Acesso · ${branding.product_name}`;
+  }, [branding.product_name]);
 
   if (loading) return null;
   if (session) return <Navigate to="/dashboard" replace />;
@@ -61,15 +64,17 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background bg-gradient-hero px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-gold shadow-gold mb-4">
-            <Gem className="h-8 w-8 text-gold-foreground" />
-          </div>
-          <h1 className="font-display text-4xl font-semibold text-center">
-            Acesso <span className="text-gradient-gold">Restrito</span>
+          {branding.logo_horizontal_url ? (
+            <img src={branding.logo_horizontal_url} alt={branding.product_name} className="h-16 w-auto object-contain mb-4" />
+          ) : (
+            <BrandLogo variant="mark" className="mb-4" />
+          )}
+          <h1 className="font-display text-3xl md:text-4xl font-semibold text-center">
+            {branding.product_name}
           </h1>
-          <p className="text-muted-foreground text-sm mt-2 text-center">
-            Portal interno de avaliação de talentos
-          </p>
+          {branding.tagline && (
+            <p className="text-muted-foreground text-sm mt-2 text-center">{branding.tagline}</p>
+          )}
         </div>
 
         <div className="surface-card rounded-xl p-8 animate-fade-in">
