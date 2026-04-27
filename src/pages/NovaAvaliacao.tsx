@@ -432,6 +432,7 @@ const PersonList = ({
   runningId,
   onEvaluate,
   onView,
+  onViewAnswers,
   emptyHint,
 }: {
   people: PersonRow[];
@@ -439,6 +440,7 @@ const PersonList = ({
   runningId: string | null;
   onEvaluate: (p: PersonRow) => void;
   onView: (assessmentId: string) => void;
+  onViewAnswers: (p: PersonRow) => void;
   emptyHint: string;
 }) => {
   if (isLoading) {
