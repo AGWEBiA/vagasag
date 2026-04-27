@@ -26,3 +26,6 @@ verify_jwt = true
 
 [functions.list-team-members]
 verify_jwt = true
+
+[functions.entrevista-ics]
+verify_jwt = false
