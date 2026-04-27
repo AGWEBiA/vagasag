@@ -166,6 +166,9 @@ export type Database = {
       branding_settings: {
         Row: {
           accent_color_hsl: string
+          autoaval_descricao: string | null
+          autoaval_slug: string | null
+          autoaval_titulo: string | null
           favicon_url: string | null
           id: number
           logo_horizontal_url: string | null
@@ -179,6 +182,9 @@ export type Database = {
         }
         Insert: {
           accent_color_hsl?: string
+          autoaval_descricao?: string | null
+          autoaval_slug?: string | null
+          autoaval_titulo?: string | null
           favicon_url?: string | null
           id?: number
           logo_horizontal_url?: string | null
@@ -192,6 +198,9 @@ export type Database = {
         }
         Update: {
           accent_color_hsl?: string
+          autoaval_descricao?: string | null
+          autoaval_slug?: string | null
+          autoaval_titulo?: string | null
           favicon_url?: string | null
           id?: number
           logo_horizontal_url?: string | null
