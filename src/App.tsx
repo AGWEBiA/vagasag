@@ -20,6 +20,7 @@ import AdminIA from "./pages/AdminIA.tsx";
 import AdminUsuarios from "./pages/AdminUsuarios.tsx";
 import AdminPerguntas from "./pages/AdminPerguntas.tsx";
 import AdminPipeline from "./pages/AdminPipeline.tsx";
+import AdminBranding from "./pages/AdminBranding.tsx";
 import VagaPipeline from "./pages/VagaPipeline.tsx";
 import Autoavaliacao from "./pages/Autoavaliacao.tsx";
 import PortalVagas from "./pages/PortalVagas.tsx";
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/admin/usuarios" element={<AdminRoute><AdminUsuarios /></AdminRoute>} />
             <Route path="/admin/perguntas" element={<ProtectedRoute><AdminPerguntas /></ProtectedRoute>} />
             <Route path="/admin/pipeline" element={<AdminRoute><AdminPipeline /></AdminRoute>} />
+            <Route path="/admin/branding" element={<AdminRoute><AdminBranding /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Briefcase, MapPin, Gem, ArrowRight } from "lucide-react";
+import { Briefcase, MapPin, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CARGO_LABEL } from "@/lib/seniority";
 import { Button } from "@/components/ui/button";
+import { useBranding } from "@/hooks/useBranding";
+import { BrandLogo } from "@/components/BrandLogo";
 
 interface VagaListItem {
   id: string;
@@ -19,11 +21,12 @@ interface VagaListItem {
 const PortalVagas = () => {
   const [vagas, setVagas] = useState<VagaListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const branding = useBranding();
 
   useEffect(() => {
-    document.title = "Vagas Abertas | Seniority Hub";
+    document.title = `Vagas · ${branding.product_name}`;
     void load();
-  }, []);
+  }, [branding.product_name]);
 
   const load = async () => {
     setLoading(true);
@@ -41,17 +44,11 @@ const PortalVagas = () => {
       <header className="border-b border-sidebar-border bg-sidebar/60 backdrop-blur">
         <div className="mx-auto max-w-6xl px-6 py-5 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-gold shadow-gold">
-              <Gem className="h-5 w-5 text-gold-foreground" />
-            </div>
-            <div>
-              <div className="font-display text-lg font-semibold leading-tight">
-                Seniority <span className="text-gradient-gold">Hub</span>
-              </div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Talent Intelligence
-              </div>
-            </div>
+            {branding.logo_horizontal_url ? (
+              <img src={branding.logo_horizontal_url} alt={branding.product_name} className="h-10 w-auto object-contain" />
+            ) : (
+              <BrandLogo variant="mark" showText />
+            )}
           </Link>
           <Button asChild variant="ghost" size="sm">
             <Link to="/login">Área do recrutador</Link>
