@@ -97,7 +97,7 @@ const NovaAvaliacao = () => {
   const { data: people, isLoading } = useQuery({
     queryKey: ["people-with-assessments"],
     queryFn: async () => {
-      const [{ data: cands, error }, { data: candidaturas, error: candErr }, { data: vagas }] =
+      const [{ data: cands, error }, { data: candidaturasNoCand, error: candErr }, { data: vagas }, { data: candidaturasComCand }] =
         await Promise.all([
           supabase
             .from("candidates")
@@ -109,6 +109,10 @@ const NovaAvaliacao = () => {
             .is("candidate_id", null)
             .order("created_at", { ascending: false }),
           supabase.from("vagas").select("id, cargo"),
+          supabase
+            .from("candidaturas")
+            .select("candidate_id, email")
+            .not("candidate_id", "is", null),
         ]);
       if (error) throw error;
       if (candErr) throw candErr;
@@ -142,14 +146,24 @@ const NovaAvaliacao = () => {
         }
       }
 
+      // Map candidate_id -> email (de candidaturas relacionadas)
+      const emailByCandidateId = new Map<string, string>();
+      for (const c of candidaturasComCand ?? []) {
+        if (c.candidate_id && c.email && !emailByCandidateId.has(c.candidate_id)) {
+          emailByCandidateId.set(c.candidate_id, c.email);
+        }
+      }
+
       const fromCandidates = (cands ?? []).map<PersonRow>((c) => {
         const list = assessmentsByCandidate.get(c.id) ?? [];
         const last = list[0] ?? null;
         return {
           id: c.id,
           nome: c.nome,
+          email: emailByCandidateId.get(c.id) ?? null,
           cargo: c.cargo,
           origem: (c.origem === "time" ? "time" : "candidato") as Origem,
+          isVirtual: false,
           created_at: c.created_at,
           assessmentsCount: list.length,
           lastAssessment: last
@@ -165,11 +179,13 @@ const NovaAvaliacao = () => {
 
       // Talentos do banco que ainda não viraram "candidate"
       const vagaCargo = new Map((vagas ?? []).map((v) => [v.id, v.cargo]));
-      const fromCandidaturas = (candidaturas ?? []).map<PersonRow>((c) => ({
+      const fromCandidaturas = (candidaturasNoCand ?? []).map<PersonRow>((c) => ({
         id: `cand:${c.id}`,
         nome: c.nome,
+        email: c.email ?? null,
         cargo: vagaCargo.get(c.vaga_id) ?? "copywriter",
         origem: "candidato" as Origem,
+        isVirtual: true,
         created_at: c.created_at,
         assessmentsCount: 0,
         lastAssessment: null,
