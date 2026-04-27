@@ -315,9 +315,14 @@ const Relatorio = () => {
       <section className="grid gap-4 md:grid-cols-3 mb-6">
         <MetricBox
           label="Nota Ponderada Final"
-          value={data.nota_ponderada.toFixed(1)}
+          value={notaRecalculada.toFixed(1)}
           suffix=" / 10"
           accent
+          hint={
+            Math.abs(notaRecalculada - data.nota_ponderada) > 0.05
+              ? `Original ${data.nota_ponderada.toFixed(1)} · recalculada com pesos atuais`
+              : undefined
+          }
         />
         <MetricBox
           label="Confiança da IA"
