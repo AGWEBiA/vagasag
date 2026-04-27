@@ -283,6 +283,52 @@ const BancoTalentos = () => {
     setPeriodoFilter("todos");
   };
 
+  const reaproveitarEmVaga = async () => {
+    if (!reaproveitando || !vagaDestino) return;
+    if (vagaDestino === reaproveitando.vaga_id) {
+      toast.error("Selecione uma vaga diferente da atual");
+      return;
+    }
+    setReaprSaving(true);
+    // Verifica se já existe candidatura desse e-mail nessa vaga
+    const { data: existente } = await supabase
+      .from("candidaturas")
+      .select("id")
+      .eq("vaga_id", vagaDestino)
+      .ilike("email", reaproveitando.email)
+      .maybeSingle();
+    if (existente) {
+      toast.error("Este candidato já existe nesta vaga");
+      setReaprSaving(false);
+      return;
+    }
+
+    const { error } = await supabase.from("candidaturas").insert({
+      vaga_id: vagaDestino,
+      nome: reaproveitando.nome,
+      email: reaproveitando.email,
+      telefone: reaproveitando.telefone,
+      linkedin: reaproveitando.linkedin,
+      portfolio: reaproveitando.portfolio,
+      dados_profissionais: reaproveitando.dados_profissionais,
+      informacoes_adicionais: reaproveitando.informacoes_adicionais,
+      tags: reaproveitando.tags,
+      skills: reaproveitando.skills,
+      candidate_id: reaproveitando.candidate_id,
+      talent_status: "em_processo",
+    });
+    setReaprSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const vagaNome = vagas.find((v) => v.id === vagaDestino)?.titulo;
+    toast.success(`Candidato reaproveitado em "${vagaNome}"`);
+    setReaproveitando(null);
+    setVagaDestino("");
+    void load();
+  };
+
   if (roleLoading) {
     return (
       <AppShell>
