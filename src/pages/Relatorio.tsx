@@ -380,7 +380,55 @@ const Relatorio = () => {
         </div>
       </section>
 
-      {/* Section 4 — Pontos Fortes & Gaps */}
+      {/* Section 3.5 — Evidências comportamentais */}
+      {evidencias.length > 0 && (
+        <section className="mb-6 surface-card rounded-xl p-6 border-2 border-gold/30">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                <Quote className="h-5 w-5 text-gold" />
+                Evidências comportamentais
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
+                Trechos das respostas que mais influenciaram o pilar Comportamental,
+                com o traço identificado pela IA e o impacto na avaliação.
+              </p>
+            </div>
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              {evidencias.length} {evidencias.length === 1 ? "evidência" : "evidências"}
+            </span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {evidencias.map((ev, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-sidebar-border bg-surface-elevated p-4"
+              >
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  {ev.trait && (
+                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-pleno-bg text-gold border border-gold/30">
+                      {ev.trait}
+                    </span>
+                  )}
+                  {ev.pergunta && (
+                    <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
+                      {ev.pergunta}
+                    </span>
+                  )}
+                </div>
+                <blockquote className="border-l-2 border-gold/50 pl-3 text-sm italic text-body/90 leading-relaxed mb-2">
+                  "{ev.trecho}"
+                </blockquote>
+                {ev.impacto && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    <strong className="text-gold/90">Impacto:</strong> {ev.impacto}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="grid gap-4 md:grid-cols-2 mb-6">
         <div className="surface-card rounded-xl p-6">
           <h3 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
