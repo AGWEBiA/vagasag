@@ -30,6 +30,8 @@ export interface Entrevista {
   ics_uid: string;
   enviar_email_convite: boolean;
   enviar_lembrete: boolean;
+  horas_antes_lembrete: number;
+  lembrete_enviado_em: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -92,6 +94,8 @@ interface CreateParams {
   entrevistadorEmail?: string;
   entrevistadorId?: string;
   enviarEmailConvite?: boolean;
+  enviarLembrete?: boolean;
+  horasAntesLembrete?: number;
 }
 
 export async function criarEntrevista(p: CreateParams): Promise<{ data?: Entrevista; error?: string }> {
@@ -114,6 +118,8 @@ export async function criarEntrevista(p: CreateParams): Promise<{ data?: Entrevi
       entrevistador_email: p.entrevistadorEmail ?? null,
       entrevistador_id: p.entrevistadorId ?? null,
       enviar_email_convite: p.enviarEmailConvite ?? true,
+      enviar_lembrete: p.enviarLembrete ?? true,
+      horas_antes_lembrete: p.horasAntesLembrete ?? 24,
       created_by: createdBy,
     })
     .select("*")
