@@ -241,6 +241,73 @@ const AdminBranding = () => {
 
           <Card className="md:col-span-2">
             <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="h-5 w-5 text-primary" />
+                Autoavaliação do time
+              </CardTitle>
+              <CardDescription>
+                Personalize a URL, o título e a mensagem da página que os colaboradores vão acessar para se autoavaliar.
+                O login continua obrigatório.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>URL personalizada (slug)</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
+                    {window.location.origin}/time/
+                  </span>
+                  <Input
+                    value={autoavalSlug}
+                    onChange={(e) => setAutoavalSlug(slugify(e.target.value))}
+                    placeholder="ex: time-ag-webi"
+                    className="font-mono"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Apenas letras minúsculas, números e hífens. Deixe em branco para usar apenas <code>/autoavaliacao</code>.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center justify-between gap-3">
+                <code className="text-xs md:text-sm break-all text-primary">{autoavalUrl}</code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(autoavalUrl);
+                    toast.success("Link copiado!");
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copiar
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Título da página</Label>
+                <Input
+                  value={autoavalTitulo}
+                  onChange={(e) => setAutoavalTitulo(e.target.value)}
+                  placeholder="Conte sobre sua trajetória"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Mensagem de boas-vindas</Label>
+                <Textarea
+                  value={autoavalDescricao}
+                  onChange={(e) => setAutoavalDescricao(e.target.value)}
+                  placeholder="Explique para o colaborador como a autoavaliação será usada..."
+                  rows={4}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <CardHeader>
               <CardTitle>Pré-visualização</CardTitle>
             </CardHeader>
             <CardContent>
