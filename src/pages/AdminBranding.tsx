@@ -112,6 +112,7 @@ const AdminBranding = () => {
     setSaving(true);
     const primary_color_hsl = hexToHsl(primaryHex) ?? branding.primary_color_hsl;
     const accent_color_hsl = hexToHsl(accentHex) ?? branding.accent_color_hsl;
+    const cleanSlug = autoavalSlug ? slugify(autoavalSlug) : null;
     const { error } = await supabase
       .from("branding_settings")
       .update({
@@ -122,6 +123,9 @@ const AdminBranding = () => {
         favicon_url: faviconUrl || null,
         primary_color_hsl,
         accent_color_hsl,
+        autoaval_slug: cleanSlug,
+        autoaval_titulo: autoavalTitulo || null,
+        autoaval_descricao: autoavalDescricao || null,
       })
       .eq("id", 1);
     setSaving(false);
