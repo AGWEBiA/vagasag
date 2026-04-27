@@ -890,7 +890,125 @@ const AdminUsuarios = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
+      {/* Edit user dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(o) => !o && setEditingUser(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+            <DialogDescription>
+              Atualize qualquer dado do usuário. Campos em branco mantêm o valor atual da senha.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_email">Email</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_name">Nome completo</Label>
+              <Input
+                id="edit_name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Maria Souza"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_pwd">Nova senha (opcional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit_pwd"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Deixe em branco para não alterar"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setEditPassword(generatePassword())}
+                  title="Gerar nova senha"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </Button>
+                {editPassword && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(editPassword);
+                      toast.success("Senha copiada");
+                    }}
+                    title="Copiar"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Mínimo de 8 caracteres. A senha antiga é descartada ao salvar.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Papéis</Label>
+              <div className="rounded-md border border-sidebar-border p-2 space-y-1">
+                {ROLE_OPTIONS.map((r) => {
+                  const checked = editRoles.includes(r);
+                  return (
+                    <label
+                      key={r}
+                      className="flex items-start gap-2 rounded-md p-2 hover:bg-surface-elevated cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setEditRoles((prev) =>
+                            v
+                              ? Array.from(new Set([...prev, r])) as AppRole[]
+                              : prev.filter((x) => x !== r),
+                          );
+                        }}
+                        className="mt-0.5"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium">{ROLE_LABELS[r]}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {ROLE_DESCRIPTIONS[r]}
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+              {editingUser?.id === currentUser?.id && (
+                <p className="text-[10px] text-destructive pt-1">
+                  Você não pode remover seu próprio papel de admin.
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUser(null)} disabled={editSaving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={editSaving}
+              className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+            >
+              {editSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Salvar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
