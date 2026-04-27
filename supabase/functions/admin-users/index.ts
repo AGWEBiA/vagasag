@@ -21,6 +21,14 @@ type Action =
   | { action: "bulk_create"; users: BulkUser[] }
   | { action: "set_role"; user_id: string; role: AppRole }
   | { action: "set_roles"; user_id: string; roles: AppRole[] }
+  | {
+      action: "update_user";
+      user_id: string;
+      email?: string;
+      password?: string;
+      full_name?: string | null;
+      roles?: AppRole[];
+    }
   | { action: "delete"; user_id: string };
 
 type AppRole = "admin" | "recrutador" | "lider" | "colaborador";
