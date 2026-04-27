@@ -811,4 +811,255 @@ const CreatePersonDialog = ({
   );
 };
 
+type AnswerDetail = {
+  source: "candidate" | "candidatura";
+  nome: string;
+  email?: string | null;
+  cargo?: string | null;
+  vaga_titulo?: string | null;
+  dados_profissionais?: string | null;
+  informacoes_adicionais?: string | null;
+  perguntas: Array<{
+    pergunta: string;
+    tipo: string;
+    resposta: string | number | null;
+  }>;
+};
+
+const ViewAnswersDialog = ({
+  person,
+  onClose,
+  onEvaluate,
+  runningId,
+}: {
+  person: PersonRow | null;
+  onClose: () => void;
+  onEvaluate: (p: PersonRow) => void;
+  runningId: string | null;
+}) => {
+  const open = !!person;
+  const { data, isLoading } = useQuery({
+    queryKey: ["person-answers", person?.id],
+    enabled: open && !!person,
+    queryFn: async (): Promise<AnswerDetail> => {
+      if (!person) throw new Error("no person");
+
+      if (person.id.startsWith("cand:")) {
+        const candidaturaId = person.id.slice(5);
+        const { data: cand, error } = await supabase
+          .from("candidaturas")
+          .select(
+            "id, nome, email, dados_profissionais, informacoes_adicionais, vaga_id, vagas(titulo, cargo)",
+          )
+          .eq("id", candidaturaId)
+          .single();
+        if (error) throw error;
+
+        const { data: respostas } = await supabase
+          .from("candidatura_respostas")
+          .select(
+            "vaga_pergunta_id, resposta_texto, resposta_numero, vaga_perguntas(texto, tipo, ordem)",
+          )
+          .eq("candidatura_id", candidaturaId);
+
+        const perguntas = (respostas ?? [])
+          .map((r: any) => ({
+            pergunta: r.vaga_perguntas?.texto ?? "Pergunta",
+            tipo: r.vaga_perguntas?.tipo ?? "texto",
+            ordem: r.vaga_perguntas?.ordem ?? 0,
+            resposta: r.resposta_texto ?? r.resposta_numero ?? null,
+          }))
+          .sort((a: any, b: any) => a.ordem - b.ordem)
+          .map(({ ordem, ...rest }: any) => rest);
+
+        return {
+          source: "candidatura",
+          nome: cand.nome,
+          email: cand.email,
+          cargo: (cand as any).vagas?.cargo ?? null,
+          vaga_titulo: (cand as any).vagas?.titulo ?? null,
+          dados_profissionais: cand.dados_profissionais,
+          informacoes_adicionais: cand.informacoes_adicionais,
+          perguntas,
+        };
+      }
+
+      const { data: c, error } = await supabase
+        .from("candidates")
+        .select("id, nome, cargo, dados_profissionais, informacoes_adicionais")
+        .eq("id", person.id)
+        .single();
+      if (error) throw error;
+
+      const { data: candidatura } = await supabase
+        .from("candidaturas")
+        .select("id, email, vaga_id, vagas(titulo)")
+        .eq("candidate_id", person.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let perguntas: AnswerDetail["perguntas"] = [];
+      let email: string | null = null;
+      let vaga_titulo: string | null = null;
+      if (candidatura) {
+        email = (candidatura as any).email ?? null;
+        vaga_titulo = (candidatura as any).vagas?.titulo ?? null;
+        const { data: respostas } = await supabase
+          .from("candidatura_respostas")
+          .select(
+            "vaga_pergunta_id, resposta_texto, resposta_numero, vaga_perguntas(texto, tipo, ordem)",
+          )
+          .eq("candidatura_id", (candidatura as any).id);
+        perguntas = (respostas ?? [])
+          .map((r: any) => ({
+            pergunta: r.vaga_perguntas?.texto ?? "Pergunta",
+            tipo: r.vaga_perguntas?.tipo ?? "texto",
+            ordem: r.vaga_perguntas?.ordem ?? 0,
+            resposta: r.resposta_texto ?? r.resposta_numero ?? null,
+          }))
+          .sort((a: any, b: any) => a.ordem - b.ordem)
+          .map(({ ordem, ...rest }: any) => rest);
+      }
+
+      return {
+        source: "candidate",
+        nome: c.nome,
+        email,
+        cargo: c.cargo,
+        vaga_titulo,
+        dados_profissionais: c.dados_profissionais,
+        informacoes_adicionais: c.informacoes_adicionais,
+        perguntas,
+      };
+    },
+  });
+
+  const isRunning = person ? runningId === person.id : false;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-gold" />
+            {person?.nome ?? "Respostas"}
+          </DialogTitle>
+          <DialogDescription>
+            Dados e respostas enviados antes da avaliação.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading && (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-gold" />
+          </div>
+        )}
+
+        {!isLoading && data && (
+          <div className="space-y-5">
+            <div className="rounded-lg border border-sidebar-border bg-surface-elevated p-3 text-xs grid grid-cols-1 md:grid-cols-2 gap-2">
+              {data.cargo && (
+                <div>
+                  <span className="text-muted-foreground">Cargo: </span>
+                  <span>{CARGO_LABEL[data.cargo] ?? data.cargo}</span>
+                </div>
+              )}
+              {data.email && (
+                <div>
+                  <span className="text-muted-foreground">E-mail: </span>
+                  <span>{data.email}</span>
+                </div>
+              )}
+              {data.vaga_titulo && (
+                <div className="md:col-span-2">
+                  <span className="text-muted-foreground">Vaga: </span>
+                  <span>{data.vaga_titulo}</span>
+                </div>
+              )}
+            </div>
+
+            {data.dados_profissionais && (
+              <section>
+                <h4 className="font-display text-sm font-semibold mb-1.5">
+                  Dados profissionais
+                </h4>
+                <div className="rounded-lg border border-sidebar-border bg-background p-3 text-sm whitespace-pre-wrap break-words">
+                  {data.dados_profissionais}
+                </div>
+              </section>
+            )}
+
+            {data.informacoes_adicionais && (
+              <section>
+                <h4 className="font-display text-sm font-semibold mb-1.5">
+                  Informações adicionais
+                </h4>
+                <div className="rounded-lg border border-sidebar-border bg-background p-3 text-sm whitespace-pre-wrap break-words">
+                  {data.informacoes_adicionais}
+                </div>
+              </section>
+            )}
+
+            {data.perguntas.length > 0 && (
+              <section>
+                <h4 className="font-display text-sm font-semibold mb-1.5">
+                  Respostas do formulário ({data.perguntas.length})
+                </h4>
+                <div className="space-y-2">
+                  {data.perguntas.map((q, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-sidebar-border bg-background p-3"
+                    >
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {i + 1}. {q.pergunta}
+                      </div>
+                      <div className="text-sm whitespace-pre-wrap break-words">
+                        {q.resposta === null || q.resposta === ""
+                          ? "—"
+                          : String(q.resposta)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {!data.dados_profissionais &&
+              !data.informacoes_adicionais &&
+              data.perguntas.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Nenhum dado disponível.
+                </p>
+              )}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
+          {person && (
+            <Button
+              onClick={() => onEvaluate(person)}
+              disabled={isRunning || isLoading}
+              className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+            >
+              {isRunning ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : person.lastAssessment ? (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              {person.lastAssessment ? "Reavaliar" : "Avaliar agora"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default NovaAvaliacao;
