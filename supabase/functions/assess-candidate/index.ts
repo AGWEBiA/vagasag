@@ -16,23 +16,29 @@ const CARGO_LABELS: Record<string, string> = {
   seo_specialist: "SEO Specialist",
 };
 
-const SYSTEM_PROMPT = `Você é um especialista sênior em avaliação de talentos para agências digitais, com mais de 15 anos de experiência em recrutamento e desenvolvimento de equipes de marketing digital, design e tecnologia.
+const SYSTEM_PROMPT = `Você é um especialista sênior em avaliação de talentos para agências digitais, com mais de 15 anos de experiência em recrutamento, desenvolvimento de equipes de marketing digital, design e tecnologia, e também em avaliação comportamental (DISC, Big Five, entrevistas situacionais STAR).
 
-Sua missão é analisar o perfil profissional de um candidato e determinar com precisão e confiança o seu nível de senioridade para o cargo informado.
+Sua missão é analisar o perfil profissional de um candidato e determinar com precisão (1) o seu nível de senioridade técnica para o cargo informado e (2) o seu perfil comportamental — caráter, proatividade, capacidade de trabalho em equipe, abertura a feedback e resiliência.
 
-FRAMEWORK DE AVALIAÇÃO — 4 PILARES:
+FRAMEWORK DE AVALIAÇÃO — 5 PILARES:
 
-1. PROFUNDIDADE TÉCNICA (peso: 35%)
-2. ESCOPO DE IMPACTO (peso: 30%)
-3. VISÃO ESTRATÉGICA (peso: 20%)
-4. LIDERANÇA E AUTONOMIA (peso: 15%)
+1. PROFUNDIDADE TÉCNICA (peso: 30%) — domínio de ferramentas, métodos e entregas específicas do cargo.
+2. ESCOPO DE IMPACTO (peso: 25%) — tamanho dos projetos, orçamentos, times e resultados gerados.
+3. PERFIL COMPORTAMENTAL (peso: 20%) — caráter, integridade, proatividade, colaboração, abertura a feedback, resiliência diante de erros e conflitos. Baseie-se principalmente nas RESPOSTAS ÀS PERGUNTAS COMPORTAMENTAIS (questões situacionais e escalas), procurando sinais nas histórias contadas: tomada de iniciativa, responsabilidade pelos próprios erros, postura colaborativa vs. individualista, capacidade de pedir ajuda, reação a divergências. Sinalize red flags (transferir culpa, desvalorizar colegas, descrever erros sem aprendizado, evitar conflitos saudáveis, isolamento).
+4. VISÃO ESTRATÉGICA (peso: 15%) — capacidade de conectar execução a objetivos de negócio.
+5. LIDERANÇA E AUTONOMIA (peso: 10%) — autogestão, mentoria, capacidade de liderar iniciativas.
 
-CRITÉRIOS DE CLASSIFICAÇÃO:
+CRITÉRIOS DE CLASSIFICAÇÃO DE SENIORIDADE:
 - JÚNIOR (0–4.9): Até 2 anos, executa tarefas com supervisão constante.
 - PLENO (5.0–7.4): 2 a 5 anos, autônomo em projetos de média complexidade.
 - SÊNIOR (7.5–10): +5 anos, lidera projetos complexos, visão estratégica.
 
-Avalie com base em evidências, não em suposições. Identifique gaps reais. Sugira perguntas de entrevista específicas.
+REGRAS:
+- Avalie com base em evidências, não em suposições.
+- Para o pilar comportamental, NUNCA mencione ao candidato/leitor que as perguntas tinham objetivo de avaliar comportamento — apenas analise o conteúdo.
+- Identifique gaps reais (técnicos e comportamentais).
+- Em "pontosFortesJson" e "gapsIdentificadosJson", inclua observações comportamentais quando relevantes (ex.: "Demonstra forte responsabilidade ao assumir erros", "Sinal de resistência a feedback").
+- Sugira perguntas de entrevista específicas, mesclando técnicas e comportamentais de aprofundamento.
 
 Retorne EXCLUSIVAMENTE um JSON válido com a estrutura solicitada via tool/function calling.`;
 
@@ -54,6 +60,11 @@ const RESPONSE_SCHEMA = {
           properties: { nota: { type: "number" }, justificativa: { type: "string" } },
           required: ["nota", "justificativa"],
         },
+        comportamental: {
+          type: "object",
+          properties: { nota: { type: "number" }, justificativa: { type: "string" } },
+          required: ["nota", "justificativa"],
+        },
         visaoEstrategica: {
           type: "object",
           properties: { nota: { type: "number" }, justificativa: { type: "string" } },
@@ -68,6 +79,7 @@ const RESPONSE_SCHEMA = {
       required: [
         "profundidadeTecnica",
         "escopoImpacto",
+        "comportamental",
         "visaoEstrategica",
         "liderancaAutonomia",
       ],
@@ -458,10 +470,11 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
 
     const pilares = parsed.analisePilares;
     const notaPonderada =
-      pilares.profundidadeTecnica.nota * 0.35 +
-      pilares.escopoImpacto.nota * 0.3 +
-      pilares.visaoEstrategica.nota * 0.2 +
-      pilares.liderancaAutonomia.nota * 0.15;
+      pilares.profundidadeTecnica.nota * 0.30 +
+      pilares.escopoImpacto.nota * 0.25 +
+      pilares.comportamental.nota * 0.20 +
+      pilares.visaoEstrategica.nota * 0.15 +
+      pilares.liderancaAutonomia.nota * 0.10;
 
     let candidate: { id: string; nome: string; cargo: string; origem: string };
     if (existingCandidate) {

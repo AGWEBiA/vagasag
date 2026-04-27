@@ -61,12 +61,13 @@ export const PILARES = [
   {
     key: "profundidadeTecnica",
     label: "Profundidade Técnica",
-    weight: 35,
+    weight: 30,
     icon: "BarChart3",
   },
-  { key: "escopoImpacto", label: "Escopo de Impacto", weight: 30, icon: "TrendingUp" },
-  { key: "visaoEstrategica", label: "Visão Estratégica", weight: 20, icon: "Target" },
-  { key: "liderancaAutonomia", label: "Liderança e Autonomia", weight: 15, icon: "Users" },
+  { key: "escopoImpacto", label: "Escopo de Impacto", weight: 25, icon: "TrendingUp" },
+  { key: "comportamental", label: "Perfil Comportamental", weight: 20, icon: "Heart" },
+  { key: "visaoEstrategica", label: "Visão Estratégica", weight: 15, icon: "Target" },
+  { key: "liderancaAutonomia", label: "Liderança e Autonomia", weight: 10, icon: "Users" },
 ] as const;
 
 export function getInitials(name: string): string {

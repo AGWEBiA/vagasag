@@ -22,6 +22,7 @@ import {
 import {
   ArrowDown,
   ArrowUp,
+  Heart,
   HelpCircle,
   Library,
   Plus,
@@ -36,6 +37,7 @@ import {
   type QuestionBankItem,
   type VagaPergunta,
 } from "@/lib/perguntas";
+import { PERGUNTAS_COMPORTAMENTAIS_TEXTOS } from "@/lib/perguntasComportamentais";
 
 interface DraftPergunta {
   id?: string;
@@ -169,6 +171,42 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
     setCustomOpen(false);
   };
 
+  const addBehavioralPackage = async () => {
+    const { data, error } = await supabase
+      .from("question_bank")
+      .select("*")
+      .eq("ativa", true)
+      .in("texto", PERGUNTAS_COMPORTAMENTAIS_TEXTOS as unknown as string[]);
+    if (error) {
+      toast.error("Não foi possível carregar o pacote comportamental.");
+      return;
+    }
+    const items = (data ?? []) as QuestionBankItem[];
+    if (items.length === 0) {
+      toast.error("Pacote comportamental não encontrado no banco de perguntas.");
+      return;
+    }
+    const existingBankIds = new Set(drafts.map((d) => d.question_bank_id));
+    const novos = items
+      .filter((q) => !existingBankIds.has(q.id))
+      .map<DraftPergunta>((q) => ({
+        question_bank_id: q.id,
+        texto: q.texto,
+        tipo: q.tipo,
+        opcoes: q.opcoes,
+        obrigatoria: true,
+        usar_na_ia: true,
+      }));
+    if (novos.length === 0) {
+      toast.info("Todas as perguntas comportamentais já estão nesta vaga.");
+      return;
+    }
+    setDrafts((d) => [...d, ...novos]);
+    toast.success(
+      `${novos.length} pergunta${novos.length > 1 ? "s" : ""} comportamental${novos.length > 1 ? "is" : ""} adicionada${novos.length > 1 ? "s" : ""}.`,
+    );
+  };
+
   const move = (idx: number, dir: -1 | 1) => {
     setDrafts((d) => {
       const next = [...d];
@@ -196,7 +234,17 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
             Selecione do banco ou crie perguntas específicas para esta vaga.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={addBehavioralPackage}
+            className="border-gold/40 hover:text-gold"
+            title="Adiciona um conjunto de perguntas situacionais para avaliar perfil comportamental, proatividade e trabalho em equipe."
+          >
+            <Heart className="h-4 w-4 mr-1.5" /> Pacote comportamental
+          </Button>
           <Button
             type="button"
             size="sm"
