@@ -247,35 +247,38 @@ const Vagas = () => {
                 {v.localizacao ? ` · ${v.localizacao}` : ""}
               </div>
               <p className="text-sm text-body line-clamp-3">{v.descricao}</p>
-              <div className="flex items-center justify-between pt-2 border-t border-sidebar-border mt-auto">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-2 pt-2 border-t border-sidebar-border mt-auto">
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold w-full"
+                >
+                  <Link to={`/vagas-admin/${v.id}/pipeline`}>
+                    <Layers className="h-3.5 w-3.5 mr-1.5" />
+                    Abrir Kanban
+                  </Link>
+                </Button>
+                <div className="flex items-center justify-between">
                   <Link
                     to={`/admin/candidaturas/${v.id}`}
                     className="inline-flex items-center gap-1.5 text-xs text-gold hover:underline"
                   >
                     <Inbox className="h-3.5 w-3.5" />
-                    {counts[v.id] ?? 0}
+                    {counts[v.id] ?? 0} candidatura{(counts[v.id] ?? 0) === 1 ? "" : "s"}
                   </Link>
-                  <Link
-                    to={`/vagas-admin/${v.id}/pipeline`}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold"
-                    title="Pipeline Kanban"
-                  >
-                    <Layers className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => remove(v)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => remove(v)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
