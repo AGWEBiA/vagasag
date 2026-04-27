@@ -690,6 +690,38 @@ const AdminUsuarios = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-sidebar-border bg-surface-elevated/40 p-3">
+              <FileSpreadsheet className="h-4 w-4 text-gold shrink-0" />
+              <div className="flex-1 min-w-[180px]">
+                <p className="text-xs font-medium">Importar de arquivo</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Aceita <code>.csv</code>, <code>.xls</code> e <code>.xlsx</code>. Colunas: email, papel, nome.
+                </p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFileImport(f);
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Escolher arquivo
+              </Button>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground -mb-1">
+              ou cole as linhas manualmente:
+            </div>
             <Textarea
               rows={10}
               value={bulkText}
