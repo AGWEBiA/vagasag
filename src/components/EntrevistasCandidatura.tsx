@@ -218,6 +218,14 @@ export function EntrevistasCandidatura({
                       {e.descricao}
                     </p>
                   )}
+                  {e.enviar_lembrete && e.status === "agendada" && (
+                    <p className="mt-1 text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {e.lembrete_enviado_em
+                        ? `Lembrete enviado em ${format(new Date(e.lembrete_enviado_em), "dd/MM HH:mm")}`
+                        : `Lembrete agendado para ${e.horas_antes_lembrete}h antes`}
+                    </p>
+                  )}
                 </div>
               </div>
 
