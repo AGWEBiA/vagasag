@@ -340,6 +340,10 @@ const InboxCandidaturas = () => {
                   </div>
                 </TabsContent>
 
+                <TabsContent value="notas" className="mt-4">
+                  <NotasInternas candidaturaId={selected.id} />
+                </TabsContent>
+
                 <TabsContent value="historico" className="mt-4">
                   <CandidaturaTimeline candidaturaId={selected.id} />
                 </TabsContent>
