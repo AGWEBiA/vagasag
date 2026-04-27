@@ -9,6 +9,7 @@ import { AdminRoute } from "@/components/AdminRoute";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import Analytics from "./pages/Analytics.tsx";
 import NovaAvaliacao from "./pages/NovaAvaliacao.tsx";
 import Historico from "./pages/Historico.tsx";
 import Relatorio from "./pages/Relatorio.tsx";
@@ -47,6 +48,7 @@ const App = () => (
 
             {/* Painel interno */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/nova-avaliacao" element={<ProtectedRoute><NovaAvaliacao /></ProtectedRoute>} />
             <Route path="/historico" element={<ProtectedRoute><Historico /></ProtectedRoute>} />
             <Route path="/relatorio/:id" element={<ProtectedRoute><Relatorio /></ProtectedRoute>} />
