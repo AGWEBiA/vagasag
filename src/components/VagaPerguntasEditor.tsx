@@ -25,6 +25,7 @@ import {
   Heart,
   HelpCircle,
   Library,
+  Loader2,
   Plus,
   Trash2,
   X,
@@ -49,6 +50,11 @@ interface DraftPergunta {
   usar_na_ia: boolean;
 }
 
+interface ReviewItem extends DraftPergunta {
+  selecionada: boolean;
+  jaExiste: boolean;
+}
+
 interface Props {
   /** ID da vaga (null quando ainda não foi criada). Quando null, persistência é diferida ao caller. */
   vagaId: string | null;
@@ -64,6 +70,12 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
   const [customOpen, setCustomOpen] = useState(false);
   const [bankSearch, setBankSearch] = useState("");
   const [filterByCargo, setFilterByCargo] = useState(true);
+
+  // Estado do modal "Revisar pacote comportamental"
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
 
   const [customForm, setCustomForm] = useState<DraftPergunta>({
     question_bank_id: null,
@@ -171,40 +183,152 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
     setCustomOpen(false);
   };
 
-  const addBehavioralPackage = async () => {
-    const { data, error } = await supabase
-      .from("question_bank")
-      .select("*")
-      .eq("ativa", true)
-      .in("texto", PERGUNTAS_COMPORTAMENTAIS_TEXTOS as unknown as string[]);
-    if (error) {
-      toast.error("Não foi possível carregar o pacote comportamental.");
+  const openBehavioralReview = async () => {
+    setReviewLoading(true);
+    setReviewOpen(true);
+    try {
+      const { data, error } = await supabase
+        .from("question_bank")
+        .select("*")
+        .eq("ativa", true)
+        .in("texto", PERGUNTAS_COMPORTAMENTAIS_TEXTOS as unknown as string[]);
+      if (error) {
+        toast.error("Não foi possível carregar o pacote comportamental.");
+        setReviewOpen(false);
+        return;
+      }
+      const items = (data ?? []) as QuestionBankItem[];
+      if (items.length === 0) {
+        toast.error("Pacote comportamental não encontrado no banco de perguntas.");
+        setReviewOpen(false);
+        return;
+      }
+      const existingBankIds = new Set(
+        drafts.map((d) => d.question_bank_id).filter((v): v is string => !!v),
+      );
+      const existingTextos = new Set(
+        drafts.map((d) => d.texto.trim().toLowerCase()),
+      );
+      const review: ReviewItem[] = items.map((q) => {
+        const jaExiste =
+          existingBankIds.has(q.id) || existingTextos.has(q.texto.trim().toLowerCase());
+        return {
+          question_bank_id: q.id,
+          texto: q.texto,
+          tipo: q.tipo,
+          opcoes: q.opcoes,
+          obrigatoria: true,
+          usar_na_ia: true,
+          selecionada: !jaExiste,
+          jaExiste,
+        };
+      });
+      setReviewItems(review);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const updateReviewItem = (idx: number, patch: Partial<ReviewItem>) => {
+    setReviewItems((items) =>
+      items.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
+    );
+  };
+
+  const confirmBehavioralReview = async () => {
+    const selecionadas = reviewItems.filter((it) => it.selecionada);
+    if (selecionadas.length === 0) {
+      toast.error("Selecione ao menos uma pergunta para adicionar.");
       return;
     }
-    const items = (data ?? []) as QuestionBankItem[];
-    if (items.length === 0) {
-      toast.error("Pacote comportamental não encontrado no banco de perguntas.");
+
+    if (vagaId) {
+      // Vaga já existe → usa edge function (validação server-side anti-duplicata)
+      setReviewSaving(true);
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          "add-question-package",
+          {
+            body: {
+              vagaId,
+              perguntas: selecionadas.map((s) => ({
+                question_bank_id: s.question_bank_id,
+                texto: s.texto,
+                tipo: s.tipo,
+                opcoes: s.opcoes,
+                obrigatoria: s.obrigatoria,
+                usar_na_ia: s.usar_na_ia,
+              })),
+            },
+          },
+        );
+        if (error) throw error;
+        const result = data as {
+          inseridas?: number;
+          ignoradas?: number;
+          error?: string;
+        };
+        if (result?.error) {
+          toast.error(result.error);
+          return;
+        }
+        const ins = result.inseridas ?? 0;
+        toast.success(
+          `${ins} pergunta${ins === 1 ? "" : "s"} adicionada${ins === 1 ? "" : "s"}.${
+            result.ignoradas ? ` ${result.ignoradas} ignorada(s) (duplicadas).` : ""
+          }`,
+        );
+        const { data: refreshed } = await supabase
+          .from("vaga_perguntas")
+          .select("*")
+          .eq("vaga_id", vagaId)
+          .order("ordem", { ascending: true });
+        const loaded = ((refreshed ?? []) as VagaPergunta[]).map((p) => ({
+          id: p.id,
+          question_bank_id: p.question_bank_id,
+          texto: p.texto,
+          tipo: p.tipo,
+          opcoes: Array.isArray(p.opcoes) ? p.opcoes : [],
+          obrigatoria: p.obrigatoria,
+          usar_na_ia: p.usar_na_ia,
+        }));
+        setDrafts(loaded);
+        setReviewOpen(false);
+      } catch (e) {
+        console.error(e);
+        toast.error(`Erro: ${e instanceof Error ? e.message : "falha ao adicionar."}`);
+      } finally {
+        setReviewSaving(false);
+      }
       return;
     }
+
+    // Vaga ainda não existe → adiciona somente em drafts locais (com dedup local)
     const existingBankIds = new Set(drafts.map((d) => d.question_bank_id));
-    const novos = items
-      .filter((q) => !existingBankIds.has(q.id))
-      .map<DraftPergunta>((q) => ({
-        question_bank_id: q.id,
-        texto: q.texto,
-        tipo: q.tipo,
-        opcoes: q.opcoes,
-        obrigatoria: true,
-        usar_na_ia: true,
-      }));
+    const existingTextos = new Set(drafts.map((d) => d.texto.trim().toLowerCase()));
+    const novos: DraftPergunta[] = [];
+    for (const s of selecionadas) {
+      if (s.question_bank_id && existingBankIds.has(s.question_bank_id)) continue;
+      if (existingTextos.has(s.texto.trim().toLowerCase())) continue;
+      novos.push({
+        question_bank_id: s.question_bank_id,
+        texto: s.texto,
+        tipo: s.tipo,
+        opcoes: s.opcoes,
+        obrigatoria: s.obrigatoria,
+        usar_na_ia: s.usar_na_ia,
+      });
+    }
     if (novos.length === 0) {
-      toast.info("Todas as perguntas comportamentais já estão nesta vaga.");
+      toast.info("Todas as perguntas selecionadas já estão na vaga.");
+      setReviewOpen(false);
       return;
     }
     setDrafts((d) => [...d, ...novos]);
     toast.success(
-      `${novos.length} pergunta${novos.length > 1 ? "s" : ""} comportamental${novos.length > 1 ? "is" : ""} adicionada${novos.length > 1 ? "s" : ""}.`,
+      `${novos.length} pergunta${novos.length > 1 ? "s" : ""} adicionada${novos.length > 1 ? "s" : ""}.`,
     );
+    setReviewOpen(false);
   };
 
   const move = (idx: number, dir: -1 | 1) => {
@@ -239,7 +363,7 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
             type="button"
             size="sm"
             variant="outline"
-            onClick={addBehavioralPackage}
+            onClick={openBehavioralReview}
             className="border-gold/40 hover:text-gold"
             title="Adiciona um conjunto de perguntas situacionais para avaliar perfil comportamental, proatividade e trabalho em equipe."
           >
@@ -348,6 +472,130 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
           ))}
         </div>
       )}
+
+      {/* Modal: Revisar pacote comportamental */}
+      <Dialog open={reviewOpen} onOpenChange={(o) => !reviewSaving && setReviewOpen(o)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl flex items-center gap-2">
+              <Heart className="h-5 w-5 text-gold" /> Revisar pacote comportamental
+            </DialogTitle>
+            <DialogDescription>
+              Selecione, edite ou remova perguntas antes de adicioná-las à vaga.
+              Itens já presentes vêm desmarcados.
+            </DialogDescription>
+          </DialogHeader>
+          {reviewLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-gold" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {reviewItems.filter((i) => i.selecionada).length} de {reviewItems.length} selecionadas
+                </span>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    className="text-gold hover:underline"
+                    onClick={() =>
+                      setReviewItems((items) =>
+                        items.map((i) => ({ ...i, selecionada: !i.jaExiste })),
+                      )
+                    }
+                  >
+                    Selecionar todas (não duplicadas)
+                  </button>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:underline"
+                    onClick={() =>
+                      setReviewItems((items) => items.map((i) => ({ ...i, selecionada: false })))
+                    }
+                  >
+                    Limpar seleção
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                {reviewItems.map((it, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded-lg border p-3 transition ${
+                      it.jaExiste
+                        ? "border-sidebar-border bg-surface-elevated/50 opacity-75"
+                        : it.selecionada
+                          ? "border-gold/40 bg-pleno-bg/30"
+                          : "border-sidebar-border bg-surface-elevated"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={it.selecionada}
+                        onCheckedChange={(v) => updateReviewItem(idx, { selecionada: !!v })}
+                        className="mt-1"
+                      />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-pleno-bg text-gold border border-gold/30">
+                            {TIPO_LABEL[it.tipo]}
+                          </span>
+                          {it.jaExiste && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">
+                              Já existe na vaga
+                            </span>
+                          )}
+                        </div>
+                        <Textarea
+                          rows={2}
+                          value={it.texto}
+                          onChange={(e) => updateReviewItem(idx, { texto: e.target.value })}
+                          className="text-sm"
+                        />
+                        <div className="flex gap-4 text-xs">
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <Checkbox
+                              checked={it.obrigatoria}
+                              onCheckedChange={(v) => updateReviewItem(idx, { obrigatoria: !!v })}
+                            />
+                            Obrigatória
+                          </label>
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <Checkbox
+                              checked={it.usar_na_ia}
+                              onCheckedChange={(v) => updateReviewItem(idx, { usar_na_ia: !!v })}
+                            />
+                            Enviar à IA
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReviewOpen(false)} disabled={reviewSaving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmBehavioralReview}
+              disabled={reviewSaving || reviewLoading}
+              className="bg-gradient-gold text-gold-foreground hover:opacity-90"
+            >
+              {reviewSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adicionando...
+                </>
+              ) : (
+                <>Adicionar à vaga</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Picker do banco */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>

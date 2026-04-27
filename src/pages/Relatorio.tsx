@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -17,6 +17,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  Quote,
+  FileDown,
+  Loader2,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   CARGO_LABEL,
   PILARES,
@@ -40,6 +44,11 @@ import {
   senioridadeAvatarClasses,
   senioridadeBadgeClasses,
 } from "@/lib/seniority";
+import {
+  pesoForPilar,
+  recomputeNotaPonderada,
+  useAssessmentPesos,
+} from "@/hooks/useAssessmentPesos";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   BarChart3,
@@ -60,6 +69,13 @@ interface PilarData {
   justificativa: string;
 }
 
+interface EvidenciaComportamental {
+  trecho: string;
+  pergunta?: string;
+  trait?: string;
+  impacto?: string;
+}
+
 interface Assessment {
   id: string;
   senioridade_detectada: Senioridade;
@@ -73,12 +89,53 @@ interface Assessment {
   model_used: string;
   created_at: string;
   candidate_id: string;
+  evidencias_comportamentais: EvidenciaComportamental[] | null;
   candidates: { id: string; nome: string; cargo: string; origem: string } | null;
 }
 
 const Relatorio = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { pesos } = useAssessmentPesos();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!id) return;
+    setExporting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-relatorio-pdf`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ assessmentId: id }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
+      link.download = `relatorio-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      toast.success("PDF gerado com sucesso.");
+    } catch (e) {
+      console.error(e);
+      toast.error(`Falha ao gerar PDF: ${e instanceof Error ? e.message : "erro"}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["assessment", id],
@@ -162,6 +219,8 @@ const Relatorio = () => {
   }
 
   const s = data.senioridade_detectada;
+  const notaRecalculada = recomputeNotaPonderada(data.analise_pilares, pesos);
+  const evidencias = data.evidencias_comportamentais ?? [];
 
   return (
     <AppShell>
@@ -256,9 +315,14 @@ const Relatorio = () => {
       <section className="grid gap-4 md:grid-cols-3 mb-6">
         <MetricBox
           label="Nota Ponderada Final"
-          value={data.nota_ponderada.toFixed(1)}
+          value={notaRecalculada.toFixed(1)}
           suffix=" / 10"
           accent
+          hint={
+            Math.abs(notaRecalculada - data.nota_ponderada) > 0.05
+              ? `Original ${data.nota_ponderada.toFixed(1)} · recalculada com pesos atuais`
+              : undefined
+          }
         />
         <MetricBox
           label="Confiança da IA"
@@ -293,7 +357,7 @@ const Relatorio = () => {
                     <div>
                       <div className="font-semibold">{p.label}</div>
                       <div className="text-xs text-muted-foreground">
-                        Peso {p.weight}%
+                        Peso {pesoForPilar(pesos, p.key) || p.weight}%
                       </div>
                     </div>
                   </div>
@@ -316,7 +380,55 @@ const Relatorio = () => {
         </div>
       </section>
 
-      {/* Section 4 — Pontos Fortes & Gaps */}
+      {/* Section 3.5 — Evidências comportamentais */}
+      {evidencias.length > 0 && (
+        <section className="mb-6 surface-card rounded-xl p-6 border-2 border-gold/30">
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                <Quote className="h-5 w-5 text-gold" />
+                Evidências comportamentais
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
+                Trechos das respostas que mais influenciaram o pilar Comportamental,
+                com o traço identificado pela IA e o impacto na avaliação.
+              </p>
+            </div>
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              {evidencias.length} {evidencias.length === 1 ? "evidência" : "evidências"}
+            </span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {evidencias.map((ev, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-sidebar-border bg-surface-elevated p-4"
+              >
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  {ev.trait && (
+                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-pleno-bg text-gold border border-gold/30">
+                      {ev.trait}
+                    </span>
+                  )}
+                  {ev.pergunta && (
+                    <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
+                      {ev.pergunta}
+                    </span>
+                  )}
+                </div>
+                <blockquote className="border-l-2 border-gold/50 pl-3 text-sm italic text-body/90 leading-relaxed mb-2">
+                  "{ev.trecho}"
+                </blockquote>
+                {ev.impacto && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    <strong className="text-gold/90">Impacto:</strong> {ev.impacto}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="grid gap-4 md:grid-cols-2 mb-6">
         <div className="surface-card rounded-xl p-6">
           <h3 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
@@ -380,6 +492,22 @@ const Relatorio = () => {
 
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
+        <Button
+          onClick={handleExportPdf}
+          disabled={exporting}
+          variant="outline"
+          className="flex-1 h-11 border-gold/40 hover:text-gold hover:border-gold"
+        >
+          {exporting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Gerando PDF...
+            </>
+          ) : (
+            <>
+              <FileDown className="h-4 w-4 mr-2" /> Exportar PDF
+            </>
+          )}
+        </Button>
         <Link to="/nova-avaliacao" className="flex-1">
           <Button className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-11">
             <Sparkles className="h-4 w-4 mr-2" /> Nova Avaliação
@@ -403,6 +531,7 @@ const MetricBox = ({
   progressClass,
   accent,
   subtle,
+  hint,
 }: {
   label: string;
   value: string;
@@ -411,6 +540,7 @@ const MetricBox = ({
   progressClass?: string;
   accent?: boolean;
   subtle?: boolean;
+  hint?: string;
 }) => (
   <div
     className={`surface-card rounded-xl p-5 ${accent ? "ring-1 ring-gold/30 shadow-gold" : ""}`}
@@ -426,6 +556,9 @@ const MetricBox = ({
       <div className="mt-3 h-1.5 rounded-full bg-secondary overflow-hidden">
         <div className={`h-full ${progressClass}`} style={{ width: `${progress}%` }} />
       </div>
+    )}
+    {hint && (
+      <div className="mt-2 text-[11px] text-muted-foreground leading-snug">{hint}</div>
     )}
   </div>
 );

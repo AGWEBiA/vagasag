@@ -40,6 +40,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AI_PROVIDERS, AIProvider, getProvider, AIProviderInfo } from "@/lib/aiProviders";
 import { cn } from "@/lib/utils";
+import { Slider } from "@/components/ui/slider";
+import { DEFAULT_PESOS, type AssessmentPesos } from "@/hooks/useAssessmentPesos";
 
 interface AISettingsRow {
   id: string;
@@ -94,11 +96,56 @@ const AdminIA = () => {
   const [showKey, setShowKey] = useState(false);
   const [savingKey, setSavingKey] = useState(false);
 
+  // Pesos dos pilares (assessment_pesos)
+  const [pesos, setPesos] = useState<AssessmentPesos>(DEFAULT_PESOS);
+  const [pesosLoading, setPesosLoading] = useState(true);
+  const [savingPesos, setSavingPesos] = useState(false);
+
+  const totalPesos =
+    pesos.tecnico + pesos.impacto + pesos.comportamental + pesos.estrategico + pesos.lideranca;
+
   useEffect(() => {
     document.title = "Configuração de IA | Seniority Hub";
     void load();
     void loadCredentials();
+    void loadPesos();
   }, []);
+
+  const loadPesos = async () => {
+    setPesosLoading(true);
+    const { data } = await supabase
+      .from("assessment_pesos")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+    if (data) {
+      setPesos({
+        tecnico: Number(data.tecnico),
+        impacto: Number(data.impacto),
+        comportamental: Number(data.comportamental),
+        estrategico: Number(data.estrategico),
+        lideranca: Number(data.lideranca),
+      });
+    }
+    setPesosLoading(false);
+  };
+
+  const savePesos = async () => {
+    if (Math.round(totalPesos) !== 100) {
+      toast.error(`Os pesos devem somar 100% (atual: ${totalPesos.toFixed(0)}%).`);
+      return;
+    }
+    setSavingPesos(true);
+    const { error } = await supabase
+      .from("assessment_pesos")
+      .upsert({ id: 1, ...pesos, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    setSavingPesos(false);
+    if (error) {
+      toast.error("Erro ao salvar pesos.");
+      return;
+    }
+    toast.success("Pesos atualizados. Próximas avaliações usarão a nova ponderação.");
+  };
 
   const load = async () => {
     setLoading(true);
@@ -414,6 +461,76 @@ const AdminIA = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Pesos dos pilares */}
+          <div className="surface-card rounded-xl p-6 lg:col-span-3 space-y-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-gold" />
+                <h2 className="font-display text-xl font-semibold">Pesos dos pilares</h2>
+              </div>
+              <span
+                className={cn(
+                  "text-sm font-mono px-3 py-1 rounded-full border",
+                  Math.round(totalPesos) === 100
+                    ? "bg-gold/10 text-gold border-gold/40"
+                    : "bg-destructive/10 text-destructive border-destructive/40",
+                )}
+              >
+                Total: {totalPesos.toFixed(0)}% {Math.round(totalPesos) === 100 ? "✓" : "(deve ser 100%)"}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Ajuste a importância de cada pilar no cálculo da nota final ponderada. Aplica-se a todas as avaliações futuras.
+            </p>
+            {pesosLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-gold" />
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {([
+                  { key: "tecnico", label: "Profundidade Técnica" },
+                  { key: "impacto", label: "Escopo de Impacto" },
+                  { key: "comportamental", label: "Perfil Comportamental" },
+                  { key: "estrategico", label: "Visão Estratégica" },
+                  { key: "lideranca", label: "Liderança e Autonomia" },
+                ] as const).map((p) => (
+                  <div key={p.key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">{p.label}</Label>
+                      <span className="font-mono text-sm text-gold font-semibold">
+                        {pesos[p.key]}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[pesos[p.key]]}
+                      min={0}
+                      max={60}
+                      step={1}
+                      onValueChange={([v]) => setPesos((s) => ({ ...s, [p.key]: v }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setPesos(DEFAULT_PESOS)} disabled={savingPesos || pesosLoading}>
+                Restaurar padrão
+              </Button>
+              <Button
+                onClick={savePesos}
+                disabled={savingPesos || pesosLoading || Math.round(totalPesos) !== 100}
+                className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+              >
+                {savingPesos ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+                ) : (
+                  <><CheckCircle2 className="h-4 w-4 mr-2" /> Salvar pesos</>
+                )}
+              </Button>
             </div>
           </div>
 
