@@ -22,6 +22,7 @@ import {
 import {
   ArrowDown,
   ArrowUp,
+  Heart,
   HelpCircle,
   Library,
   Plus,
@@ -36,6 +37,7 @@ import {
   type QuestionBankItem,
   type VagaPergunta,
 } from "@/lib/perguntas";
+import { PERGUNTAS_COMPORTAMENTAIS_TEXTOS } from "@/lib/perguntasComportamentais";
 
 interface DraftPergunta {
   id?: string;
