@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -31,8 +32,10 @@ import {
 import {
   ArrowDown,
   ArrowUp,
+  Bot,
   Layers,
   Loader2,
+  Mail,
   Pencil,
   Plus,
   Trash2,
