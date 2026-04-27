@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CARGO_LABEL } from "@/lib/seniority";
 import { toast } from "sonner";
 import { diffDays, type PipelineEstagio } from "@/lib/pipeline";
+import { dispararAutoScoreSeNecessario, enviarEmailEstagio } from "@/lib/emails";
 import {
   DndContext,
   DragEndEvent,
