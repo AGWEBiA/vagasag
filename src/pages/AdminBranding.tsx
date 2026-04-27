@@ -221,17 +221,35 @@ const AdminBranding = () => {
           <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle>Logos & Favicon</CardTitle>
-              <CardDescription>PNG/SVG. Logo horizontal aparece em headers; mark é o ícone quadrado.</CardDescription>
+              <CardDescription>
+                PNG/SVG/WEBP. <strong>Horizontal</strong>: sidebar e login (desktop). <strong>Mobile</strong>: barra
+                superior em telas pequenas (use uma versão compacta).{" "}
+                <strong>Mark</strong>: ícone quadrado (fallback). <strong>Favicon</strong>: aba do navegador.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
-                  <Label>Logo horizontal (sidebar/login)</Label>
+                  <Label>Logo horizontal (desktop)</Label>
                   <div className="h-24 rounded border border-border bg-sidebar flex items-center justify-center p-3">
                     {logoUrl ? <img src={logoUrl} alt="logo" className="max-h-full max-w-full object-contain" /> : <span className="text-xs text-muted-foreground">Sem logo</span>}
                   </div>
-                  <FileBtn k="horizontal" label="Enviar logo horizontal" />
+                  <FileBtn k="horizontal" label="Enviar logo desktop" />
                   <Input placeholder="ou cole uma URL" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Logo mobile (compacta)</Label>
+                  <div className="h-24 rounded border border-border bg-sidebar flex items-center justify-center p-3">
+                    {mobileUrl ? (
+                      <img src={mobileUrl} alt="logo mobile" className="max-h-full max-w-full object-contain" />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Sem logo mobile (usará o mark)
+                      </span>
+                    )}
+                  </div>
+                  <FileBtn k="mobile" label="Enviar logo mobile" />
+                  <Input placeholder="ou cole uma URL" value={mobileUrl} onChange={(e) => setMobileUrl(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Logo mark (quadrado)</Label>
@@ -250,6 +268,92 @@ const AdminBranding = () => {
                   <Input placeholder="ou cole uma URL" value={faviconUrl} onChange={(e) => setFaviconUrl(e.target.value)} />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Type className="h-5 w-5 text-primary" />
+                Tipografia
+              </CardTitle>
+              <CardDescription>
+                Use qualquer fonte do{" "}
+                <a
+                  href="https://fonts.google.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary underline"
+                >
+                  Google Fonts
+                </a>
+                . Digite o nome exato (ex: <code>Plus Jakarta Sans</code>, <code>Inter</code>, <code>Manrope</code>).
+                A fonte é carregada automaticamente após salvar.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Fonte para títulos (headings)</Label>
+                  <Input
+                    list="font-suggestions-heading"
+                    value={fontHeading}
+                    onChange={(e) => setFontHeading(e.target.value)}
+                    placeholder="Plus Jakarta Sans"
+                  />
+                  <datalist id="font-suggestions-heading">
+                    {FONT_SUGGESTIONS.map((f) => (
+                      <option key={f} value={f} />
+                    ))}
+                  </datalist>
+                  <p
+                    className="text-2xl mt-1"
+                    style={{ fontFamily: `'${fontHeading}', serif`, fontWeight: Number(fontHeadingWeight) || 600 }}
+                  >
+                    {productName || "Aa Bb Cc 123"}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Fonte para texto (body)</Label>
+                  <Input
+                    list="font-suggestions-body"
+                    value={fontBody}
+                    onChange={(e) => setFontBody(e.target.value)}
+                    placeholder="Inter"
+                  />
+                  <datalist id="font-suggestions-body">
+                    {FONT_SUGGESTIONS.map((f) => (
+                      <option key={f} value={f} />
+                    ))}
+                  </datalist>
+                  <p
+                    className="text-sm leading-relaxed mt-1 text-muted-foreground"
+                    style={{ fontFamily: `'${fontBody}', sans-serif` }}
+                  >
+                    The quick brown fox jumps over the lazy dog. 0123456789
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Peso dos títulos</Label>
+                  <Select value={fontHeadingWeight} onValueChange={setFontHeadingWeight}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="400">Regular (400)</SelectItem>
+                      <SelectItem value="500">Medium (500)</SelectItem>
+                      <SelectItem value="600">Semibold (600)</SelectItem>
+                      <SelectItem value="700">Bold (700)</SelectItem>
+                      <SelectItem value="800">Extra Bold (800)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Dica: para nomes compostos, escreva exatamente como aparece no Google Fonts (ex: <code>DM Sans</code>,
+                não <code>dm sans</code>). A prévia ao lado já tenta carregar a fonte; se não aparecer, verifique a
+                grafia.
+              </p>
             </CardContent>
           </Card>
 
