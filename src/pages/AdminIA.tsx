@@ -40,6 +40,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AI_PROVIDERS, AIProvider, getProvider, AIProviderInfo } from "@/lib/aiProviders";
 import { cn } from "@/lib/utils";
+import { Slider } from "@/components/ui/slider";
+import { DEFAULT_PESOS, type AssessmentPesos } from "@/hooks/useAssessmentPesos";
 
 interface AISettingsRow {
   id: string;
