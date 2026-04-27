@@ -764,9 +764,19 @@ const BancoTalentos = () => {
                   )}
                 </div>
 
-                <DialogFooter className="mt-4">
+                <DialogFooter className="mt-4 gap-2 flex-wrap">
                   <Button variant="ghost" onClick={() => setViewing(null)}>
                     Fechar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setReaproveitando(viewing);
+                      setVagaDestino("");
+                      setViewing(null);
+                    }}
+                  >
+                    <Repeat className="h-4 w-4 mr-2" /> Reaproveitar em outra vaga
                   </Button>
                   <Button
                     onClick={() => {
