@@ -15,7 +15,10 @@ import {
   RefreshCw,
   Eye,
   FileText,
+  Download,
+  Filter,
 } from "lucide-react";
+import jsPDF from "jspdf";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,13 +52,18 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+import { TIPO_LABEL, ESCALA_LABEL, type PerguntaTipo } from "@/lib/perguntas";
+
 type Origem = "candidato" | "time";
+type SubCategoria = "todos" | "candidato_registrado" | "time" | "candidatura_virtual";
 
 interface PersonRow {
   id: string;
   nome: string;
+  email: string | null;
   cargo: string;
   origem: Origem;
+  isVirtual: boolean;
   created_at: string;
   assessmentsCount: number;
   lastAssessment: {
@@ -78,6 +86,7 @@ const NovaAvaliacao = () => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Origem>("candidato");
   const [search, setSearch] = useState("");
+  const [subCategoria, setSubCategoria] = useState<SubCategoria>("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [confirmReassess, setConfirmReassess] = useState<PersonRow | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
@@ -90,7 +99,7 @@ const NovaAvaliacao = () => {
   const { data: people, isLoading } = useQuery({
     queryKey: ["people-with-assessments"],
     queryFn: async () => {
-      const [{ data: cands, error }, { data: candidaturas, error: candErr }, { data: vagas }] =
+      const [{ data: cands, error }, { data: candidaturasNoCand, error: candErr }, { data: vagas }, { data: candidaturasComCand }] =
         await Promise.all([
           supabase
             .from("candidates")
@@ -102,6 +111,10 @@ const NovaAvaliacao = () => {
             .is("candidate_id", null)
             .order("created_at", { ascending: false }),
           supabase.from("vagas").select("id, cargo"),
+          supabase
+            .from("candidaturas")
+            .select("candidate_id, email")
+            .not("candidate_id", "is", null),
         ]);
       if (error) throw error;
       if (candErr) throw candErr;
@@ -135,14 +148,24 @@ const NovaAvaliacao = () => {
         }
       }
 
+      // Map candidate_id -> email (de candidaturas relacionadas)
+      const emailByCandidateId = new Map<string, string>();
+      for (const c of candidaturasComCand ?? []) {
+        if (c.candidate_id && c.email && !emailByCandidateId.has(c.candidate_id)) {
+          emailByCandidateId.set(c.candidate_id, c.email);
+        }
+      }
+
       const fromCandidates = (cands ?? []).map<PersonRow>((c) => {
         const list = assessmentsByCandidate.get(c.id) ?? [];
         const last = list[0] ?? null;
         return {
           id: c.id,
           nome: c.nome,
+          email: emailByCandidateId.get(c.id) ?? null,
           cargo: c.cargo,
           origem: (c.origem === "time" ? "time" : "candidato") as Origem,
+          isVirtual: false,
           created_at: c.created_at,
           assessmentsCount: list.length,
           lastAssessment: last
@@ -158,11 +181,13 @@ const NovaAvaliacao = () => {
 
       // Talentos do banco que ainda não viraram "candidate"
       const vagaCargo = new Map((vagas ?? []).map((v) => [v.id, v.cargo]));
-      const fromCandidaturas = (candidaturas ?? []).map<PersonRow>((c) => ({
+      const fromCandidaturas = (candidaturasNoCand ?? []).map<PersonRow>((c) => ({
         id: `cand:${c.id}`,
         nome: c.nome,
+        email: c.email ?? null,
         cargo: vagaCargo.get(c.vaga_id) ?? "copywriter",
         origem: "candidato" as Origem,
+        isVirtual: true,
         created_at: c.created_at,
         assessmentsCount: 0,
         lastAssessment: null,
@@ -173,21 +198,33 @@ const NovaAvaliacao = () => {
   });
 
   const filtered = useMemo(() => {
-    const list = (people ?? []).filter((p) => p.origem === tab);
+    let list = (people ?? []).filter((p) => p.origem === tab);
+    // sub-categoria só faz sentido em "candidato"
+    if (tab === "candidato" && subCategoria !== "todos") {
+      if (subCategoria === "candidato_registrado") {
+        list = list.filter((p) => !p.isVirtual);
+      } else if (subCategoria === "candidatura_virtual") {
+        list = list.filter((p) => p.isVirtual);
+      }
+    }
     if (!search.trim()) return list;
     const q = search.trim().toLowerCase();
     return list.filter(
       (p) =>
         p.nome.toLowerCase().includes(q) ||
+        (p.email ?? "").toLowerCase().includes(q) ||
         (CARGO_LABEL[p.cargo] ?? p.cargo).toLowerCase().includes(q),
     );
-  }, [people, tab, search]);
+  }, [people, tab, search, subCategoria]);
 
   const counts = useMemo(() => {
     const list = people ?? [];
+    const candidatoList = list.filter((p) => p.origem === "candidato");
     return {
       time: list.filter((p) => p.origem === "time").length,
-      candidato: list.filter((p) => p.origem === "candidato").length,
+      candidato: candidatoList.length,
+      candidato_registrado: candidatoList.filter((p) => !p.isVirtual).length,
+      candidatura_virtual: candidatoList.filter((p) => p.isVirtual).length,
       pendentes: list.filter((p) => !p.lastAssessment).length,
     };
   }, [people]);
@@ -287,7 +324,13 @@ const NovaAvaliacao = () => {
       </header>
 
       <div className="surface-card rounded-xl p-4 md:p-6">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Origem)}>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            setTab(v as Origem);
+            setSubCategoria("todos");
+          }}
+        >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
             <TabsList>
               <TabsTrigger value="candidato" className="gap-2">
@@ -303,14 +346,38 @@ const NovaAvaliacao = () => {
                 </span>
               </TabsTrigger>
             </TabsList>
-            <div className="relative w-full md:w-72">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome ou cargo"
-                className="pl-9"
-              />
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              {tab === "candidato" && (
+                <Select
+                  value={subCategoria}
+                  onValueChange={(v) => setSubCategoria(v as SubCategoria)}
+                >
+                  <SelectTrigger className="w-full sm:w-56">
+                    <Filter className="h-4 w-4 mr-1 text-muted-foreground" />
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">
+                      Todos ({counts.candidato})
+                    </SelectItem>
+                    <SelectItem value="candidato_registrado">
+                      Candidatos registrados ({counts.candidato_registrado})
+                    </SelectItem>
+                    <SelectItem value="candidatura_virtual">
+                      Candidaturas virtuais ({counts.candidatura_virtual})
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="relative w-full md:w-72">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome ou e-mail"
+                  className="pl-9"
+                />
+              </div>
             </div>
           </div>
 
@@ -502,9 +569,15 @@ const PersonList = ({
                     <Clock className="h-3 w-3" /> Pendente
                   </span>
                 )}
+                {p.isVirtual && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gold/10 text-gold border border-gold/30 px-2 py-0.5 text-[10px] font-semibold">
+                    Candidatura virtual
+                  </span>
+                )}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 gap-y-1">
                 <span>{CARGO_LABEL[p.cargo] ?? p.cargo}</span>
+                {p.email && <span className="truncate max-w-[260px]">{p.email}</span>}
                 <span>Cadastrada em {formatDate(p.created_at)}</span>
                 {p.lastAssessment && (
                   <span>
@@ -937,6 +1010,88 @@ const ViewAnswersDialog = ({
 
   const isRunning = person ? runningId === person.id : false;
 
+  const handleDownloadPDF = () => {
+    if (!data || !person) return;
+    try {
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 40;
+      const maxWidth = pageWidth - marginX * 2;
+      let y = 50;
+
+      const ensureSpace = (h: number) => {
+        if (y + h > pageHeight - 40) {
+          doc.addPage();
+          y = 50;
+        }
+      };
+
+      const writeWrapped = (text: string, size: number, opts?: { bold?: boolean; color?: [number, number, number] }) => {
+        doc.setFont("helvetica", opts?.bold ? "bold" : "normal");
+        doc.setFontSize(size);
+        if (opts?.color) doc.setTextColor(...opts.color);
+        else doc.setTextColor(20, 20, 20);
+        const lines = doc.splitTextToSize(text || "—", maxWidth);
+        for (const line of lines) {
+          ensureSpace(size + 4);
+          doc.text(line, marginX, y);
+          y += size + 4;
+        }
+      };
+
+      // Cabeçalho
+      writeWrapped(data.nome || person.nome, 18, { bold: true });
+      y += 4;
+      const meta: string[] = [];
+      if (data.cargo) meta.push(`Cargo: ${CARGO_LABEL[data.cargo] ?? data.cargo}`);
+      if (data.email) meta.push(`E-mail: ${data.email}`);
+      if (data.vaga_titulo) meta.push(`Vaga: ${data.vaga_titulo}`);
+      meta.push(`Gerado em: ${new Date().toLocaleString("pt-BR")}`);
+      writeWrapped(meta.join("  ·  "), 9, { color: [110, 110, 110] });
+      y += 10;
+
+      if (data.dados_profissionais) {
+        writeWrapped("Dados profissionais", 12, { bold: true });
+        writeWrapped(data.dados_profissionais, 10);
+        y += 8;
+      }
+      if (data.informacoes_adicionais) {
+        writeWrapped("Informações adicionais", 12, { bold: true });
+        writeWrapped(data.informacoes_adicionais, 10);
+        y += 8;
+      }
+      if (data.perguntas.length > 0) {
+        writeWrapped(`Respostas do formulário (${data.perguntas.length})`, 12, { bold: true });
+        data.perguntas.forEach((q, i) => {
+          const tipo = (q.tipo as PerguntaTipo) ?? "texto";
+          const tipoLabel = TIPO_LABEL[tipo] ?? "Texto";
+          writeWrapped(`${i + 1}. ${q.pergunta}  [${tipoLabel}]`, 10, { bold: true });
+          let respStr = "—";
+          if (tipo === "escala" && typeof q.resposta === "number") {
+            respStr = `${q.resposta} / 5${ESCALA_LABEL[q.resposta] ? ` · ${ESCALA_LABEL[q.resposta]}` : ""}`;
+          } else if (q.resposta !== null && q.resposta !== "") {
+            respStr = String(q.resposta);
+          }
+          writeWrapped(respStr, 10);
+          y += 6;
+        });
+      }
+
+      const safeName = (data.nome || person.nome || "respostas")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      doc.save(`respostas-${safeName}.pdf`);
+      toast.success("PDF gerado!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao gerar PDF.");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -1007,21 +1162,52 @@ const ViewAnswersDialog = ({
                   Respostas do formulário ({data.perguntas.length})
                 </h4>
                 <div className="space-y-2">
-                  {data.perguntas.map((q, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-sidebar-border bg-background p-3"
-                    >
-                      <div className="text-xs text-muted-foreground mb-1">
-                        {i + 1}. {q.pergunta}
+                  {data.perguntas.map((q, i) => {
+                    const tipo = (q.tipo as PerguntaTipo) ?? "texto";
+                    const tipoLabel = TIPO_LABEL[tipo] ?? "Texto";
+                    const isEscala = tipo === "escala";
+                    const numero = typeof q.resposta === "number" ? q.resposta : null;
+                    return (
+                      <div
+                        key={i}
+                        className="rounded-lg border border-sidebar-border bg-background p-3"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="text-xs text-muted-foreground">
+                            {i + 1}. {q.pergunta}
+                          </div>
+                          <span
+                            className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                              isEscala
+                                ? "bg-pleno-bg text-gold border-gold/30"
+                                : tipo === "escolha"
+                                  ? "bg-senior-bg text-senior border-senior/30"
+                                  : "bg-surface-elevated text-muted-foreground border-sidebar-border"
+                            }`}
+                          >
+                            {tipoLabel}
+                          </span>
+                        </div>
+                        {isEscala && numero !== null ? (
+                          <div className="text-sm">
+                            <span className="font-display text-lg text-gold">
+                              {numero}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {" / 5"}
+                              {ESCALA_LABEL[numero] && ` · ${ESCALA_LABEL[numero]}`}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="text-sm whitespace-pre-wrap break-words">
+                            {q.resposta === null || q.resposta === ""
+                              ? "—"
+                              : String(q.resposta)}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm whitespace-pre-wrap break-words">
-                        {q.resposta === null || q.resposta === ""
-                          ? "—"
-                          : String(q.resposta)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -1036,9 +1222,17 @@ const ViewAnswersDialog = ({
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={onClose}>
             Fechar
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleDownloadPDF}
+            disabled={isLoading || !data}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Baixar PDF
           </Button>
           {person && (
             <Button
