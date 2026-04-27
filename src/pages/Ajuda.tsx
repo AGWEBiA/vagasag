@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { BrandLogo } from "@/components/BrandLogo";
 import { useBranding } from "@/hooks/useBranding";
 import {
   Accordion,
