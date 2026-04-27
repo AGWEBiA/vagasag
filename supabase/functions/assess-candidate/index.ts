@@ -504,12 +504,31 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
     }
 
     const pilares = parsed.analisePilares;
+
+    // Carrega pesos globais (com fallback para defaults)
+    const { data: pesosRow } = await supabase
+      .from("assessment_pesos")
+      .select("tecnico, impacto, comportamental, estrategico, lideranca")
+      .eq("id", 1)
+      .maybeSingle();
+    const pesos = pesosRow ?? {
+      tecnico: 30,
+      impacto: 25,
+      comportamental: 20,
+      estrategico: 15,
+      lideranca: 10,
+    };
+
     const notaPonderada =
-      pilares.profundidadeTecnica.nota * 0.30 +
-      pilares.escopoImpacto.nota * 0.25 +
-      pilares.comportamental.nota * 0.20 +
-      pilares.visaoEstrategica.nota * 0.15 +
-      pilares.liderancaAutonomia.nota * 0.10;
+      pilares.profundidadeTecnica.nota * (Number(pesos.tecnico) / 100) +
+      pilares.escopoImpacto.nota * (Number(pesos.impacto) / 100) +
+      pilares.comportamental.nota * (Number(pesos.comportamental) / 100) +
+      pilares.visaoEstrategica.nota * (Number(pesos.estrategico) / 100) +
+      pilares.liderancaAutonomia.nota * (Number(pesos.lideranca) / 100);
+
+    const evidenciasComportamentais = Array.isArray(parsed.evidenciasComportamentais)
+      ? parsed.evidenciasComportamentais
+      : [];
 
     let candidate: { id: string; nome: string; cargo: string; origem: string };
     if (existingCandidate) {
