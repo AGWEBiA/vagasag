@@ -98,6 +98,30 @@ const RESPONSE_SCHEMA = {
     gapsIdentificadosJson: { type: "array", items: { type: "string" } },
     perguntasEntrevistaJson: { type: "array", items: { type: "string" } },
     resumoExecutivo: { type: "string" },
+    evidenciasComportamentais: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          trecho: { type: "string" },
+          traco: {
+            type: "string",
+            enum: [
+              "proatividade",
+              "colaboracao",
+              "responsabilidade",
+              "abertura_a_feedback",
+              "resiliencia",
+              "autoconhecimento",
+              "red_flag",
+            ],
+          },
+          impacto: { type: "string", enum: ["positivo", "negativo", "neutro"] },
+          analise: { type: "string" },
+        },
+        required: ["trecho", "traco", "impacto", "analise"],
+      },
+    },
   },
   required: [
     "senioridadeDetectada",
@@ -107,6 +131,7 @@ const RESPONSE_SCHEMA = {
     "gapsIdentificadosJson",
     "perguntasEntrevistaJson",
     "resumoExecutivo",
+    "evidenciasComportamentais",
   ],
 };
 
