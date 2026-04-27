@@ -160,6 +160,44 @@ export type Database = {
         }
         Relationships: []
       }
+      candidatura_atribuicoes: {
+        Row: {
+          atribuido_por: string | null
+          candidatura_id: string
+          created_at: string
+          id: string
+          recrutador_id: string
+          recrutador_nome: string | null
+          updated_at: string
+        }
+        Insert: {
+          atribuido_por?: string | null
+          candidatura_id: string
+          created_at?: string
+          id?: string
+          recrutador_id: string
+          recrutador_nome?: string | null
+          updated_at?: string
+        }
+        Update: {
+          atribuido_por?: string | null
+          candidatura_id?: string
+          created_at?: string
+          id?: string
+          recrutador_id?: string
+          recrutador_nome?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidatura_atribuicoes_candidatura_id_fkey"
+            columns: ["candidatura_id"]
+            isOneToOne: true
+            referencedRelation: "candidaturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidatura_eventos: {
         Row: {
           ator_id: string | null
@@ -192,6 +230,47 @@ export type Database = {
           tipo?: string
         }
         Relationships: []
+      }
+      candidatura_notas: {
+        Row: {
+          autor_id: string
+          autor_nome: string | null
+          candidatura_id: string
+          created_at: string
+          id: string
+          mencionados: string[]
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          autor_id: string
+          autor_nome?: string | null
+          candidatura_id: string
+          created_at?: string
+          id?: string
+          mencionados?: string[]
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          autor_id?: string
+          autor_nome?: string | null
+          candidatura_id?: string
+          created_at?: string
+          id?: string
+          mencionados?: string[]
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidatura_notas_candidatura_id_fkey"
+            columns: ["candidatura_id"]
+            isOneToOne: false
+            referencedRelation: "candidaturas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       candidatura_respostas: {
         Row: {
@@ -521,6 +600,36 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      tag_definicoes: {
+        Row: {
+          cor: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
         }
         Relationships: []
       }
