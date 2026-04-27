@@ -38,12 +38,15 @@ import {
   CalendarDays,
   FileText,
   Eye,
+  Repeat,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { NotasInternas } from "@/components/NotasInternas";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Vaga {
   id: string;
