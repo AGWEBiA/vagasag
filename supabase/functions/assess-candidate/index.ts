@@ -470,10 +470,11 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
 
     const pilares = parsed.analisePilares;
     const notaPonderada =
-      pilares.profundidadeTecnica.nota * 0.35 +
-      pilares.escopoImpacto.nota * 0.3 +
-      pilares.visaoEstrategica.nota * 0.2 +
-      pilares.liderancaAutonomia.nota * 0.15;
+      pilares.profundidadeTecnica.nota * 0.30 +
+      pilares.escopoImpacto.nota * 0.25 +
+      pilares.comportamental.nota * 0.20 +
+      pilares.visaoEstrategica.nota * 0.15 +
+      pilares.liderancaAutonomia.nota * 0.10;
 
     let candidate: { id: string; nome: string; cargo: string; origem: string };
     if (existingCandidate) {
