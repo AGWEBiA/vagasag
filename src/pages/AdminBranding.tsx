@@ -55,7 +55,11 @@ const AdminBranding = () => {
   const [accentHex, setAccentHex] = useState(hslToHex(branding.accent_color_hsl));
   const [logoUrl, setLogoUrl] = useState(branding.logo_horizontal_url ?? "");
   const [markUrl, setMarkUrl] = useState(branding.logo_mark_url ?? "");
+  const [mobileUrl, setMobileUrl] = useState(branding.logo_mobile_url ?? "");
   const [faviconUrl, setFaviconUrl] = useState(branding.favicon_url ?? "");
+  const [fontHeading, setFontHeading] = useState(branding.font_heading);
+  const [fontBody, setFontBody] = useState(branding.font_body);
+  const [fontHeadingWeight, setFontHeadingWeight] = useState(branding.font_heading_weight);
   const [autoavalSlug, setAutoavalSlug] = useState(branding.autoaval_slug ?? "");
   const [autoavalTitulo, setAutoavalTitulo] = useState(branding.autoaval_titulo ?? "");
   const [autoavalDescricao, setAutoavalDescricao] = useState(branding.autoaval_descricao ?? "");
@@ -70,7 +74,11 @@ const AdminBranding = () => {
     setAccentHex(hslToHex(branding.accent_color_hsl));
     setLogoUrl(branding.logo_horizontal_url ?? "");
     setMarkUrl(branding.logo_mark_url ?? "");
+    setMobileUrl(branding.logo_mobile_url ?? "");
     setFaviconUrl(branding.favicon_url ?? "");
+    setFontHeading(branding.font_heading);
+    setFontBody(branding.font_body);
+    setFontHeadingWeight(branding.font_heading_weight);
     setAutoavalSlug(branding.autoaval_slug ?? "");
     setAutoavalTitulo(branding.autoaval_titulo ?? "");
     setAutoavalDescricao(branding.autoaval_descricao ?? "");
