@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layers, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { CARGO_LABEL } from "@/lib/seniority";
 
@@ -19,6 +20,8 @@ interface VagaLite {
   cargo: string;
   status: string;
 }
+
+type FiltroStatus = "abertas" | "todas";
 
 /**
  * Botão fixo no header que abre um modal listando todas as vagas
