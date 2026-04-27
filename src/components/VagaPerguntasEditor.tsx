@@ -778,6 +778,50 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
   );
 };
 
+interface BankGroupProps {
+  title: string;
+  description: string;
+  items: QuestionBankItem[];
+  onPick: (q: QuestionBankItem) => void;
+  accent?: boolean;
+  muted?: boolean;
+}
+
+const BankGroup = ({ title, description, items, onPick, accent, muted }: BankGroupProps) => (
+  <div className="space-y-1.5">
+    <div className="flex items-center gap-2 sticky top-0 bg-background py-1 z-10">
+      <h4
+        className={`text-xs font-semibold uppercase tracking-wider ${
+          accent ? "text-gold" : muted ? "text-muted-foreground" : "text-foreground"
+        }`}
+      >
+        {title}
+      </h4>
+      <span className="text-[10px] text-muted-foreground">({items.length})</span>
+    </div>
+    <p className="text-[11px] text-muted-foreground -mt-1">{description}</p>
+    <div className="space-y-1.5">
+      {items.map((q) => (
+        <button
+          key={q.id}
+          type="button"
+          onClick={() => onPick(q)}
+          className={`w-full text-left rounded-md border bg-surface-elevated p-3 hover:border-gold/40 transition ${
+            accent ? "border-gold/30" : "border-sidebar-border"
+          } ${muted ? "opacity-75" : ""}`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-pleno-bg text-gold border border-gold/30">
+              {TIPO_LABEL[q.tipo]}
+            </span>
+          </div>
+          <p className="text-sm">{q.texto}</p>
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 /** Persiste o conjunto de perguntas-vaga, substituindo o atual. */
 export async function savePerguntasForVaga(
   vagaId: string,
