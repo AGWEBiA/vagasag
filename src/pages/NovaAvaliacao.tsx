@@ -84,6 +84,7 @@ const NovaAvaliacao = () => {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Origem>("candidato");
   const [search, setSearch] = useState("");
+  const [subCategoria, setSubCategoria] = useState<SubCategoria>("todos");
   const [createOpen, setCreateOpen] = useState(false);
   const [confirmReassess, setConfirmReassess] = useState<PersonRow | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
