@@ -11,6 +11,7 @@ import {
   Users2,
   HelpCircle,
   Layers,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -20,6 +21,7 @@ import { ReactNode } from "react";
 
 const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/nova-avaliacao", label: "Nova Avaliação", icon: Sparkles, badge: "IA" },
   { to: "/historico", label: "Histórico", icon: History },
   { to: "/vagas-admin", label: "Vagas", icon: Briefcase },

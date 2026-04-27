@@ -11,8 +11,10 @@ export interface TemplateEntry {
 
 import { template as candidaturaConfirmacao } from './candidatura-confirmacao.tsx'
 import { template as estagioGenerico } from './estagio-generico.tsx'
+import { template as entrevistaConvite } from './entrevista-convite.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'candidatura-confirmacao': candidaturaConfirmacao,
   'estagio-generico': estagioGenerico,
+  'entrevista-convite': entrevistaConvite,
 }

@@ -33,6 +33,7 @@ import type { PipelineEstagio } from "@/lib/pipeline";
 import { dispararAutoScoreSeNecessario, enviarEmailEstagio } from "@/lib/emails";
 import { NotasInternas } from "@/components/NotasInternas";
 import { AtribuicaoRecrutador } from "@/components/AtribuicaoRecrutador";
+import { EntrevistasCandidatura } from "@/components/EntrevistasCandidatura";
 
 interface Vaga {
   id: string;
@@ -294,8 +295,9 @@ const InboxCandidaturas = () => {
               </div>
 
               <Tabs defaultValue="detalhes" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 max-w-md">
+                <TabsList className="grid w-full grid-cols-4 max-w-lg">
                   <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+                  <TabsTrigger value="entrevistas">Entrevistas</TabsTrigger>
                   <TabsTrigger value="notas">Notas</TabsTrigger>
                   <TabsTrigger value="historico">Histórico</TabsTrigger>
                 </TabsList>
@@ -338,6 +340,16 @@ const InboxCandidaturas = () => {
                     </h3>
                     <RespostasCandidato candidaturaId={selected.id} />
                   </div>
+                </TabsContent>
+
+                <TabsContent value="entrevistas" className="mt-4">
+                  <EntrevistasCandidatura
+                    candidaturaId={selected.id}
+                    vagaId={selected.vaga_id}
+                    candidatoNome={selected.nome}
+                    candidatoEmail={selected.email}
+                    vagaTitulo={vaga?.titulo ?? ""}
+                  />
                 </TabsContent>
 
                 <TabsContent value="notas" className="mt-4">
