@@ -140,6 +140,29 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
     });
   }, [bank, bankSearch, filterByCargo, cargo, drafts]);
 
+  /**
+   * Agrupa o banco filtrado em:
+   * - especificas: perguntas que listam o cargo atual em cargos_sugeridos
+   * - genericas: perguntas sem cargos_sugeridos (servem para qualquer cargo)
+   * - outrosCargos: perguntas com cargos_sugeridos ≠ atual (visíveis quando filterByCargo=false)
+   */
+  const grupos = useMemo(() => {
+    const especificas: QuestionBankItem[] = [];
+    const genericas: QuestionBankItem[] = [];
+    const outrosCargos: QuestionBankItem[] = [];
+    for (const q of filteredBank) {
+      const lista = q.cargos_sugeridos ?? [];
+      if (lista.length === 0) {
+        genericas.push(q);
+      } else if (cargo && lista.includes(cargo)) {
+        especificas.push(q);
+      } else {
+        outrosCargos.push(q);
+      }
+    }
+    return { especificas, genericas, outrosCargos };
+  }, [filteredBank, cargo]);
+
   const addFromBank = (q: QuestionBankItem) => {
     setDrafts((d) => [
       ...d,
@@ -628,22 +651,33 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
                 Nenhuma pergunta disponível.
               </p>
             ) : (
-              <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1">
-                {filteredBank.map((q) => (
-                  <button
-                    key={q.id}
-                    type="button"
-                    onClick={() => addFromBank(q)}
-                    className="w-full text-left rounded-md border border-sidebar-border bg-surface-elevated p-3 hover:border-gold/40 transition"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-pleno-bg text-gold border border-gold/30">
-                        {TIPO_LABEL[q.tipo]}
-                      </span>
-                    </div>
-                    <p className="text-sm">{q.texto}</p>
-                  </button>
-                ))}
+              <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+                {grupos.especificas.length > 0 && (
+                  <BankGroup
+                    title={`Específicas do cargo${cargo ? ` (${cargo})` : ""}`}
+                    description="Perguntas marcadas como sugeridas para este cargo no banco."
+                    items={grupos.especificas}
+                    onPick={addFromBank}
+                    accent
+                  />
+                )}
+                {grupos.genericas.length > 0 && (
+                  <BankGroup
+                    title="Genéricas"
+                    description="Perguntas sem cargo específico — servem para qualquer função."
+                    items={grupos.genericas}
+                    onPick={addFromBank}
+                  />
+                )}
+                {grupos.outrosCargos.length > 0 && (
+                  <BankGroup
+                    title="Sugeridas para outros cargos"
+                    description="Perguntas marcadas para cargos diferentes do selecionado."
+                    items={grupos.outrosCargos}
+                    onPick={addFromBank}
+                    muted
+                  />
+                )}
               </div>
             )}
           </div>
@@ -743,6 +777,50 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
     </div>
   );
 };
+
+interface BankGroupProps {
+  title: string;
+  description: string;
+  items: QuestionBankItem[];
+  onPick: (q: QuestionBankItem) => void;
+  accent?: boolean;
+  muted?: boolean;
+}
+
+const BankGroup = ({ title, description, items, onPick, accent, muted }: BankGroupProps) => (
+  <div className="space-y-1.5">
+    <div className="flex items-center gap-2 sticky top-0 bg-background py-1 z-10">
+      <h4
+        className={`text-xs font-semibold uppercase tracking-wider ${
+          accent ? "text-gold" : muted ? "text-muted-foreground" : "text-foreground"
+        }`}
+      >
+        {title}
+      </h4>
+      <span className="text-[10px] text-muted-foreground">({items.length})</span>
+    </div>
+    <p className="text-[11px] text-muted-foreground -mt-1">{description}</p>
+    <div className="space-y-1.5">
+      {items.map((q) => (
+        <button
+          key={q.id}
+          type="button"
+          onClick={() => onPick(q)}
+          className={`w-full text-left rounded-md border bg-surface-elevated p-3 hover:border-gold/40 transition ${
+            accent ? "border-gold/30" : "border-sidebar-border"
+          } ${muted ? "opacity-75" : ""}`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-pleno-bg text-gold border border-gold/30">
+              {TIPO_LABEL[q.tipo]}
+            </span>
+          </div>
+          <p className="text-sm">{q.texto}</p>
+        </button>
+      ))}
+    </div>
+  </div>
+);
 
 /** Persiste o conjunto de perguntas-vaga, substituindo o atual. */
 export async function savePerguntasForVaga(
