@@ -473,6 +473,130 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
         </div>
       )}
 
+      {/* Modal: Revisar pacote comportamental */}
+      <Dialog open={reviewOpen} onOpenChange={(o) => !reviewSaving && setReviewOpen(o)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl flex items-center gap-2">
+              <Heart className="h-5 w-5 text-gold" /> Revisar pacote comportamental
+            </DialogTitle>
+            <DialogDescription>
+              Selecione, edite ou remova perguntas antes de adicioná-las à vaga.
+              Itens já presentes vêm desmarcados.
+            </DialogDescription>
+          </DialogHeader>
+          {reviewLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-gold" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {reviewItems.filter((i) => i.selecionada).length} de {reviewItems.length} selecionadas
+                </span>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    className="text-gold hover:underline"
+                    onClick={() =>
+                      setReviewItems((items) =>
+                        items.map((i) => ({ ...i, selecionada: !i.jaExiste })),
+                      )
+                    }
+                  >
+                    Selecionar todas (não duplicadas)
+                  </button>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:underline"
+                    onClick={() =>
+                      setReviewItems((items) => items.map((i) => ({ ...i, selecionada: false })))
+                    }
+                  >
+                    Limpar seleção
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                {reviewItems.map((it, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded-lg border p-3 transition ${
+                      it.jaExiste
+                        ? "border-sidebar-border bg-surface-elevated/50 opacity-75"
+                        : it.selecionada
+                          ? "border-gold/40 bg-pleno-bg/30"
+                          : "border-sidebar-border bg-surface-elevated"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={it.selecionada}
+                        onCheckedChange={(v) => updateReviewItem(idx, { selecionada: !!v })}
+                        className="mt-1"
+                      />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-pleno-bg text-gold border border-gold/30">
+                            {TIPO_LABEL[it.tipo]}
+                          </span>
+                          {it.jaExiste && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">
+                              Já existe na vaga
+                            </span>
+                          )}
+                        </div>
+                        <Textarea
+                          rows={2}
+                          value={it.texto}
+                          onChange={(e) => updateReviewItem(idx, { texto: e.target.value })}
+                          className="text-sm"
+                        />
+                        <div className="flex gap-4 text-xs">
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <Checkbox
+                              checked={it.obrigatoria}
+                              onCheckedChange={(v) => updateReviewItem(idx, { obrigatoria: !!v })}
+                            />
+                            Obrigatória
+                          </label>
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <Checkbox
+                              checked={it.usar_na_ia}
+                              onCheckedChange={(v) => updateReviewItem(idx, { usar_na_ia: !!v })}
+                            />
+                            Enviar à IA
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReviewOpen(false)} disabled={reviewSaving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmBehavioralReview}
+              disabled={reviewSaving || reviewLoading}
+              className="bg-gradient-gold text-gold-foreground hover:opacity-90"
+            >
+              {reviewSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adicionando...
+                </>
+              ) : (
+                <>Adicionar à vaga</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Picker do banco */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
