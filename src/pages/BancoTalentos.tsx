@@ -859,6 +859,60 @@ const BancoTalentos = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reaproveitar em outra vaga */}
+      <Dialog
+        open={!!reaproveitando}
+        onOpenChange={(o) => {
+          if (!o) {
+            setReaproveitando(null);
+            setVagaDestino("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reaproveitar talento</DialogTitle>
+            <DialogDescription>
+              Cria uma nova candidatura de <strong>{reaproveitando?.nome}</strong>{" "}
+              em outra vaga aberta, copiando dados profissionais e contato.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label>Vaga destino</Label>
+            <Select value={vagaDestino} onValueChange={setVagaDestino}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma vaga…" />
+              </SelectTrigger>
+              <SelectContent>
+                {vagas
+                  .filter((v) => v.id !== reaproveitando?.vaga_id)
+                  .map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.titulo}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setReaproveitando(null);
+                setVagaDestino("");
+              }}
+              disabled={reaprSaving}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={reaproveitarEmVaga} disabled={!vagaDestino || reaprSaving}>
+              {reaprSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Repeat className="h-4 w-4 mr-2" /> Reaproveitar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 };
