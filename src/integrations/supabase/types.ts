@@ -163,6 +163,48 @@ export type Database = {
           },
         ]
       }
+      branding_settings: {
+        Row: {
+          accent_color_hsl: string
+          favicon_url: string | null
+          id: number
+          logo_horizontal_url: string | null
+          logo_mark_url: string | null
+          primary_color_hsl: string
+          primary_foreground_hsl: string
+          product_name: string
+          tagline: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accent_color_hsl?: string
+          favicon_url?: string | null
+          id?: number
+          logo_horizontal_url?: string | null
+          logo_mark_url?: string | null
+          primary_color_hsl?: string
+          primary_foreground_hsl?: string
+          product_name?: string
+          tagline?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accent_color_hsl?: string
+          favicon_url?: string | null
+          id?: number
+          logo_horizontal_url?: string | null
+          logo_mark_url?: string | null
+          primary_color_hsl?: string
+          primary_foreground_hsl?: string
+          product_name?: string
+          tagline?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       candidates: {
         Row: {
           cargo: string
