@@ -256,8 +256,95 @@ const SECOES: Secao[] = [
   },
 ];
 
+// Renderiza um React node de resposta como texto/HTML simples para o PDF
+const nodeToHtml = (node: React.ReactNode): string => {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeToHtml).join("");
+  // ReactElement
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const el = node as any;
+  if (el && el.props) {
+    const children = nodeToHtml(el.props.children);
+    const type = el.type;
+    if (type === "strong" || type === "b") return `<strong>${children}</strong>`;
+    if (type === "em" || type === "i") return `<em>${children}</em>`;
+    if (type === "code") return `<code style="background:#f1f1f1;padding:1px 4px;border-radius:3px;font-size:90%">${children}</code>`;
+    if (type === "ul") return `<ul>${children}</ul>`;
+    if (type === "ol") return `<ol>${children}</ol>`;
+    if (type === "li") return `<li>${children}</li>`;
+    if (type === "br") return "<br/>";
+    // Link → manter texto (PDF é offline)
+    return children;
+  }
+  return "";
+};
+
+const buildPrintableHtml = (productName: string, logoUrl?: string | null) => {
+  const dateStr = new Date().toLocaleDateString("pt-BR");
+  const sectionsHtml = SECOES.map((s) => `
+    <section style="margin:24px 0;page-break-inside:avoid;">
+      <h2 style="font-size:18px;color:#b8860b;border-bottom:2px solid #b8860b;padding-bottom:4px;margin-bottom:6px;">${s.titulo}</h2>
+      <p style="color:#666;font-size:12px;margin:0 0 10px;">${s.resumo}</p>
+      ${s.topicos.map((t) => `
+        <div style="margin:10px 0 14px;page-break-inside:avoid;">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${t.q}</div>
+          <div style="font-size:12px;line-height:1.55;color:#222;">${nodeToHtml(t.a)}</div>
+        </div>
+      `).join("")}
+    </section>
+  `).join("");
+
+  return `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"/>
+<title>Guia de Ajuda — ${productName}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:#111; }
+  header { display:flex; align-items:center; gap:12px; border-bottom:1px solid #ddd; padding-bottom:12px; margin-bottom:12px; }
+  header img { height:40px; width:auto; object-fit:contain; }
+  h1 { font-size:22px; margin:0; }
+  .meta { color:#888; font-size:11px; margin-top:2px; }
+  ul, ol { margin:6px 0 6px 18px; padding:0; }
+  li { font-size:12px; line-height:1.55; }
+  .toc { background:#fafafa; border:1px solid #eee; padding:10px 14px; border-radius:6px; margin-bottom:16px; }
+  .toc h3 { margin:0 0 6px; font-size:13px; color:#555; text-transform:uppercase; letter-spacing:.05em; }
+  .toc ol { margin:0 0 0 18px; }
+  .toc li { font-size:12px; }
+  footer { margin-top:24px; border-top:1px solid #ddd; padding-top:8px; color:#999; font-size:10px; text-align:center; }
+</style></head><body>
+<header>
+  ${logoUrl ? `<img src="${logoUrl}" alt="${productName}"/>` : ""}
+  <div>
+    <h1>Guia de Ajuda — ${productName}</h1>
+    <div class="meta">Gerado em ${dateStr}</div>
+  </div>
+</header>
+<div class="toc">
+  <h3>Sumário</h3>
+  <ol>${SECOES.map((s) => `<li>${s.titulo} — <span style="color:#888">${s.resumo}</span></li>`).join("")}</ol>
+</div>
+${sectionsHtml}
+<footer>${productName} · Guia gerado a partir do sistema</footer>
+<script>window.addEventListener('load', () => setTimeout(() => window.print(), 300));</script>
+</body></html>`;
+};
+
 const Ajuda = () => {
   const [busca, setBusca] = useState("");
+  const branding = useBranding();
+
+  const handleDownloadPdf = () => {
+    const html = buildPrintableHtml(
+      branding.product_name ?? "Sistema",
+      branding.logo_horizontal_url ?? branding.logo_mark_url ?? null,
+    );
+    const w = window.open("", "_blank", "noopener,noreferrer");
+    if (!w) return;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
 
   const filtradas = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -274,14 +361,24 @@ const Ajuda = () => {
 
   return (
     <AppShell>
-      <header className="mb-8 animate-fade-in">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pleno-bg text-gold text-xs font-medium mb-3 border border-gold/30">
-          <HelpCircle className="h-3 w-3" /> Central de Ajuda
+      <header className="mb-8 animate-fade-in flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pleno-bg text-gold text-xs font-medium mb-3 border border-gold/30">
+            <HelpCircle className="h-3 w-3" /> Central de Ajuda
+          </div>
+          <h1 className="font-display text-4xl font-semibold">Como usar o sistema</h1>
+          <p className="text-muted-foreground mt-1">
+            Guia rápido para vagas, pipeline, candidaturas, entrevistas e IA.
+          </p>
         </div>
-        <h1 className="font-display text-4xl font-semibold">Como usar o sistema</h1>
-        <p className="text-muted-foreground mt-1">
-          Guia rápido para vagas, pipeline, candidaturas, entrevistas e IA.
-        </p>
+        <Button
+          onClick={handleDownloadPdf}
+          variant="outline"
+          className="border-gold/40 hover:text-gold"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Baixar guia em PDF
+        </Button>
       </header>
 
       <div className="grid lg:grid-cols-[240px_1fr] gap-6">
