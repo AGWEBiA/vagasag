@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { refreshBranding, useBranding } from "@/hooks/useBranding";
+import { FONT_SUGGESTIONS, refreshBranding, useBranding } from "@/hooks/useBranding";
 import { toast } from "sonner";
-import { Loader2, Upload, Palette, Link2, Copy } from "lucide-react";
+import { Loader2, Upload, Palette, Link2, Copy, Type } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 
 const hexToHsl = (hex: string): string | null => {
