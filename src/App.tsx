@@ -23,6 +23,7 @@ import VagaPipeline from "./pages/VagaPipeline.tsx";
 import Autoavaliacao from "./pages/Autoavaliacao.tsx";
 import PortalVagas from "./pages/PortalVagas.tsx";
 import VagaPublica from "./pages/VagaPublica.tsx";
+import Unsubscribe from "./pages/Unsubscribe.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -39,7 +40,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/vagas" element={<PortalVagas />} />
             <Route path="/vagas/:id" element={<VagaPublica />} />
-
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             {/* Authenticated (qualquer login) */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/autoavaliacao" element={<ProtectedRoute><Autoavaliacao /></ProtectedRoute>} />
