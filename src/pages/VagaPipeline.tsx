@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CARGO_LABEL } from "@/lib/seniority";
 import { toast } from "sonner";
 import { diffDays, type PipelineEstagio } from "@/lib/pipeline";
+import { dispararAutoScoreSeNecessario, enviarEmailEstagio } from "@/lib/emails";
 import {
   DndContext,
   DragEndEvent,
@@ -131,9 +132,36 @@ const VagaPipeline = () => {
     if (error) {
       toast.error("Não foi possível mover");
       void load();
-    } else {
-      const novo = estagios.find((s) => s.id === estagioId)?.nome;
-      toast.success(`Movido para "${novo}"`);
+      return;
+    }
+    const estagio = estagios.find((s) => s.id === estagioId);
+    toast.success(`Movido para "${estagio?.nome ?? ""}"`);
+    if (!estagio) return;
+
+    // E-mail por estágio (best-effort)
+    if (estagio.email_ativo && estagio.email_assunto?.trim() && estagio.email_corpo?.trim()) {
+      const r = await enviarEmailEstagio({
+        candidaturaId: cand.id,
+        estagio,
+        nome: cand.nome,
+        email: cand.email,
+        vaga: vaga?.titulo ?? "",
+      });
+      if ("ok" in r && r.ok) toast.success("E-mail enviado ao candidato");
+      else if ("error" in r) toast.error("Falha ao enviar e-mail");
+    }
+
+    // Auto-score (background)
+    if (estagio.auto_score_ativo) {
+      toast.info("Iniciando avaliação automática por IA...");
+      void dispararAutoScoreSeNecessario(cand.id, estagio).then((r) => {
+        if ("ok" in r && r.ok) {
+          toast.success("Avaliação automática concluída");
+          void load();
+        } else if ("error" in r) {
+          console.warn("auto-score falhou", r.error);
+        }
+      });
     }
   };
 
