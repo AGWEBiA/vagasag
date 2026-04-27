@@ -4,7 +4,7 @@ export interface TeamMember {
   id: string;
   email: string;
   nome: string;
-  role: string;
+  roles: string[];
 }
 
 let cache: TeamMember[] | null = null;
@@ -12,7 +12,7 @@ let cachePromise: Promise<TeamMember[]> | null = null;
 
 /**
  * Lista membros do time (admin, recrutador, lider, colaborador).
- * Usa o edge function admin-users que já retorna usuários + roles.
+ * Acessível a qualquer usuário autenticado via edge function `list-team-members`.
  * Resultado é cacheado em memória durante a sessão.
  */
 export async function listTeamMembers(force = false): Promise<TeamMember[]> {
@@ -21,18 +21,10 @@ export async function listTeamMembers(force = false): Promise<TeamMember[]> {
 
   cachePromise = (async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "list" },
-      });
-      if (error || !data?.users) return [];
-      const members: TeamMember[] = (data.users as any[]).map((u) => ({
-        id: u.id,
-        email: u.email,
-        nome: u.email?.split("@")[0] ?? "",
-        role: u.role ?? "user",
-      }));
-      cache = members;
-      return members;
+      const { data, error } = await supabase.functions.invoke("list-team-members");
+      if (error || !data?.members) return [];
+      cache = data.members as TeamMember[];
+      return cache;
     } catch {
       return [];
     } finally {
