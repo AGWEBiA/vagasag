@@ -11,6 +11,23 @@ export interface PipelineEstagio {
   cor: string;
   tipo: EstagioTipo;
   ativo: boolean;
+  auto_score_ativo: boolean;
+  email_ativo: boolean;
+  email_assunto: string | null;
+  email_corpo: string | null;
+}
+
+/**
+ * Substitui variáveis {{nome}}, {{vaga}}, {{estagio}} em templates de e-mail.
+ */
+export function interpolarTemplate(
+  texto: string,
+  vars: Record<string, string | undefined | null>,
+): string {
+  return texto.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => {
+    const v = vars[key];
+    return v == null ? "" : String(v);
+  });
 }
 
 export const ESTAGIO_TIPO_LABEL: Record<EstagioTipo, string> = {
