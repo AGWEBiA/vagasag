@@ -242,6 +242,53 @@ const AdminUsuarios = () => {
     }
   };
 
+  const openEditUser = (u: UserRow) => {
+    setEditingUser(u);
+    setEditEmail(u.email ?? "");
+    setEditName(u.full_name ?? "");
+    setEditPassword("");
+    setEditRoles(u.roles.length > 0 ? u.roles : (["colaborador"] as AppRole[]));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingUser) return;
+    if (!editEmail.trim()) {
+      toast.error("Email é obrigatório.");
+      return;
+    }
+    if (editPassword && editPassword.length < 8) {
+      toast.error("Nova senha deve ter ao menos 8 caracteres.");
+      return;
+    }
+    if (editRoles.length === 0) {
+      toast.error("Selecione ao menos um papel.");
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const payload: any = {
+        action: "update_user",
+        user_id: editingUser.id,
+        email: editEmail.trim(),
+        full_name: editName.trim() || null,
+        roles: editRoles,
+      };
+      if (editPassword) payload.password = editPassword;
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: payload,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Usuário atualizado!");
+      setEditingUser(null);
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao atualizar usuário.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const normalizeRole = (raw: any): AppRole => {
