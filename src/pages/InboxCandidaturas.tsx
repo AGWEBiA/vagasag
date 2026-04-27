@@ -31,6 +31,8 @@ import { CandidaturaTimeline } from "@/components/CandidaturaTimeline";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PipelineEstagio } from "@/lib/pipeline";
 import { dispararAutoScoreSeNecessario, enviarEmailEstagio } from "@/lib/emails";
+import { NotasInternas } from "@/components/NotasInternas";
+import { AtribuicaoRecrutador } from "@/components/AtribuicaoRecrutador";
 
 interface Vaga {
   id: string;
