@@ -368,6 +368,33 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates_globais: {
+        Row: {
+          assunto: string
+          ativo: boolean
+          corpo: string
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assunto: string
+          ativo?: boolean
+          corpo: string
+          id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assunto?: string
+          ativo?: boolean
+          corpo?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       email_unsubscribe_tokens: {
         Row: {
           created_at: string
@@ -395,8 +422,12 @@ export type Database = {
       pipeline_estagios: {
         Row: {
           ativo: boolean
+          auto_score_ativo: boolean
           cor: string
           created_at: string
+          email_assunto: string | null
+          email_ativo: boolean
+          email_corpo: string | null
           id: string
           nome: string
           ordem: number
@@ -405,8 +436,12 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          auto_score_ativo?: boolean
           cor?: string
           created_at?: string
+          email_assunto?: string | null
+          email_ativo?: boolean
+          email_corpo?: string | null
           id?: string
           nome: string
           ordem?: number
@@ -415,8 +450,12 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          auto_score_ativo?: boolean
           cor?: string
           created_at?: string
+          email_assunto?: string | null
+          email_ativo?: boolean
+          email_corpo?: string | null
           id?: string
           nome?: string
           ordem?: number
