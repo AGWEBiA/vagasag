@@ -183,6 +183,16 @@ const AdminPipeline = () => {
                       inativo
                     </span>
                   )}
+                  {e.auto_score_ativo && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider bg-pleno-bg text-pleno border border-pleno/40">
+                      <Bot className="h-3 w-3" /> auto-score
+                    </span>
+                  )}
+                  {e.email_ativo && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider bg-gold/10 text-gold border border-gold/40">
+                      <Mail className="h-3 w-3" /> e-mail
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground">Ordem: {e.ordem}</div>
               </div>
