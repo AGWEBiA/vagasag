@@ -106,7 +106,7 @@ const Login = () => {
             </div>
             <Button
               type="submit"
-              className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+              className="w-full bg-primary text-primary-foreground hover:opacity-90"
               disabled={submitting}
             >
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -142,7 +142,7 @@ const Login = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Seniority Hub · uso interno · acesso monitorado
+          {branding.product_name} · acesso restrito
         </p>
       </div>
     </div>
