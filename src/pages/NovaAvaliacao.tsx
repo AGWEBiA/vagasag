@@ -1222,9 +1222,17 @@ const ViewAnswersDialog = ({
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={onClose}>
             Fechar
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleDownloadPDF}
+            disabled={isLoading || !data}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Baixar PDF
           </Button>
           {person && (
             <Button
