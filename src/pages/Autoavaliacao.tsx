@@ -182,10 +182,7 @@ const Autoavaliacao = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-sidebar-border bg-surface-elevated/60 backdrop-blur sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Gem className="h-5 w-5 text-gold" />
-            <span className="font-display text-lg font-semibold">Seniority Hub</span>
-          </div>
+          <BrandLogo variant="horizontal" className="h-8" />
           <div className="flex items-center gap-3">
             {hasPanelAccess && (
               <Button
@@ -218,12 +215,11 @@ const Autoavaliacao = () => {
             <Sparkles className="h-3 w-3" /> Autoavaliação do time
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-semibold">
-            Conte sobre sua trajetória
+            {branding.autoaval_titulo || "Conte sobre sua trajetória"}
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Suas respostas vão ajudar a liderança a entender seu nível atual e mapear
-            oportunidades de crescimento. Apenas administradores e líderes verão sua
-            avaliação.
+          <p className="text-muted-foreground mt-2 whitespace-pre-line">
+            {branding.autoaval_descricao ||
+              "Suas respostas vão ajudar a liderança a entender seu nível atual e mapear oportunidades de crescimento. Apenas administradores e líderes verão sua avaliação."}
           </p>
         </div>
 
