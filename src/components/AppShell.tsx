@@ -4,7 +4,6 @@ import {
   Sparkles,
   History,
   LogOut,
-  Gem,
   Briefcase,
   Cpu,
   Users,
@@ -13,6 +12,7 @@ import {
   Layers,
   BarChart3,
   LifeBuoy,
+  Palette,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 import { KanbanQuickAccess } from "@/components/KanbanQuickAccess";
+import { BrandLogo } from "@/components/BrandLogo";
+import { useBranding } from "@/hooks/useBranding";
 
 const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,6 +37,7 @@ const ADMIN_NAV = [
   { to: "/admin/usuarios", label: "Usuários", icon: Users, badge: "Admin" },
   { to: "/admin/perguntas", label: "Perguntas", icon: HelpCircle, badge: "Admin" },
   { to: "/admin/pipeline", label: "Pipeline", icon: Layers, badge: "Admin" },
+  { to: "/admin/branding", label: "Branding", icon: Palette, badge: "Admin" },
   { to: "/admin/ia", label: "Configuração de IA", icon: Cpu, badge: "Admin" },
 ];
 
@@ -42,6 +45,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
+  const branding = useBranding();
   const NAV = isAdmin ? [...BASE_NAV, ...ADMIN_NAV] : BASE_NAV;
 
   const initials = (user?.email ?? "U").slice(0, 2).toUpperCase();
@@ -54,18 +58,16 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-sidebar-border">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-gold shadow-gold">
-            <Gem className="h-5 w-5 text-gold-foreground" />
-          </div>
-          <div>
-            <div className="font-display text-lg font-semibold leading-tight">
-              Seniority <span className="text-gradient-gold">Hub</span>
-            </div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Talent Intelligence
-            </div>
-          </div>
+        <div className="px-6 py-6 border-b border-sidebar-border">
+          {branding.logo_horizontal_url ? (
+            <img
+              src={branding.logo_horizontal_url}
+              alt={branding.product_name}
+              className="h-10 w-auto object-contain"
+            />
+          ) : (
+            <BrandLogo variant="mark" showText />
+          )}
         </div>
 
         <nav className="flex-1 px-3 py-6 space-y-1">
