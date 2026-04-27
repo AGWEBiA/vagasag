@@ -498,6 +498,89 @@ export type Database = {
         }
         Relationships: []
       }
+      entrevistas: {
+        Row: {
+          candidatura_id: string
+          created_at: string
+          created_by: string | null
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          entrevistador_email: string | null
+          entrevistador_id: string | null
+          entrevistador_nome: string | null
+          enviar_email_convite: boolean
+          enviar_lembrete: boolean
+          fuso_horario: string
+          ics_uid: string
+          id: string
+          link_video: string | null
+          local: string | null
+          modalidade: string
+          notas_pos_entrevista: string | null
+          status: string
+          titulo: string
+          updated_at: string
+          vaga_id: string
+        }
+        Insert: {
+          candidatura_id: string
+          created_at?: string
+          created_by?: string | null
+          data_fim: string
+          data_inicio: string
+          descricao?: string | null
+          entrevistador_email?: string | null
+          entrevistador_id?: string | null
+          entrevistador_nome?: string | null
+          enviar_email_convite?: boolean
+          enviar_lembrete?: boolean
+          fuso_horario?: string
+          ics_uid?: string
+          id?: string
+          link_video?: string | null
+          local?: string | null
+          modalidade?: string
+          notas_pos_entrevista?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+          vaga_id: string
+        }
+        Update: {
+          candidatura_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          entrevistador_email?: string | null
+          entrevistador_id?: string | null
+          entrevistador_nome?: string | null
+          enviar_email_convite?: boolean
+          enviar_lembrete?: boolean
+          fuso_horario?: string
+          ics_uid?: string
+          id?: string
+          link_video?: string | null
+          local?: string | null
+          modalidade?: string
+          notas_pos_entrevista?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+          vaga_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrevistas_candidatura_id_fkey"
+            columns: ["candidatura_id"]
+            isOneToOne: false
+            referencedRelation: "candidaturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipeline_estagios: {
         Row: {
           ativo: boolean
