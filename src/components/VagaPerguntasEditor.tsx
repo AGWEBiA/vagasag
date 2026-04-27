@@ -25,6 +25,7 @@ import {
   Heart,
   HelpCircle,
   Library,
+  Loader2,
   Plus,
   Trash2,
   X,
