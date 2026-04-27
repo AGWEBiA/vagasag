@@ -96,6 +96,46 @@ interface Assessment {
 const Relatorio = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { pesos } = useAssessmentPesos();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!id) return;
+    setExporting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-relatorio-pdf`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ assessmentId: id }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      const objectUrl = URL.createObjectURL(blob);
+      link.href = objectUrl;
+      link.download = `relatorio-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      toast.success("PDF gerado com sucesso.");
+    } catch (e) {
+      console.error(e);
+      toast.error(`Falha ao gerar PDF: ${e instanceof Error ? e.message : "erro"}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["assessment", id],
