@@ -629,6 +629,14 @@ const AdminUsuarios = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => openEditUser(u)}
+                        title="Editar dados do usuário"
+                      >
+                        <Pencil className="h-4 w-4 text-gold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setToDelete(u)}
                         disabled={isMe}
                         title={isMe ? "Você não pode excluir a si mesmo" : "Excluir"}
