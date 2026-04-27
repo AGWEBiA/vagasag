@@ -234,7 +234,17 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
             Selecione do banco ou crie perguntas específicas para esta vaga.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={addBehavioralPackage}
+            className="border-gold/40 hover:text-gold"
+            title="Adiciona um conjunto de perguntas situacionais para avaliar perfil comportamental, proatividade e trabalho em equipe."
+          >
+            <Heart className="h-4 w-4 mr-1.5" /> Pacote comportamental
+          </Button>
           <Button
             type="button"
             size="sm"
