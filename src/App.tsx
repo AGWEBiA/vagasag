@@ -46,6 +46,7 @@ const App = () => (
             {/* Authenticated (qualquer login) */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/autoavaliacao" element={<ProtectedRoute><Autoavaliacao /></ProtectedRoute>} />
+            <Route path="/ajuda" element={<ProtectedRoute><Ajuda /></ProtectedRoute>} />
 
             {/* Painel interno */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
