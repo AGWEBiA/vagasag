@@ -492,6 +492,22 @@ const Relatorio = () => {
 
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
+        <Button
+          onClick={handleExportPdf}
+          disabled={exporting}
+          variant="outline"
+          className="flex-1 h-11 border-gold/40 hover:text-gold hover:border-gold"
+        >
+          {exporting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Gerando PDF...
+            </>
+          ) : (
+            <>
+              <FileDown className="h-4 w-4 mr-2" /> Exportar PDF
+            </>
+          )}
+        </Button>
         <Link to="/nova-avaliacao" className="flex-1">
           <Button className="w-full bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold h-11">
             <Sparkles className="h-4 w-4 mr-2" /> Nova Avaliação
