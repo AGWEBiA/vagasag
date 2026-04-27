@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Target,
   Users,
+  Heart,
   Sparkles,
   History as HistoryIcon,
   CheckCircle2,
