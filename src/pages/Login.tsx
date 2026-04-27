@@ -34,16 +34,16 @@ const Login = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
-        navigate("/dashboard");
+        navigate("/");
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + "/dashboard" },
+          options: { emailRedirectTo: window.location.origin + "/" },
         });
         if (error) throw error;
         toast.success("Conta criada! Você já está autenticado.");
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (err: any) {
       const msg = err?.message ?? "Erro ao autenticar";
