@@ -120,9 +120,17 @@ const AdminUsuarios = () => {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [bulkResults, setBulkResults] = useState<
-    { email: string; ok: boolean; error?: string }[] | null
+    { email: string; ok: boolean; error?: string; password?: string; full_name?: string; role?: AppRole }[] | null
   >(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+
+  // edit user
+  const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editRoles, setEditRoles] = useState<AppRole[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
 
   // delete
   const [toDelete, setToDelete] = useState<UserRow | null>(null);
