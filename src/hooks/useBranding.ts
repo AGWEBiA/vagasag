@@ -10,6 +10,9 @@ export interface BrandingSettings {
   primary_color_hsl: string;
   primary_foreground_hsl: string;
   accent_color_hsl: string;
+  autoaval_slug: string | null;
+  autoaval_titulo: string | null;
+  autoaval_descricao: string | null;
 }
 
 const DEFAULTS: BrandingSettings = {
@@ -21,6 +24,10 @@ const DEFAULTS: BrandingSettings = {
   primary_color_hsl: "0 75% 35%",
   primary_foreground_hsl: "0 0% 100%",
   accent_color_hsl: "43 86% 50%",
+  autoaval_slug: "time-ag-webi",
+  autoaval_titulo: "Conte sobre sua trajetória",
+  autoaval_descricao:
+    "Suas respostas vão ajudar a liderança a entender seu nível atual e mapear oportunidades de crescimento. Apenas administradores e líderes verão sua avaliação.",
 };
 
 let cache: BrandingSettings | null = null;
