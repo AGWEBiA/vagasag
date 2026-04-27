@@ -512,8 +512,10 @@ export type Database = {
           enviar_email_convite: boolean
           enviar_lembrete: boolean
           fuso_horario: string
+          horas_antes_lembrete: number
           ics_uid: string
           id: string
+          lembrete_enviado_em: string | null
           link_video: string | null
           local: string | null
           modalidade: string
@@ -536,8 +538,10 @@ export type Database = {
           enviar_email_convite?: boolean
           enviar_lembrete?: boolean
           fuso_horario?: string
+          horas_antes_lembrete?: number
           ics_uid?: string
           id?: string
+          lembrete_enviado_em?: string | null
           link_video?: string | null
           local?: string | null
           modalidade?: string
@@ -560,8 +564,10 @@ export type Database = {
           enviar_email_convite?: boolean
           enviar_lembrete?: boolean
           fuso_horario?: string
+          horas_antes_lembrete?: number
           ics_uid?: string
           id?: string
+          lembrete_enviado_em?: string | null
           link_video?: string | null
           local?: string | null
           modalidade?: string

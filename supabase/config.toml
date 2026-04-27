@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.entrevista-ics]
 verify_jwt = false
+
+[functions.send-entrevista-lembretes]
+verify_jwt = true

@@ -218,6 +218,14 @@ export function EntrevistasCandidatura({
                       {e.descricao}
                     </p>
                   )}
+                  {e.enviar_lembrete && e.status === "agendada" && (
+                    <p className="mt-1 text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {e.lembrete_enviado_em
+                        ? `Lembrete enviado em ${format(new Date(e.lembrete_enviado_em), "dd/MM HH:mm")}`
+                        : `Lembrete agendado para ${e.horas_antes_lembrete}h antes`}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -283,6 +291,8 @@ function NovaEntrevistaDialog(p: NovaEntrevistaProps) {
   const [entrevistadorNome, setEntrevistadorNome] = useState("");
   const [entrevistadorEmail, setEntrevistadorEmail] = useState("");
   const [enviarEmail, setEnviarEmail] = useState(true);
+  const [enviarLembrete, setEnviarLembrete] = useState(true);
+  const [horasAntesLembrete, setHorasAntesLembrete] = useState(24);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
@@ -317,6 +327,8 @@ function NovaEntrevistaDialog(p: NovaEntrevistaProps) {
       entrevistadorNome: entrevistadorNome.trim() || undefined,
       entrevistadorEmail: entrevistadorEmail.trim() || undefined,
       enviarEmailConvite: enviarEmail,
+      enviarLembrete: enviarLembrete,
+      horasAntesLembrete: horasAntesLembrete,
     });
 
     if (error || !ent) {
@@ -497,6 +509,42 @@ function NovaEntrevistaDialog(p: NovaEntrevistaProps) {
             </p>
           </div>
           <Switch checked={enviarEmail} onCheckedChange={setEnviarEmail} />
+        </div>
+
+        <div className="rounded-md border border-border px-3 py-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm">Lembrete automático</Label>
+              <p className="text-xs text-muted-foreground">
+                Envia um e-mail antes da entrevista.
+              </p>
+            </div>
+            <Switch checked={enviarLembrete} onCheckedChange={setEnviarLembrete} />
+          </div>
+          {enviarLembrete && (
+            <div className="flex items-center gap-2 pt-1">
+              <Label htmlFor="horas-antes" className="text-xs text-muted-foreground">
+                Quantas horas antes:
+              </Label>
+              <Select
+                value={String(horasAntesLembrete)}
+                onValueChange={(v) => setHorasAntesLembrete(Number(v))}
+              >
+                <SelectTrigger id="horas-antes" className="h-8 w-32 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 hora</SelectItem>
+                  <SelectItem value="2">2 horas</SelectItem>
+                  <SelectItem value="4">4 horas</SelectItem>
+                  <SelectItem value="12">12 horas</SelectItem>
+                  <SelectItem value="24">24 horas</SelectItem>
+                  <SelectItem value="48">48 horas</SelectItem>
+                  <SelectItem value="72">72 horas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </div>
 
