@@ -130,9 +130,13 @@ const AdminBranding = () => {
         tagline,
         logo_horizontal_url: logoUrl || null,
         logo_mark_url: markUrl || null,
+        logo_mobile_url: mobileUrl || null,
         favicon_url: faviconUrl || null,
         primary_color_hsl,
         accent_color_hsl,
+        font_heading: fontHeading.trim() || "Plus Jakarta Sans",
+        font_body: fontBody.trim() || "Inter",
+        font_heading_weight: fontHeadingWeight || "600",
         autoaval_slug: cleanSlug,
         autoaval_titulo: autoavalTitulo || null,
         autoaval_descricao: autoavalDescricao || null,
@@ -144,7 +148,7 @@ const AdminBranding = () => {
     toast.success("Branding atualizado");
   };
 
-  const FileBtn = ({ k, label }: { k: "horizontal" | "mark" | "favicon"; label: string }) => {
+  const FileBtn = ({ k, label }: { k: "horizontal" | "mark" | "mobile" | "favicon"; label: string }) => {
     const ref = useRef<HTMLInputElement>(null);
     return (
       <>
