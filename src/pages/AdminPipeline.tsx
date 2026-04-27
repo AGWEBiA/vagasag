@@ -296,6 +296,41 @@ const AdminPipeline = () => {
   );
 };
 
+interface EstagioPayload {
+  nome: string;
+  cor: string;
+  tipo: EstagioTipo;
+  ordem: number;
+  ativo: boolean;
+  auto_score_ativo: boolean;
+  email_ativo: boolean;
+  email_assunto: string | null;
+  email_corpo: string | null;
+}
+
+const PLACEHOLDERS_BY_TIPO: Record<EstagioTipo, { assunto: string; corpo: string }> = {
+  inicial: {
+    assunto: "Recebemos sua candidatura para {{vaga}}",
+    corpo:
+      "Olá {{nome}},\n\nRecebemos sua candidatura para {{vaga}} e ela já está em análise.\n\nObrigado!",
+  },
+  intermediario: {
+    assunto: "Atualização sobre sua candidatura — {{vaga}}",
+    corpo:
+      "Olá {{nome}},\n\nSua candidatura avançou para a etapa \"{{estagio}}\". Em breve entraremos em contato com os próximos passos.",
+  },
+  final_aprovado: {
+    assunto: "Boas notícias sobre {{vaga}} 🎉",
+    corpo:
+      "Olá {{nome}},\n\nFicamos muito felizes em informar que você foi aprovado(a) para {{vaga}}!\n\nEm breve nosso time entrará em contato para os próximos passos.",
+  },
+  final_reprovado: {
+    assunto: "Sobre sua candidatura para {{vaga}}",
+    corpo:
+      "Olá {{nome}},\n\nAgradecemos muito seu interesse em {{vaga}} e o tempo investido no nosso processo.\n\nDessa vez optamos por seguir com outro perfil, mas seu currículo ficará no nosso banco de talentos.\n\nDesejamos sucesso na sua jornada!",
+  },
+};
+
 const EstagioDialog = ({
   open,
   estagio,
@@ -309,18 +344,16 @@ const EstagioDialog = ({
   nextOrdem: number;
   saving: boolean;
   onClose: () => void;
-  onSave: (p: {
-    nome: string;
-    cor: string;
-    tipo: EstagioTipo;
-    ordem: number;
-    ativo: boolean;
-  }) => void;
+  onSave: (p: EstagioPayload) => void;
 }) => {
   const [nome, setNome] = useState("");
   const [cor, setCor] = useState(ESTAGIO_CORES_PRESET[0]);
   const [tipo, setTipo] = useState<EstagioTipo>("intermediario");
   const [ordem, setOrdem] = useState<number>(nextOrdem);
+  const [autoScore, setAutoScore] = useState(false);
+  const [emailAtivo, setEmailAtivo] = useState(false);
+  const [emailAssunto, setEmailAssunto] = useState("");
+  const [emailCorpo, setEmailCorpo] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -328,16 +361,26 @@ const EstagioDialog = ({
       setCor(estagio?.cor ?? ESTAGIO_CORES_PRESET[0]);
       setTipo(estagio?.tipo ?? "intermediario");
       setOrdem(estagio?.ordem ?? nextOrdem);
+      setAutoScore(estagio?.auto_score_ativo ?? false);
+      setEmailAtivo(estagio?.email_ativo ?? false);
+      setEmailAssunto(estagio?.email_assunto ?? "");
+      setEmailCorpo(estagio?.email_corpo ?? "");
     }
   }, [open, estagio, nextOrdem]);
 
+  const sugerirTemplate = () => {
+    const tpl = PLACEHOLDERS_BY_TIPO[tipo];
+    if (!emailAssunto) setEmailAssunto(tpl.assunto);
+    if (!emailCorpo) setEmailCorpo(tpl.corpo);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{estagio ? "Editar estágio" : "Novo estágio"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label>Nome</Label>
             <Input
@@ -360,9 +403,7 @@ const EstagioDialog = ({
                   <SelectItem value="inicial">Inicial</SelectItem>
                   <SelectItem value="intermediario">Intermediário</SelectItem>
                   <SelectItem value="final_aprovado">Final · Aprovado</SelectItem>
-                  <SelectItem value="final_reprovado">
-                    Final · Reprovado
-                  </SelectItem>
+                  <SelectItem value="final_reprovado">Final · Reprovado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -391,16 +432,109 @@ const EstagioDialog = ({
               ))}
             </div>
           </div>
+
+          {/* Auto-score */}
+          <div className="rounded-lg border border-sidebar-border p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2">
+                <Bot className="h-4 w-4 text-pleno mt-0.5" />
+                <div>
+                  <Label className="text-sm">Auto-score com IA</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Roda a avaliação automaticamente quando o candidato chega
+                    neste estágio.
+                  </p>
+                </div>
+              </div>
+              <Switch checked={autoScore} onCheckedChange={setAutoScore} />
+            </div>
+          </div>
+
+          {/* E-mail automático */}
+          <div className="rounded-lg border border-sidebar-border p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2">
+                <Mail className="h-4 w-4 text-gold mt-0.5" />
+                <div>
+                  <Label className="text-sm">E-mail automático ao entrar no estágio</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Variáveis disponíveis:{" "}
+                    <code className="text-[11px] px-1 rounded bg-sidebar-border/30">
+                      {"{{nome}}"}
+                    </code>
+                    {" "}
+                    <code className="text-[11px] px-1 rounded bg-sidebar-border/30">
+                      {"{{vaga}}"}
+                    </code>
+                    {" "}
+                    <code className="text-[11px] px-1 rounded bg-sidebar-border/30">
+                      {"{{estagio}}"}
+                    </code>
+                  </p>
+                </div>
+              </div>
+              <Switch checked={emailAtivo} onCheckedChange={setEmailAtivo} />
+            </div>
+
+            {emailAtivo && (
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={sugerirTemplate}
+                    className="text-xs h-7"
+                  >
+                    Sugerir template para "{ESTAGIO_TIPO_LABEL[tipo]}"
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Assunto</Label>
+                  <Input
+                    value={emailAssunto}
+                    onChange={(e) => setEmailAssunto(e.target.value)}
+                    placeholder="Ex: Atualização sobre {{vaga}}"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Corpo do e-mail</Label>
+                  <Textarea
+                    value={emailCorpo}
+                    onChange={(e) => setEmailCorpo(e.target.value)}
+                    placeholder="Olá {{nome}}, ..."
+                    rows={8}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button
             onClick={() =>
-              onSave({ nome: nome.trim(), cor, tipo, ordem, ativo: true })
+              onSave({
+                nome: nome.trim(),
+                cor,
+                tipo,
+                ordem,
+                ativo: true,
+                auto_score_ativo: autoScore,
+                email_ativo: emailAtivo,
+                email_assunto: emailAtivo ? emailAssunto.trim() || null : null,
+                email_corpo: emailAtivo ? emailCorpo.trim() || null : null,
+              })
             }
-            disabled={!nome.trim() || saving}
+            disabled={
+              !nome.trim() ||
+              saving ||
+              (emailAtivo && (!emailAssunto.trim() || !emailCorpo.trim()))
+            }
             className="bg-gradient-gold text-gold-foreground"
           >
             {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
