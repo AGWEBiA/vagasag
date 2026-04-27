@@ -1080,21 +1080,52 @@ const ViewAnswersDialog = ({
                   Respostas do formulário ({data.perguntas.length})
                 </h4>
                 <div className="space-y-2">
-                  {data.perguntas.map((q, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-sidebar-border bg-background p-3"
-                    >
-                      <div className="text-xs text-muted-foreground mb-1">
-                        {i + 1}. {q.pergunta}
+                  {data.perguntas.map((q, i) => {
+                    const tipo = (q.tipo as PerguntaTipo) ?? "texto";
+                    const tipoLabel = TIPO_LABEL[tipo] ?? "Texto";
+                    const isEscala = tipo === "escala";
+                    const numero = typeof q.resposta === "number" ? q.resposta : null;
+                    return (
+                      <div
+                        key={i}
+                        className="rounded-lg border border-sidebar-border bg-background p-3"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="text-xs text-muted-foreground">
+                            {i + 1}. {q.pergunta}
+                          </div>
+                          <span
+                            className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                              isEscala
+                                ? "bg-pleno-bg text-gold border-gold/30"
+                                : tipo === "escolha"
+                                  ? "bg-senior-bg text-senior border-senior/30"
+                                  : "bg-surface-elevated text-muted-foreground border-sidebar-border"
+                            }`}
+                          >
+                            {tipoLabel}
+                          </span>
+                        </div>
+                        {isEscala && numero !== null ? (
+                          <div className="text-sm">
+                            <span className="font-display text-lg text-gold">
+                              {numero}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {" / 5"}
+                              {ESCALA_LABEL[numero] && ` · ${ESCALA_LABEL[numero]}`}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="text-sm whitespace-pre-wrap break-words">
+                            {q.resposta === null || q.resposta === ""
+                              ? "—"
+                              : String(q.resposta)}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm whitespace-pre-wrap break-words">
-                        {q.resposta === null || q.resposta === ""
-                          ? "—"
-                          : String(q.resposta)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
