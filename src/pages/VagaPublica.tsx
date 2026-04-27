@@ -193,6 +193,14 @@ const VagaPublica = () => {
         .insert(respostasRows);
       if (rErr) console.error("Erro respostas:", rErr);
     }
+    // Dispara e-mail de confirmação (best-effort, não bloqueia)
+    enviarEmailConfirmacaoCandidatura({
+      candidaturaId: cand.id,
+      nome: parsed.data.nome,
+      email: parsed.data.email,
+      vaga: vaga.titulo,
+    }).catch((e) => console.warn("email confirmação falhou", e));
+
     setSubmitting(false);
     setSuccess(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
