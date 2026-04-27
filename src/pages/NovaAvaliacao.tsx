@@ -471,7 +471,14 @@ const PersonList = ({
           >
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium truncate">{p.nome}</span>
+                <button
+                  type="button"
+                  onClick={() => onViewAnswers(p)}
+                  className="font-medium truncate text-left hover:text-gold underline-offset-4 hover:underline transition-colors"
+                  title="Ver respostas e dados enviados"
+                >
+                  {p.nome}
+                </button>
                 {hasAssessment ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-senior-bg text-senior border border-senior/30 px-2 py-0.5 text-[10px] font-semibold">
                     <CheckCircle2 className="h-3 w-3" /> Avaliada
@@ -493,6 +500,13 @@ const PersonList = ({
                     Última avaliação em {formatDate(p.lastAssessment.created_at)}
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => onViewAnswers(p)}
+                  className="inline-flex items-center gap-1 text-gold hover:text-gold-bright"
+                >
+                  <Eye className="h-3 w-3" /> Ver respostas
+                </button>
               </div>
             </div>
 
