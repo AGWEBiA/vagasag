@@ -53,12 +53,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type Origem = "candidato" | "time";
+type SubCategoria = "todos" | "candidato_registrado" | "time" | "candidatura_virtual";
 
 interface PersonRow {
   id: string;
   nome: string;
+  email: string | null;
   cargo: string;
   origem: Origem;
+  isVirtual: boolean;
   created_at: string;
   assessmentsCount: number;
   lastAssessment: {
