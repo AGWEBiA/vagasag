@@ -321,6 +321,7 @@ const NovaAvaliacao = () => {
               runningId={runningId}
               onEvaluate={handleEvaluateClick}
               onView={(id) => navigate(`/relatorio/${id}`)}
+              onViewAnswers={(p) => setViewing(p)}
               emptyHint="Nenhum candidato cadastrado nesta categoria. Use 'Cadastrar novo' ou aguarde candidaturas pelo portal de vagas."
             />
           </TabsContent>
@@ -331,6 +332,7 @@ const NovaAvaliacao = () => {
               runningId={runningId}
               onEvaluate={handleEvaluateClick}
               onView={(id) => navigate(`/relatorio/${id}`)}
+              onViewAnswers={(p) => setViewing(p)}
               emptyHint="Nenhum membro do time enviou autoavaliação ainda. Eles podem fazer login e enviar pela página de Autoavaliação."
             />
           </TabsContent>
