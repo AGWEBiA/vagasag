@@ -322,7 +322,13 @@ const NovaAvaliacao = () => {
       </header>
 
       <div className="surface-card rounded-xl p-4 md:p-6">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Origem)}>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            setTab(v as Origem);
+            setSubCategoria("todos");
+          }}
+        >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
             <TabsList>
               <TabsTrigger value="candidato" className="gap-2">
@@ -338,14 +344,38 @@ const NovaAvaliacao = () => {
                 </span>
               </TabsTrigger>
             </TabsList>
-            <div className="relative w-full md:w-72">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome ou cargo"
-                className="pl-9"
-              />
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              {tab === "candidato" && (
+                <Select
+                  value={subCategoria}
+                  onValueChange={(v) => setSubCategoria(v as SubCategoria)}
+                >
+                  <SelectTrigger className="w-full sm:w-56">
+                    <Filter className="h-4 w-4 mr-1 text-muted-foreground" />
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">
+                      Todos ({counts.candidato})
+                    </SelectItem>
+                    <SelectItem value="candidato_registrado">
+                      Candidatos registrados ({counts.candidato_registrado})
+                    </SelectItem>
+                    <SelectItem value="candidatura_virtual">
+                      Candidaturas virtuais ({counts.candidatura_virtual})
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="relative w-full md:w-72">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome ou e-mail"
+                  className="pl-9"
+                />
+              </div>
             </div>
           </div>
 
