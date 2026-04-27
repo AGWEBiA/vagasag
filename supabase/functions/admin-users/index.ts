@@ -166,13 +166,13 @@ async function handleBulkCreate(
   if (!Array.isArray(users) || users.length === 0) {
     return json({ error: "Lista vazia" }, 400);
   }
-  const results: { email: string; ok: boolean; error?: string }[] = [];
+  const results: { email: string; ok: boolean; error?: string; password?: string; full_name?: string; role?: AppRole }[] = [];
   for (const u of users) {
     try {
       if (!u.email) throw new Error("email vazio");
       const role: AppRole = u.role && ALLOWED_ROLES.includes(u.role) ? u.role : "colaborador";
-      const password =
-        u.password && u.password.length >= 8 ? u.password : randomPassword();
+      const providedPwd = u.password && u.password.length >= 8;
+      const password = providedPwd ? (u.password as string) : randomPassword();
       const { data, error } = await admin.auth.admin.createUser({
         email: u.email,
         password,
@@ -182,13 +182,68 @@ async function handleBulkCreate(
       if (error) throw error;
       await admin.from("user_roles").delete().eq("user_id", data.user.id);
       await admin.from("user_roles").insert({ user_id: data.user.id, role });
-      results.push({ email: u.email, ok: true });
+      results.push({
+        email: u.email,
+        ok: true,
+        password,
+        full_name: u.full_name,
+        role,
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro";
       results.push({ email: u.email, ok: false, error: msg });
     }
   }
   return json({ results });
+}
+
+async function handleUpdateUser(
+  admin: ReturnType<typeof createClient>,
+  body: Extract<Action, { action: "update_user" }>,
+  callerId: string,
+) {
+  if (!body.user_id) return json({ error: "user_id obrigatório" }, 400);
+
+  const updates: Record<string, unknown> = {};
+  if (typeof body.email === "string" && body.email.trim()) {
+    updates.email = body.email.trim();
+  }
+  if (typeof body.password === "string" && body.password.length > 0) {
+    if (body.password.length < 8) {
+      return json({ error: "Senha deve ter ao menos 8 caracteres" }, 400);
+    }
+    updates.password = body.password;
+  }
+  if (body.full_name !== undefined) {
+    updates.user_metadata = { full_name: body.full_name ?? null };
+  }
+
+  if (Object.keys(updates).length > 0) {
+    const { error } = await admin.auth.admin.updateUserById(body.user_id, updates);
+    if (error) throw error;
+  }
+
+  if (Array.isArray(body.roles)) {
+    const cleanRoles = Array.from(
+      new Set(body.roles.filter((r): r is AppRole => ALLOWED_ROLES.includes(r))),
+    );
+    if (cleanRoles.length === 0) {
+      return json({ error: "Selecione ao menos um papel." }, 400);
+    }
+    if (body.user_id === callerId && !cleanRoles.includes("admin")) {
+      return json(
+        { error: "Você não pode remover o seu próprio papel de admin." },
+        400,
+      );
+    }
+    await admin.from("user_roles").delete().eq("user_id", body.user_id);
+    const { error: rErr } = await admin
+      .from("user_roles")
+      .insert(cleanRoles.map((role) => ({ user_id: body.user_id, role })));
+    if (rErr) throw rErr;
+  }
+
+  return json({ ok: true });
 }
 
 async function handleSetRole(
