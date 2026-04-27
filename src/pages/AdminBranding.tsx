@@ -55,6 +55,9 @@ const AdminBranding = () => {
   const [logoUrl, setLogoUrl] = useState(branding.logo_horizontal_url ?? "");
   const [markUrl, setMarkUrl] = useState(branding.logo_mark_url ?? "");
   const [faviconUrl, setFaviconUrl] = useState(branding.favicon_url ?? "");
+  const [autoavalSlug, setAutoavalSlug] = useState(branding.autoaval_slug ?? "");
+  const [autoavalTitulo, setAutoavalTitulo] = useState(branding.autoaval_titulo ?? "");
+  const [autoavalDescricao, setAutoavalDescricao] = useState(branding.autoaval_descricao ?? "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
 
@@ -67,7 +70,23 @@ const AdminBranding = () => {
     setLogoUrl(branding.logo_horizontal_url ?? "");
     setMarkUrl(branding.logo_mark_url ?? "");
     setFaviconUrl(branding.favicon_url ?? "");
+    setAutoavalSlug(branding.autoaval_slug ?? "");
+    setAutoavalTitulo(branding.autoaval_titulo ?? "");
+    setAutoavalDescricao(branding.autoaval_descricao ?? "");
   }, [branding]);
+
+  const slugify = (v: string) =>
+    v
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60);
+
+  const autoavalUrl = autoavalSlug
+    ? `${window.location.origin}/time/${autoavalSlug}`
+    : `${window.location.origin}/autoavaliacao`;
 
   const upload = async (file: File, key: "horizontal" | "mark" | "favicon") => {
     setUploading(key);
