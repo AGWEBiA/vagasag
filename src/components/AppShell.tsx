@@ -12,12 +12,14 @@ import {
   HelpCircle,
   Layers,
   BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
+import { KanbanQuickAccess } from "@/components/KanbanQuickAccess";
 
 const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +28,7 @@ const BASE_NAV = [
   { to: "/historico", label: "Histórico", icon: History },
   { to: "/vagas-admin", label: "Vagas", icon: Briefcase },
   { to: "/banco-talentos", label: "Talentos", icon: Users2 },
+  { to: "/ajuda", label: "Ajuda", icon: LifeBuoy },
 ];
 
 const ADMIN_NAV = [
