@@ -121,13 +121,24 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
 
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between border-b border-sidebar-border bg-sidebar px-4 py-3">
-        <div className="flex items-center gap-2">
-          {branding.logo_mark_url ? (
-            <img src={branding.logo_mark_url} alt={branding.product_name} className="h-8 w-8 rounded-md object-cover" />
+        <div className="flex items-center gap-2 min-w-0">
+          {branding.logo_mobile_url ? (
+            <img
+              src={branding.logo_mobile_url}
+              alt={branding.product_name}
+              className="h-8 w-auto max-w-[160px] object-contain"
+            />
+          ) : branding.logo_mark_url ? (
+            <>
+              <img src={branding.logo_mark_url} alt={branding.product_name} className="h-8 w-8 rounded-md object-cover" />
+              <span className="font-display font-semibold truncate max-w-[180px]">{branding.product_name}</span>
+            </>
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary" />
+            <>
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary" />
+              <span className="font-display font-semibold truncate max-w-[180px]">{branding.product_name}</span>
+            </>
           )}
-          <span className="font-display font-semibold truncate max-w-[180px]">{branding.product_name}</span>
         </div>
         <Button variant="ghost" size="sm" onClick={handleLogout}>
           <LogOut className="h-4 w-4" />

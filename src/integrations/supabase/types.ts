@@ -170,9 +170,13 @@ export type Database = {
           autoaval_slug: string | null
           autoaval_titulo: string | null
           favicon_url: string | null
+          font_body: string
+          font_heading: string
+          font_heading_weight: string
           id: number
           logo_horizontal_url: string | null
           logo_mark_url: string | null
+          logo_mobile_url: string | null
           primary_color_hsl: string
           primary_foreground_hsl: string
           product_name: string
@@ -186,9 +190,13 @@ export type Database = {
           autoaval_slug?: string | null
           autoaval_titulo?: string | null
           favicon_url?: string | null
+          font_body?: string
+          font_heading?: string
+          font_heading_weight?: string
           id?: number
           logo_horizontal_url?: string | null
           logo_mark_url?: string | null
+          logo_mobile_url?: string | null
           primary_color_hsl?: string
           primary_foreground_hsl?: string
           product_name?: string
@@ -202,9 +210,13 @@ export type Database = {
           autoaval_slug?: string | null
           autoaval_titulo?: string | null
           favicon_url?: string | null
+          font_body?: string
+          font_heading?: string
+          font_heading_weight?: string
           id?: number
           logo_horizontal_url?: string | null
           logo_mark_url?: string | null
+          logo_mobile_url?: string | null
           primary_color_hsl?: string
           primary_foreground_hsl?: string
           product_name?: string
