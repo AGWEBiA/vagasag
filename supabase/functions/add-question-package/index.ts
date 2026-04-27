@@ -13,9 +13,10 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-// Lock em memória por vaga_id para evitar cliques rápidos / corrida.
-// Edge functions são instanciadas sob demanda — esse lock só protege
-// a mesma instância. A constraint UNIQUE no banco protege globalmente.
+// Lock em memória por vaga_id para evitar cliques rápidos / corrida
+// dentro da MESMA instância da edge function.
+// A constraint UNIQUE no banco protege globalmente contra duplicatas
+// via question_bank_id.
 const inFlight = new Set<string>();
 
 interface PerguntaInput {
@@ -30,7 +31,7 @@ interface PerguntaInput {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const lockKey = crypto.randomUUID();
+  let lockedVaga: string | null = null;
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -65,7 +66,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Máximo 50 perguntas por requisição." }, 400);
     }
 
-    // Lock por vaga (mesma instância da function)
     if (inFlight.has(vagaId)) {
       return jsonResponse(
         { error: "Outra inserção está em andamento para esta vaga. Tente novamente em instantes." },
@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
       );
     }
     inFlight.add(vagaId);
+    lockedVaga = vagaId;
 
-    // Verifica permissão (admin ou dono da vaga)
     const { data: vaga, error: vagaErr } = await supabase
       .from("vagas")
       .select("id, created_by")
@@ -84,7 +84,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Vaga não encontrada." }, 404);
     }
 
-    // Carrega perguntas já existentes na vaga
     const { data: existentes, error: exErr } = await supabase
       .from("vaga_perguntas")
       .select("question_bank_id, texto, ordem")
@@ -107,8 +106,6 @@ Deno.serve(async (req) => {
       -1,
     );
 
-    // Filtra duplicatas (por question_bank_id OU texto idêntico, case-insensitive)
-    // Também deduplica dentro do próprio payload.
     const seenInPayload = new Set<string>();
     const novos: PerguntaInput[] = [];
     const duplicadas: { texto: string; motivo: string }[] = [];
@@ -157,8 +154,6 @@ Deno.serve(async (req) => {
       usar_na_ia: p.usar_na_ia !== false,
     }));
 
-    // INSERT — RLS valida permissão; constraint UNIQUE garante atomicidade
-    // contra cliques rápidos em instâncias diferentes.
     const { data: inserted, error: insErr } = await supabase
       .from("vaga_perguntas")
       .insert(rows)
@@ -166,11 +161,11 @@ Deno.serve(async (req) => {
 
     if (insErr) {
       console.error("erro inserindo", insErr);
-      // Código 23505 = unique violation (índice uq_vaga_perguntas_vaga_question_bank)
+      // 23505 = unique violation (índice uq_vaga_perguntas_vaga_question_bank)
       if ((insErr as { code?: string }).code === "23505") {
         return jsonResponse(
           {
-            error: "Algumas perguntas já estavam na vaga. Recarregue a página e tente novamente.",
+            error: "Algumas perguntas já estavam na vaga. Recarregue e tente novamente.",
             inseridas: 0,
             ignoradas: novos.length,
           },
@@ -189,13 +184,6 @@ Deno.serve(async (req) => {
     console.error("Unhandled", err);
     return jsonResponse({ error: "Erro interno." }, 500);
   } finally {
-    // Libera o lock — usa try/finally para garantir mesmo em erro
-    if (req.method !== "OPTIONS") {
-      // Re-extrai vagaId do body já consumido seria caro; usamos lockKey
-      // como sentinel — na prática o set tem entries por vaga.
-      // Como não temos vagaId aqui de forma segura, usamos uma limpeza geral
-      // a cada chamada (lock dura no máximo a duração da request).
-      inFlight.delete(lockKey);
-    }
+    if (lockedVaga) inFlight.delete(lockedVaga);
   }
 });
