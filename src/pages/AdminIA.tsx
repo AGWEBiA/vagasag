@@ -108,7 +108,44 @@ const AdminIA = () => {
     document.title = "Configuração de IA | Seniority Hub";
     void load();
     void loadCredentials();
+    void loadPesos();
   }, []);
+
+  const loadPesos = async () => {
+    setPesosLoading(true);
+    const { data } = await supabase
+      .from("assessment_pesos")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+    if (data) {
+      setPesos({
+        tecnico: Number(data.tecnico),
+        impacto: Number(data.impacto),
+        comportamental: Number(data.comportamental),
+        estrategico: Number(data.estrategico),
+        lideranca: Number(data.lideranca),
+      });
+    }
+    setPesosLoading(false);
+  };
+
+  const savePesos = async () => {
+    if (Math.round(totalPesos) !== 100) {
+      toast.error(`Os pesos devem somar 100% (atual: ${totalPesos.toFixed(0)}%).`);
+      return;
+    }
+    setSavingPesos(true);
+    const { error } = await supabase
+      .from("assessment_pesos")
+      .upsert({ id: 1, ...pesos, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    setSavingPesos(false);
+    if (error) {
+      toast.error("Erro ao salvar pesos.");
+      return;
+    }
+    toast.success("Pesos atualizados. Próximas avaliações usarão a nova ponderação.");
+  };
 
   const load = async () => {
     setLoading(true);
