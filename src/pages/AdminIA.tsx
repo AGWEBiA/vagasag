@@ -96,6 +96,14 @@ const AdminIA = () => {
   const [showKey, setShowKey] = useState(false);
   const [savingKey, setSavingKey] = useState(false);
 
+  // Pesos dos pilares (assessment_pesos)
+  const [pesos, setPesos] = useState<AssessmentPesos>(DEFAULT_PESOS);
+  const [pesosLoading, setPesosLoading] = useState(true);
+  const [savingPesos, setSavingPesos] = useState(false);
+
+  const totalPesos =
+    pesos.tecnico + pesos.impacto + pesos.comportamental + pesos.estrategico + pesos.lideranca;
+
   useEffect(() => {
     document.title = "Configuração de IA | Seniority Hub";
     void load();
