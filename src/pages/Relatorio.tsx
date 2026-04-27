@@ -273,7 +273,7 @@ const Relatorio = () => {
         />
       </section>
 
-      {/* Section 3 — 4 Pilares */}
+      {/* Section 3 — Pilares (técnicos + comportamental) */}
       <section className="mb-6">
         <h2 className="font-display text-2xl font-semibold mb-4">
           Análise por Pilar
