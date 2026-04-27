@@ -196,21 +196,33 @@ const NovaAvaliacao = () => {
   });
 
   const filtered = useMemo(() => {
-    const list = (people ?? []).filter((p) => p.origem === tab);
+    let list = (people ?? []).filter((p) => p.origem === tab);
+    // sub-categoria só faz sentido em "candidato"
+    if (tab === "candidato" && subCategoria !== "todos") {
+      if (subCategoria === "candidato_registrado") {
+        list = list.filter((p) => !p.isVirtual);
+      } else if (subCategoria === "candidatura_virtual") {
+        list = list.filter((p) => p.isVirtual);
+      }
+    }
     if (!search.trim()) return list;
     const q = search.trim().toLowerCase();
     return list.filter(
       (p) =>
         p.nome.toLowerCase().includes(q) ||
+        (p.email ?? "").toLowerCase().includes(q) ||
         (CARGO_LABEL[p.cargo] ?? p.cargo).toLowerCase().includes(q),
     );
-  }, [people, tab, search]);
+  }, [people, tab, search, subCategoria]);
 
   const counts = useMemo(() => {
     const list = people ?? [];
+    const candidatoList = list.filter((p) => p.origem === "candidato");
     return {
       time: list.filter((p) => p.origem === "time").length,
-      candidato: list.filter((p) => p.origem === "candidato").length,
+      candidato: candidatoList.length,
+      candidato_registrado: candidatoList.filter((p) => !p.isVirtual).length,
+      candidatura_virtual: candidatoList.filter((p) => p.isVirtual).length,
       pendentes: list.filter((p) => !p.lastAssessment).length,
     };
   }, [people]);
