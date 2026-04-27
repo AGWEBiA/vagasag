@@ -31,6 +31,8 @@ import { CandidaturaTimeline } from "@/components/CandidaturaTimeline";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PipelineEstagio } from "@/lib/pipeline";
 import { dispararAutoScoreSeNecessario, enviarEmailEstagio } from "@/lib/emails";
+import { NotasInternas } from "@/components/NotasInternas";
+import { AtribuicaoRecrutador } from "@/components/AtribuicaoRecrutador";
 
 interface Vaga {
   id: string;
@@ -260,37 +262,41 @@ const InboxCandidaturas = () => {
                 <StatusBadge status={selected.status} />
               </div>
 
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-gold" />
-                <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Estágio
-                </span>
-                <Select
-                  value={selected.estagio_id ?? ""}
-                  onValueChange={(v) => changeEstagio(selected, v)}
-                >
-                  <SelectTrigger className="h-8 w-56">
-                    <SelectValue placeholder="Sem estágio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estagios.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: e.cor }}
-                          />
-                          {e.nome}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-gold" />
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Estágio
+                  </span>
+                  <Select
+                    value={selected.estagio_id ?? ""}
+                    onValueChange={(v) => changeEstagio(selected, v)}
+                  >
+                    <SelectTrigger className="h-8 w-56">
+                      <SelectValue placeholder="Sem estágio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {estagios.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          <span className="inline-flex items-center gap-2">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: e.cor }}
+                            />
+                            {e.nome}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <AtribuicaoRecrutador candidaturaId={selected.id} />
               </div>
 
               <Tabs defaultValue="detalhes" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 max-w-xs">
+                <TabsList className="grid w-full grid-cols-3 max-w-md">
                   <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+                  <TabsTrigger value="notas">Notas</TabsTrigger>
                   <TabsTrigger value="historico">Histórico</TabsTrigger>
                 </TabsList>
 
@@ -332,6 +338,10 @@ const InboxCandidaturas = () => {
                     </h3>
                     <RespostasCandidato candidaturaId={selected.id} />
                   </div>
+                </TabsContent>
+
+                <TabsContent value="notas" className="mt-4">
+                  <NotasInternas candidaturaId={selected.id} />
                 </TabsContent>
 
                 <TabsContent value="historico" className="mt-4">

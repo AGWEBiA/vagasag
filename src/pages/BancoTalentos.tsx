@@ -38,12 +38,15 @@ import {
   CalendarDays,
   FileText,
   Eye,
+  Repeat,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { NotasInternas } from "@/components/NotasInternas";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Vaga {
   id: string;
@@ -122,6 +125,9 @@ const BancoTalentos = () => {
     notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [reaproveitando, setReaproveitando] = useState<Talento | null>(null);
+  const [vagaDestino, setVagaDestino] = useState<string>("");
+  const [reaprSaving, setReaprSaving] = useState(false);
 
   useEffect(() => {
     document.title = "Banco de Talentos | Seniority Hub";
@@ -275,6 +281,52 @@ const BancoTalentos = () => {
     setSenioridadeFilter("todos");
     setTagFilter("");
     setPeriodoFilter("todos");
+  };
+
+  const reaproveitarEmVaga = async () => {
+    if (!reaproveitando || !vagaDestino) return;
+    if (vagaDestino === reaproveitando.vaga_id) {
+      toast.error("Selecione uma vaga diferente da atual");
+      return;
+    }
+    setReaprSaving(true);
+    // Verifica se já existe candidatura desse e-mail nessa vaga
+    const { data: existente } = await supabase
+      .from("candidaturas")
+      .select("id")
+      .eq("vaga_id", vagaDestino)
+      .ilike("email", reaproveitando.email)
+      .maybeSingle();
+    if (existente) {
+      toast.error("Este candidato já existe nesta vaga");
+      setReaprSaving(false);
+      return;
+    }
+
+    const { error } = await supabase.from("candidaturas").insert({
+      vaga_id: vagaDestino,
+      nome: reaproveitando.nome,
+      email: reaproveitando.email,
+      telefone: reaproveitando.telefone,
+      linkedin: reaproveitando.linkedin,
+      portfolio: reaproveitando.portfolio,
+      dados_profissionais: reaproveitando.dados_profissionais,
+      informacoes_adicionais: reaproveitando.informacoes_adicionais,
+      tags: reaproveitando.tags,
+      skills: reaproveitando.skills,
+      candidate_id: reaproveitando.candidate_id,
+      talent_status: "em_processo",
+    });
+    setReaprSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const vagaNome = vagas.find((v) => v.id === vagaDestino)?.titulo;
+    toast.success(`Candidato reaproveitado em "${vagaNome}"`);
+    setReaproveitando(null);
+    setVagaDestino("");
+    void load();
   };
 
   if (roleLoading) {
@@ -712,9 +764,19 @@ const BancoTalentos = () => {
                   )}
                 </div>
 
-                <DialogFooter className="mt-4">
+                <DialogFooter className="mt-4 gap-2 flex-wrap">
                   <Button variant="ghost" onClick={() => setViewing(null)}>
                     Fechar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setReaproveitando(viewing);
+                      setVagaDestino("");
+                      setViewing(null);
+                    }}
+                  >
+                    <Repeat className="h-4 w-4 mr-2" /> Reaproveitar em outra vaga
                   </Button>
                   <Button
                     onClick={() => {
@@ -793,6 +855,60 @@ const BancoTalentos = () => {
             <Button onClick={saveEdit} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reaproveitar em outra vaga */}
+      <Dialog
+        open={!!reaproveitando}
+        onOpenChange={(o) => {
+          if (!o) {
+            setReaproveitando(null);
+            setVagaDestino("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reaproveitar talento</DialogTitle>
+            <DialogDescription>
+              Cria uma nova candidatura de <strong>{reaproveitando?.nome}</strong>{" "}
+              em outra vaga aberta, copiando dados profissionais e contato.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label>Vaga destino</Label>
+            <Select value={vagaDestino} onValueChange={setVagaDestino}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma vaga…" />
+              </SelectTrigger>
+              <SelectContent>
+                {vagas
+                  .filter((v) => v.id !== reaproveitando?.vaga_id)
+                  .map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.titulo}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setReaproveitando(null);
+                setVagaDestino("");
+              }}
+              disabled={reaprSaving}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={reaproveitarEmVaga} disabled={!vagaDestino || reaprSaving}>
+              {reaprSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Repeat className="h-4 w-4 mr-2" /> Reaproveitar
             </Button>
           </DialogFooter>
         </DialogContent>
