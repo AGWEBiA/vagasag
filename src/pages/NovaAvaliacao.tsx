@@ -52,6 +52,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+import { TIPO_LABEL, ESCALA_LABEL, type PerguntaTipo } from "@/lib/perguntas";
+
 type Origem = "candidato" | "time";
 type SubCategoria = "todos" | "candidato_registrado" | "time" | "candidatura_virtual";
 
