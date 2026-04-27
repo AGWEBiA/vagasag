@@ -51,6 +51,7 @@ const Autoavaliacao = () => {
   const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
   const { hasPanelAccess, loading: roleLoading } = useUserRole();
+  const branding = useBranding();
   const [nome, setNome] = useState("");
   const [cargo, setCargo] = useState("");
   const [dados, setDados] = useState("");
