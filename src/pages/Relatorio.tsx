@@ -357,7 +357,7 @@ const Relatorio = () => {
                     <div>
                       <div className="font-semibold">{p.label}</div>
                       <div className="text-xs text-muted-foreground">
-                        Peso {p.weight}%
+                        Peso {pesoForPilar(pesos, p.key) || p.weight}%
                       </div>
                     </div>
                   </div>
