@@ -464,6 +464,76 @@ const AdminIA = () => {
             </div>
           </div>
 
+          {/* Pesos dos pilares */}
+          <div className="surface-card rounded-xl p-6 lg:col-span-3 space-y-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-gold" />
+                <h2 className="font-display text-xl font-semibold">Pesos dos pilares</h2>
+              </div>
+              <span
+                className={cn(
+                  "text-sm font-mono px-3 py-1 rounded-full border",
+                  Math.round(totalPesos) === 100
+                    ? "bg-gold/10 text-gold border-gold/40"
+                    : "bg-destructive/10 text-destructive border-destructive/40",
+                )}
+              >
+                Total: {totalPesos.toFixed(0)}% {Math.round(totalPesos) === 100 ? "✓" : "(deve ser 100%)"}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Ajuste a importância de cada pilar no cálculo da nota final ponderada. Aplica-se a todas as avaliações futuras.
+            </p>
+            {pesosLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-gold" />
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {([
+                  { key: "tecnico", label: "Profundidade Técnica" },
+                  { key: "impacto", label: "Escopo de Impacto" },
+                  { key: "comportamental", label: "Perfil Comportamental" },
+                  { key: "estrategico", label: "Visão Estratégica" },
+                  { key: "lideranca", label: "Liderança e Autonomia" },
+                ] as const).map((p) => (
+                  <div key={p.key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">{p.label}</Label>
+                      <span className="font-mono text-sm text-gold font-semibold">
+                        {pesos[p.key]}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[pesos[p.key]]}
+                      min={0}
+                      max={60}
+                      step={1}
+                      onValueChange={([v]) => setPesos((s) => ({ ...s, [p.key]: v }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setPesos(DEFAULT_PESOS)} disabled={savingPesos || pesosLoading}>
+                Restaurar padrão
+              </Button>
+              <Button
+                onClick={savePesos}
+                disabled={savingPesos || pesosLoading || Math.round(totalPesos) !== 100}
+                className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-gold"
+              >
+                {savingPesos ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
+                ) : (
+                  <><CheckCircle2 className="h-4 w-4 mr-2" /> Salvar pesos</>
+                )}
+              </Button>
+            </div>
+          </div>
+
           {/* Cards de provedores */}
           <div className="lg:col-span-3 space-y-3">
             <div className="flex items-center gap-2">
