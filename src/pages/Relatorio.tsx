@@ -46,6 +46,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   TrendingUp,
   Target,
   Users,
+  Heart,
 };
 
 const SENIORIDADE_RANK: Record<Senioridade, number> = {
