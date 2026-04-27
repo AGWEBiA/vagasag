@@ -362,7 +362,7 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
             type="button"
             size="sm"
             variant="outline"
-            onClick={addBehavioralPackage}
+            onClick={openBehavioralReview}
             className="border-gold/40 hover:text-gold"
             title="Adiciona um conjunto de perguntas situacionais para avaliar perfil comportamental, proatividade e trabalho em equipe."
           >
