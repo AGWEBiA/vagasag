@@ -140,6 +140,29 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
     });
   }, [bank, bankSearch, filterByCargo, cargo, drafts]);
 
+  /**
+   * Agrupa o banco filtrado em:
+   * - especificas: perguntas que listam o cargo atual em cargos_sugeridos
+   * - genericas: perguntas sem cargos_sugeridos (servem para qualquer cargo)
+   * - outrosCargos: perguntas com cargos_sugeridos ≠ atual (visíveis quando filterByCargo=false)
+   */
+  const grupos = useMemo(() => {
+    const especificas: QuestionBankItem[] = [];
+    const genericas: QuestionBankItem[] = [];
+    const outrosCargos: QuestionBankItem[] = [];
+    for (const q of filteredBank) {
+      const lista = q.cargos_sugeridos ?? [];
+      if (lista.length === 0) {
+        genericas.push(q);
+      } else if (cargo && lista.includes(cargo)) {
+        especificas.push(q);
+      } else {
+        outrosCargos.push(q);
+      }
+    }
+    return { especificas, genericas, outrosCargos };
+  }, [filteredBank, cargo]);
+
   const addFromBank = (q: QuestionBankItem) => {
     setDrafts((d) => [
       ...d,
