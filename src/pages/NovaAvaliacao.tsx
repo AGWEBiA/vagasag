@@ -567,9 +567,15 @@ const PersonList = ({
                     <Clock className="h-3 w-3" /> Pendente
                   </span>
                 )}
+                {p.isVirtual && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gold/10 text-gold border border-gold/30 px-2 py-0.5 text-[10px] font-semibold">
+                    Candidatura virtual
+                  </span>
+                )}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 gap-y-1">
                 <span>{CARGO_LABEL[p.cargo] ?? p.cargo}</span>
+                {p.email && <span className="truncate max-w-[260px]">{p.email}</span>}
                 <span>Cadastrada em {formatDate(p.created_at)}</span>
                 {p.lastAssessment && (
                   <span>
