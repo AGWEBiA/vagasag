@@ -77,6 +77,7 @@ interface UserRow {
 }
 
 const ROLE_OPTIONS: AppRole[] = ["admin", "recrutador", "lider", "colaborador"];
+const MIN_PASSWORD_LENGTH = 6;
 
 const ROLE_BADGE: Record<AppRole, string> = {
   admin: "bg-gradient-gold text-gold-foreground",
@@ -160,8 +161,8 @@ const AdminUsuarios = () => {
   };
 
   const handleCreate = async () => {
-    if (!newEmail.trim() || !newPassword || newPassword.length < 8) {
-      toast.error("Email e senha (mín. 8 caracteres) são obrigatórios.");
+    if (!newEmail.trim() || !newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Email e senha (mín. ${MIN_PASSWORD_LENGTH} caracteres) são obrigatórios.`);
       return;
     }
     setCreating(true);
@@ -256,8 +257,8 @@ const AdminUsuarios = () => {
       toast.error("Email é obrigatório.");
       return;
     }
-    if (editPassword && editPassword.length < 8) {
-      toast.error("Nova senha deve ter ao menos 8 caracteres.");
+    if (editPassword && editPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Nova senha deve ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.`);
       return;
     }
     if (editRoles.length === 0) {
@@ -400,7 +401,7 @@ const AdminUsuarios = () => {
         email,
         role: validRole,
         full_name: fullName || undefined,
-        password: password && password.length >= 8 ? password : undefined,
+        password: password && password.length >= MIN_PASSWORD_LENGTH ? password : undefined,
       };
     });
     setBulkBusy(true);
