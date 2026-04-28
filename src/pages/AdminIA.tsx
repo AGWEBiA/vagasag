@@ -362,7 +362,7 @@ const AdminIA = () => {
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Painel principal: provider + model */}
-          <div className="surface-card rounded-xl p-6 lg:col-span-2 space-y-6">
+          <div className="surface-card rounded-xl p-4 sm:p-6 lg:col-span-2 space-y-6">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-gold" />
               <h2 className="font-display text-xl font-semibold">Modelo padrão global</h2>
@@ -431,7 +431,7 @@ const AdminIA = () => {
           </div>
 
           {/* Status atual */}
-          <div className="surface-card rounded-xl p-6 space-y-4">
+          <div className="surface-card rounded-xl p-4 sm:p-6 space-y-4">
             <div className="flex items-center gap-2">
               <Cpu className="h-5 w-5 text-gold" />
               <h2 className="font-display text-lg font-semibold">Status atual</h2>
@@ -465,7 +465,7 @@ const AdminIA = () => {
           </div>
 
           {/* Pesos dos pilares */}
-          <div className="surface-card rounded-xl p-6 lg:col-span-3 space-y-5">
+          <div className="surface-card rounded-xl p-4 sm:p-6 lg:col-span-3 space-y-5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-gold" />
@@ -679,7 +679,7 @@ const ProviderCard = ({
   return (
     <div
       className={cn(
-        "surface-card rounded-xl p-6 lg:col-span-3 transition-all",
+        "surface-card rounded-xl p-4 sm:p-6 lg:col-span-3 transition-all",
         enabled ? "border-gold/30" : "opacity-90",
       )}
     >

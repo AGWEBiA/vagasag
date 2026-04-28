@@ -229,7 +229,7 @@ const Relatorio = () => {
   return (
     <AppShell>
       {/* Section 1 — Header */}
-      <header className="surface-card rounded-xl p-6 md:p-8 mb-6 animate-fade-in">
+      <header className="surface-card rounded-xl p-4 sm:p-6 md:p-8 mb-6 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           <div
             className={`flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-bold shrink-0 ${senioridadeAvatarClasses(s)}`}
@@ -352,7 +352,7 @@ const Relatorio = () => {
             if (!pilar) return null;
             const Icon = ICONS[p.icon];
             return (
-              <div key={p.key} className="surface-card rounded-xl p-6">
+              <div key={p.key} className="surface-card rounded-xl p-4 sm:p-6">
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pleno-bg text-gold">
@@ -386,7 +386,7 @@ const Relatorio = () => {
 
       {/* Section 3.5 — Evidências comportamentais */}
       {evidencias.length > 0 && (
-        <section className="mb-6 surface-card rounded-xl p-6 border-2 border-gold/30">
+        <section className="mb-6 surface-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
           <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
             <div>
               <h2 className="font-display text-xl font-semibold flex items-center gap-2">
@@ -434,7 +434,7 @@ const Relatorio = () => {
         </section>
       )}
       <section className="grid gap-4 md:grid-cols-2 mb-6">
-        <div className="surface-card rounded-xl p-6">
+        <div className="surface-card rounded-xl p-4 sm:p-6">
           <h3 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-senior" />
             Pontos Fortes
@@ -448,7 +448,7 @@ const Relatorio = () => {
             ))}
           </ul>
         </div>
-        <div className="surface-card rounded-xl p-6">
+        <div className="surface-card rounded-xl p-4 sm:p-6">
           <h3 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
             Gaps Identificados
@@ -485,7 +485,7 @@ const Relatorio = () => {
       </section>
 
       {/* Section 6 — Resumo */}
-      <section className="rounded-xl p-6 md:p-8 mb-8 bg-gradient-surface border-2 border-gold/40 shadow-gold">
+      <section className="rounded-xl p-4 sm:p-6 md:p-8 mb-8 bg-gradient-surface border-2 border-gold/40 shadow-gold">
         <h2 className="font-display text-2xl font-semibold mb-3 text-gradient-gold">
           Resumo Executivo
         </h2>

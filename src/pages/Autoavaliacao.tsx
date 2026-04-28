@@ -309,7 +309,7 @@ const Autoavaliacao = () => {
 
             <form
               onSubmit={handleSubmit}
-              className="surface-card rounded-xl p-6 md:p-8 space-y-6"
+              className="surface-card rounded-xl p-4 sm:p-6 md:p-8 space-y-6"
             >
             <div className="space-y-2">
               <Label htmlFor="nome">

@@ -88,7 +88,7 @@ const PortalVagas = () => {
               <Link
                 key={v.id}
                 to={`/vagas/${v.id}`}
-                className="surface-card rounded-xl p-6 flex flex-col gap-3 hover:ring-1 hover:ring-gold/40 hover:shadow-gold transition group"
+                className="surface-card rounded-xl p-4 sm:p-6 flex flex-col gap-3 hover:ring-1 hover:ring-gold/40 hover:shadow-gold transition group"
               >
                 <div className="text-xs text-gold uppercase tracking-widest font-semibold">
                   {CARGO_LABEL[v.cargo]}

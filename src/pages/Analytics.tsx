@@ -540,7 +540,7 @@ const Card = ({
   icon?: React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <div className="surface-card rounded-xl p-6">
+  <div className="surface-card rounded-xl p-4 sm:p-6">
     <div className="flex items-center justify-between mb-4">
       <h2 className="font-display text-lg font-semibold">{title}</h2>
       {icon}
