@@ -13,15 +13,23 @@ import {
   BarChart3,
   LifeBuoy,
   Palette,
+  Menu,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { KanbanQuickAccess } from "@/components/KanbanQuickAccess";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useBranding } from "@/hooks/useBranding";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -46,6 +54,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const branding = useBranding();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const NAV = isAdmin ? [...BASE_NAV, ...ADMIN_NAV] : BASE_NAV;
 
   const initials = (user?.email ?? "U").slice(0, 2).toUpperCase();
@@ -54,6 +63,34 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
     await signOut();
     navigate("/login");
   };
+
+  const NavItems = ({ onClick }: { onClick?: () => void }) => (
+    <>
+      {NAV.map(({ to, label, icon: Icon, badge }) => (
+        <NavLink
+          key={to}
+          to={to}
+          onClick={onClick}
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-all min-h-[44px]",
+              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-gold",
+              isActive &&
+                "bg-sidebar-accent text-gold ring-1 ring-gold/20 shadow-card",
+            )
+          }
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 truncate">{label}</span>
+          {badge && (
+            <span className="rounded-full bg-gradient-gold px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
+              {badge}
+            </span>
+          )}
+        </NavLink>
+      ))}
+    </>
+  );
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -70,29 +107,8 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           )}
         </div>
 
-        <nav className="flex-1 px-3 py-6 space-y-1">
-          {NAV.map(({ to, label, icon: Icon, badge }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
-                  "text-sidebar-foreground hover:bg-sidebar-accent hover:text-gold",
-                  isActive &&
-                    "bg-sidebar-accent text-gold ring-1 ring-gold/20 shadow-card",
-                )
-              }
-            >
-              <Icon className="h-4 w-4" />
-              <span className="flex-1">{label}</span>
-              {badge && (
-                <span className="rounded-full bg-gradient-gold px-2 py-0.5 text-[10px] font-bold text-gold-foreground">
-                  {badge}
-                </span>
-              )}
-            </NavLink>
-          ))}
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+          <NavItems />
         </nav>
 
         <div className="border-t border-sidebar-border p-4">
@@ -120,32 +136,84 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
       </aside>
 
       {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between border-b border-sidebar-border bg-sidebar px-4 py-3">
-        <div className="flex items-center gap-2 min-w-0">
-          {branding.logo_mobile_url ? (
-            <img
-              src={branding.logo_mobile_url}
-              alt={branding.product_name}
-              className="h-8 w-auto max-w-[160px] object-contain"
-            />
-          ) : branding.logo_mark_url ? (
-            <>
-              <img src={branding.logo_mark_url} alt={branding.product_name} className="h-8 w-8 rounded-md object-cover" />
-              <span className="font-display font-semibold truncate max-w-[180px]">{branding.product_name}</span>
-            </>
-          ) : (
-            <>
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary" />
-              <span className="font-display font-semibold truncate max-w-[180px]">{branding.product_name}</span>
-            </>
-          )}
+      <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between border-b border-sidebar-border bg-sidebar px-3 py-2.5">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0" aria-label="Abrir menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 bg-sidebar border-sidebar-border flex flex-col">
+              <SheetHeader className="px-4 py-4 border-b border-sidebar-border">
+                <SheetTitle className="text-left">
+                  {branding.logo_horizontal_url ? (
+                    <img
+                      src={branding.logo_horizontal_url}
+                      alt={branding.product_name}
+                      className="h-8 w-auto object-contain"
+                    />
+                  ) : (
+                    <span className="font-display">{branding.product_name}</span>
+                  )}
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <NavItems onClick={() => setMobileOpen(false)} />
+              </nav>
+              <div className="border-t border-sidebar-border p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-gold text-xs font-bold text-gold-foreground">
+                    {initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-sm font-medium">{user?.email}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {isAdmin ? "Admin Master" : "Recrutador"}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-sidebar-border hover:border-gold/40 hover:text-gold"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <div className="flex items-center gap-2 min-w-0">
+            {branding.logo_mobile_url ? (
+              <img
+                src={branding.logo_mobile_url}
+                alt={branding.product_name}
+                className="h-7 w-auto max-w-[140px] object-contain"
+              />
+            ) : branding.logo_mark_url ? (
+              <>
+                <img src={branding.logo_mark_url} alt={branding.product_name} className="h-7 w-7 rounded-md object-cover" />
+                <span className="font-display font-semibold truncate text-sm">{branding.product_name}</span>
+              </>
+            ) : (
+              <>
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary" />
+                <span className="font-display font-semibold truncate text-sm">{branding.product_name}</span>
+              </>
+            )}
+          </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleLogout}>
-          <LogOut className="h-4 w-4" />
-        </Button>
+        <NavLink to="/ajuda" aria-label="Ajuda">
+          <Button variant="ghost" size="icon">
+            <LifeBuoy className="h-5 w-5" />
+          </Button>
+        </NavLink>
       </div>
 
-      <main className="flex-1 min-w-0 md:p-8 p-4 pt-20 md:pt-8 bg-gradient-hero">
+      <main className="flex-1 min-w-0 md:p-8 px-4 py-4 pt-16 md:pt-8 bg-gradient-hero pb-8">
         {/* Topbar desktop com atalhos rápidos */}
         <div className="hidden md:flex items-center justify-end gap-2 mb-4">
           <KanbanQuickAccess />
@@ -166,38 +234,6 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           </NavLink>
         </div>
         <div className="mx-auto max-w-7xl">{children}</div>
-
-        {/* Mobile nav */}
-        <nav
-          className={cn(
-            "md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sidebar-border bg-sidebar grid",
-            NAV.length >= 7
-              ? "grid-cols-7"
-              : NAV.length === 6
-              ? "grid-cols-6"
-              : NAV.length === 5
-              ? "grid-cols-5"
-              : NAV.length === 4
-              ? "grid-cols-4"
-              : "grid-cols-3",
-          )}
-        >
-          {NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-xs",
-                  isActive ? "text-gold" : "text-muted-foreground",
-                )
-              }
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
       </main>
     </div>
   );
