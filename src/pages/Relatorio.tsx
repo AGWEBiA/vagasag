@@ -103,22 +103,26 @@ const Relatorio = () => {
     if (!id) return;
     setExporting(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-relatorio-pdf`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      const { data: fnData, error: fnError } = await supabase.functions.invoke(
+        "export-relatorio-pdf",
+        {
+          body: { assessmentId: id },
         },
-        body: JSON.stringify({ assessmentId: id }),
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || `HTTP ${res.status}`);
+      );
+      if (fnError) {
+        throw new Error(fnError.message || "Erro ao chamar a função");
       }
-      const blob = await res.blob();
+      // supabase.functions.invoke returns the body as Blob/ArrayBuffer when content-type isn't JSON
+      let blob: Blob;
+      if (fnData instanceof Blob) {
+        blob = fnData;
+      } else if (fnData instanceof ArrayBuffer) {
+        blob = new Blob([fnData], { type: "application/pdf" });
+      } else if (fnData && typeof fnData === "object" && "error" in fnData) {
+        throw new Error(String((fnData as { error: string }).error));
+      } else {
+        blob = new Blob([fnData as BlobPart], { type: "application/pdf" });
+      }
       const link = document.createElement("a");
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;
