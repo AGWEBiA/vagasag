@@ -426,7 +426,7 @@ Deno.serve(async (req) => {
     if (settingsErr) console.warn("ai_settings read error", settingsErr);
 
     const provider = (settings?.provider as string) || "lovable";
-    const model = (settings?.model as string) || "google/gemini-2.5-flash";
+    const model = (settings?.model as string) || "google/gemini-2.5-pro";
 
     const cargoLabel = CARGO_LABELS[cargo];
 
