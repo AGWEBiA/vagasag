@@ -180,6 +180,66 @@ const Relatorio = () => {
     enabled: !!candidateId,
   });
 
+  // Diagnóstico de inputs fracos (para o aviso de baixa confiança)
+  const { data: inputDiag } = useQuery({
+    queryKey: ["assessment-input-diag", candidateId],
+    queryFn: async () => {
+      const { data: cand } = await supabase
+        .from("candidates")
+        .select("dados_profissionais, informacoes_adicionais")
+        .eq("id", candidateId!)
+        .maybeSingle();
+
+      // Tenta achar candidatura mais recente do mesmo email/candidate (via candidate_id se existir)
+      const { data: candidatura } = await supabase
+        .from("candidaturas")
+        .select("id, dados_profissionais, informacoes_adicionais, vaga_id")
+        .eq("candidate_id", candidateId!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let respostas: Array<{ texto: string | null; numero: number | null; tipo: string; pergunta: string; obrigatoria: boolean; usar_na_ia: boolean }> = [];
+      if (candidatura?.id) {
+        const { data: resps } = await supabase
+          .from("candidatura_respostas")
+          .select("resposta_texto, resposta_numero, vaga_perguntas(texto, tipo, obrigatoria, usar_na_ia)")
+          .eq("candidatura_id", candidatura.id);
+        respostas = (resps ?? []).map((r: any) => ({
+          texto: r.resposta_texto,
+          numero: r.resposta_numero,
+          tipo: r.vaga_perguntas?.tipo ?? "texto",
+          pergunta: r.vaga_perguntas?.texto ?? "",
+          obrigatoria: !!r.vaga_perguntas?.obrigatoria,
+          usar_na_ia: !!r.vaga_perguntas?.usar_na_ia,
+        }));
+      }
+
+      const cv = cand?.dados_profissionais ?? candidatura?.dados_profissionais ?? "";
+      const extra = cand?.informacoes_adicionais ?? candidatura?.informacoes_adicionais ?? "";
+      const cvLen = cv.trim().length;
+      const respostasIA = respostas.filter((r) => r.usar_na_ia);
+      const respostasVazias = respostasIA.filter(
+        (r) => r.tipo !== "escala" && (!r.texto || r.texto.trim().length < 20),
+      );
+      const respostasCurtas = respostasIA.filter(
+        (r) => r.tipo !== "escala" && r.texto && r.texto.trim().length >= 20 && r.texto.trim().length < 80,
+      );
+
+      return {
+        cvLen,
+        cvCurto: cvLen > 0 && cvLen < 500,
+        cvAusente: cvLen === 0,
+        semInfoAdicional: !extra || extra.trim().length < 30,
+        totalRespostasIA: respostasIA.length,
+        respostasVaziasCount: respostasVazias.length,
+        respostasCurtasCount: respostasCurtas.length,
+        semRespostas: respostasIA.length === 0,
+      };
+    },
+    enabled: !!candidateId,
+  });
+
   const previous = useMemo(() => {
     if (!data || !history) return null;
     const idx = history.findIndex((h) => h.id === data.id);
