@@ -140,8 +140,8 @@ async function handleCreate(
   if (!ALLOWED_ROLES.includes(body.role)) {
     return json({ error: "Role inválido" }, 400);
   }
-  if (body.password.length < 8) {
-    return json({ error: "Senha deve ter ao menos 8 caracteres" }, 400);
+  if (body.password.length < 6) {
+    return json({ error: "Senha deve ter ao menos 6 caracteres" }, 400);
   }
 
   const { data, error } = await admin.auth.admin.createUser({
@@ -209,8 +209,8 @@ async function handleUpdateUser(
     updates.email = body.email.trim();
   }
   if (typeof body.password === "string" && body.password.length > 0) {
-    if (body.password.length < 8) {
-      return json({ error: "Senha deve ter ao menos 8 caracteres" }, 400);
+    if (body.password.length < 6) {
+      return json({ error: "Senha deve ter ao menos 6 caracteres" }, 400);
     }
     updates.password = body.password;
   }
