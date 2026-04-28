@@ -509,9 +509,11 @@ Deno.serve(async (req) => {
       }
     }
 
+    const rubric = SENIORITY_RUBRICS[cargo] ?? "";
+
     const userPrompt = `Cargo avaliado: ${cargoLabel}
 Nome do candidato: ${nome}
-
+${rubric ? `\nRÉGUA DE SENIORIDADE ESPECÍFICA PARA ${cargoLabel.toUpperCase()} (use estes critérios como prioritários):${rubric}\n` : ""}
 DADOS PROFISSIONAIS:
 ${dadosProfissionais}
 
