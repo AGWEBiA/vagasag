@@ -197,6 +197,7 @@ async function callLovable(model: string, userPrompt: string) {
         },
       ],
       tool_choice: { type: "function", function: { name: "submit_assessment" } },
+      reasoning: { effort: "medium" },
     }),
   });
   return parseOpenAIToolCall(resp);
