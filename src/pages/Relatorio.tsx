@@ -401,27 +401,66 @@ const Relatorio = () => {
         />
       </section>
 
-      {data.confidence_score < 60 && (
-        <div className="surface-card rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5 mb-6 flex gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="text-sm space-y-1">
-            <p className="font-semibold text-foreground">
-              Confiança da IA baixa ({data.confidence_score}%)
-            </p>
-            <p className="text-muted-foreground">
-              A avaliação pode estar imprecisa. Causas mais comuns:
-            </p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-              <li>Currículo curto ou pouco detalhado (faltam métricas, resultados, tempo por cargo)</li>
-              <li>Respostas das perguntas vazias ou muito genéricas</li>
-              <li>Cargo ambíguo em relação à trajetória descrita</li>
-            </ul>
-            <p className="text-muted-foreground pt-1">
-              Sugestão: peça ao candidato mais detalhes quantitativos e refaça a avaliação.
-            </p>
+      {data.confidence_score < 60 && (() => {
+        const issues: { label: string; detail: string }[] = [];
+        if (inputDiag?.cvAusente) {
+          issues.push({ label: "Currículo ausente", detail: "O candidato não enviou texto de experiência profissional." });
+        } else if (inputDiag?.cvCurto) {
+          issues.push({ label: "Currículo curto", detail: `Apenas ${inputDiag.cvLen} caracteres. Faltam métricas, resultados e tempo por cargo.` });
+        }
+        if (inputDiag?.semInfoAdicional) {
+          issues.push({ label: "Sem informações adicionais", detail: "Campo de contexto extra está vazio ou muito curto." });
+        }
+        if (inputDiag?.semRespostas) {
+          issues.push({ label: "Sem respostas da vaga", detail: "Não há perguntas respondidas marcadas para análise da IA." });
+        } else {
+          if ((inputDiag?.respostasVaziasCount ?? 0) > 0) {
+            issues.push({
+              label: `${inputDiag!.respostasVaziasCount} resposta(s) vazia(s)`,
+              detail: `De ${inputDiag!.totalRespostasIA} perguntas usadas pela IA, ${inputDiag!.respostasVaziasCount} estão em branco ou com menos de 20 caracteres.`,
+            });
+          }
+          if ((inputDiag?.respostasCurtasCount ?? 0) > 0) {
+            issues.push({
+              label: `${inputDiag!.respostasCurtasCount} resposta(s) muito curta(s)`,
+              detail: "Respostas com menos de 80 caracteres tendem a não ter contexto suficiente para avaliar comportamento.",
+            });
+          }
+        }
+
+        return (
+          <div className="surface-card rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5 mb-6 flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-sm space-y-2 flex-1">
+              <p className="font-semibold text-foreground">
+                Confiança da IA baixa ({data.confidence_score}%)
+              </p>
+              {issues.length > 0 ? (
+                <>
+                  <p className="text-muted-foreground">Entradas fracas detectadas:</p>
+                  <ul className="space-y-1.5">
+                    {issues.map((it, i) => (
+                      <li key={i} className="text-muted-foreground">
+                        <span className="font-medium text-foreground">{it.label}.</span>{" "}
+                        {it.detail}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-muted-foreground">
+                  Os inputs parecem completos — a baixa confiança pode vir de cargo ambíguo
+                  em relação à trajetória ou de evidências quantitativas insuficientes (R$, %, escala).
+                </p>
+              )}
+              <p className="text-muted-foreground pt-1">
+                Sugestão: peça ao candidato mais detalhes quantitativos (orçamentos, métricas,
+                tempo por cargo) e refaça a avaliação.
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Section 3 — Pilares (técnicos + comportamental) */}
       <section className="mb-6">
