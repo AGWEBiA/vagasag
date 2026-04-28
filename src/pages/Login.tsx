@@ -30,15 +30,23 @@ const Login = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      // Senha pode ter espaços legítimos no meio, mas espaços nas pontas
+      // quase sempre são lixo do autocomplete mobile.
+      const cleanPassword = password.replace(/^\s+|\s+$/g, "");
+
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: cleanPassword,
+        });
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
         navigate("/");
       } else {
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: cleanEmail,
+          password: cleanPassword,
           options: { emailRedirectTo: window.location.origin + "/" },
         });
         if (error) throw error;
@@ -46,17 +54,38 @@ const Login = () => {
         navigate("/");
       }
     } catch (err: any) {
-      const msg = err?.message ?? "Erro ao autenticar";
-      if (msg.toLowerCase().includes("invalid login")) {
-        toast.error("E-mail ou senha incorretos.");
-      } else if (msg.toLowerCase().includes("already registered")) {
+      const msg = (err?.message ?? "Erro ao autenticar").toLowerCase();
+      if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+        toast.error("E-mail ainda não confirmado. Verifique sua caixa de entrada (e spam).");
+      } else if (msg.includes("invalid login") || msg.includes("invalid credentials")) {
+        toast.error("E-mail ou senha incorretos. Use 'Esqueci minha senha' se necessário.");
+      } else if (msg.includes("already registered") || msg.includes("user already")) {
         toast.error("Este e-mail já está cadastrado. Faça login.");
         setMode("signin");
+      } else if (msg.includes("rate limit") || msg.includes("too many")) {
+        toast.error("Muitas tentativas. Aguarde um minuto e tente novamente.");
       } else {
-        toast.error(msg);
+        toast.error(err?.message ?? "Erro ao autenticar");
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      toast.error("Digite seu e-mail acima para receber o link de redefinição.");
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: window.location.origin + "/reset-password",
+      });
+      if (error) throw error;
+      toast.success("Enviamos um link de redefinição para seu e-mail.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Não foi possível enviar o e-mail de redefinição.");
     }
   };
 
