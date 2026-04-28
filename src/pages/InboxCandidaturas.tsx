@@ -252,7 +252,7 @@ const InboxCandidaturas = () => {
           </div>
 
           {selected && (
-            <div className="surface-card rounded-xl p-6 space-y-5">
+            <div className="surface-card rounded-xl p-4 sm:p-6 space-y-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="font-display text-2xl font-semibold">{selected.nome}</h2>

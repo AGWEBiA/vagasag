@@ -177,7 +177,7 @@ const Dashboard = () => {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2 mb-8">
-        <div className="surface-card rounded-xl p-6">
+        <div className="surface-card rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display text-xl font-semibold">
               Distribuição por Senioridade
@@ -224,7 +224,7 @@ const Dashboard = () => {
           )}
         </div>
 
-        <div className="surface-card rounded-xl p-6">
+        <div className="surface-card rounded-xl p-4 sm:p-6">
           <h2 className="font-display text-xl font-semibold mb-6">
             Top Cargos Avaliados
           </h2>
@@ -251,7 +251,7 @@ const Dashboard = () => {
         </div>
       </section>
 
-      <section className="surface-card rounded-xl p-6">
+      <section className="surface-card rounded-xl p-4 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-xl font-semibold">
             Avaliações Recentes
