@@ -14,6 +14,8 @@ const CARGO_LABELS: Record<string, string> = {
   desenvolvedor: "Desenvolvedor",
   social_media_manager: "Social Media Manager",
   seo_specialist: "SEO Specialist",
+  atendimento_suporte: "Atendimento / Suporte",
+  gestor_projetos: "Gestor de Projetos",
 };
 
 // Réguas detalhadas de senioridade por cargo. Quanto mais específica, menos ambiguidade e maior confidence.
