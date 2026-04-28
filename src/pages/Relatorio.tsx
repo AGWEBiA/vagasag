@@ -180,6 +180,66 @@ const Relatorio = () => {
     enabled: !!candidateId,
   });
 
+  // Diagnóstico de inputs fracos (para o aviso de baixa confiança)
+  const { data: inputDiag } = useQuery({
+    queryKey: ["assessment-input-diag", candidateId],
+    queryFn: async () => {
+      const { data: cand } = await supabase
+        .from("candidates")
+        .select("dados_profissionais, informacoes_adicionais")
+        .eq("id", candidateId!)
+        .maybeSingle();
+
+      // Tenta achar candidatura mais recente do mesmo email/candidate (via candidate_id se existir)
+      const { data: candidatura } = await supabase
+        .from("candidaturas")
+        .select("id, dados_profissionais, informacoes_adicionais, vaga_id")
+        .eq("candidate_id", candidateId!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let respostas: Array<{ texto: string | null; numero: number | null; tipo: string; pergunta: string; obrigatoria: boolean; usar_na_ia: boolean }> = [];
+      if (candidatura?.id) {
+        const { data: resps } = await supabase
+          .from("candidatura_respostas")
+          .select("resposta_texto, resposta_numero, vaga_perguntas(texto, tipo, obrigatoria, usar_na_ia)")
+          .eq("candidatura_id", candidatura.id);
+        respostas = (resps ?? []).map((r: any) => ({
+          texto: r.resposta_texto,
+          numero: r.resposta_numero,
+          tipo: r.vaga_perguntas?.tipo ?? "texto",
+          pergunta: r.vaga_perguntas?.texto ?? "",
+          obrigatoria: !!r.vaga_perguntas?.obrigatoria,
+          usar_na_ia: !!r.vaga_perguntas?.usar_na_ia,
+        }));
+      }
+
+      const cv = cand?.dados_profissionais ?? candidatura?.dados_profissionais ?? "";
+      const extra = cand?.informacoes_adicionais ?? candidatura?.informacoes_adicionais ?? "";
+      const cvLen = cv.trim().length;
+      const respostasIA = respostas.filter((r) => r.usar_na_ia);
+      const respostasVazias = respostasIA.filter(
+        (r) => r.tipo !== "escala" && (!r.texto || r.texto.trim().length < 20),
+      );
+      const respostasCurtas = respostasIA.filter(
+        (r) => r.tipo !== "escala" && r.texto && r.texto.trim().length >= 20 && r.texto.trim().length < 80,
+      );
+
+      return {
+        cvLen,
+        cvCurto: cvLen > 0 && cvLen < 500,
+        cvAusente: cvLen === 0,
+        semInfoAdicional: !extra || extra.trim().length < 30,
+        totalRespostasIA: respostasIA.length,
+        respostasVaziasCount: respostasVazias.length,
+        respostasCurtasCount: respostasCurtas.length,
+        semRespostas: respostasIA.length === 0,
+      };
+    },
+    enabled: !!candidateId,
+  });
+
   const previous = useMemo(() => {
     if (!data || !history) return null;
     const idx = history.findIndex((h) => h.id === data.id);
@@ -341,27 +401,66 @@ const Relatorio = () => {
         />
       </section>
 
-      {data.confidence_score < 60 && (
-        <div className="surface-card rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5 mb-6 flex gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="text-sm space-y-1">
-            <p className="font-semibold text-foreground">
-              Confiança da IA baixa ({data.confidence_score}%)
-            </p>
-            <p className="text-muted-foreground">
-              A avaliação pode estar imprecisa. Causas mais comuns:
-            </p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-              <li>Currículo curto ou pouco detalhado (faltam métricas, resultados, tempo por cargo)</li>
-              <li>Respostas das perguntas vazias ou muito genéricas</li>
-              <li>Cargo ambíguo em relação à trajetória descrita</li>
-            </ul>
-            <p className="text-muted-foreground pt-1">
-              Sugestão: peça ao candidato mais detalhes quantitativos e refaça a avaliação.
-            </p>
+      {data.confidence_score < 60 && (() => {
+        const issues: { label: string; detail: string }[] = [];
+        if (inputDiag?.cvAusente) {
+          issues.push({ label: "Currículo ausente", detail: "O candidato não enviou texto de experiência profissional." });
+        } else if (inputDiag?.cvCurto) {
+          issues.push({ label: "Currículo curto", detail: `Apenas ${inputDiag.cvLen} caracteres. Faltam métricas, resultados e tempo por cargo.` });
+        }
+        if (inputDiag?.semInfoAdicional) {
+          issues.push({ label: "Sem informações adicionais", detail: "Campo de contexto extra está vazio ou muito curto." });
+        }
+        if (inputDiag?.semRespostas) {
+          issues.push({ label: "Sem respostas da vaga", detail: "Não há perguntas respondidas marcadas para análise da IA." });
+        } else {
+          if ((inputDiag?.respostasVaziasCount ?? 0) > 0) {
+            issues.push({
+              label: `${inputDiag!.respostasVaziasCount} resposta(s) vazia(s)`,
+              detail: `De ${inputDiag!.totalRespostasIA} perguntas usadas pela IA, ${inputDiag!.respostasVaziasCount} estão em branco ou com menos de 20 caracteres.`,
+            });
+          }
+          if ((inputDiag?.respostasCurtasCount ?? 0) > 0) {
+            issues.push({
+              label: `${inputDiag!.respostasCurtasCount} resposta(s) muito curta(s)`,
+              detail: "Respostas com menos de 80 caracteres tendem a não ter contexto suficiente para avaliar comportamento.",
+            });
+          }
+        }
+
+        return (
+          <div className="surface-card rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5 mb-6 flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-sm space-y-2 flex-1">
+              <p className="font-semibold text-foreground">
+                Confiança da IA baixa ({data.confidence_score}%)
+              </p>
+              {issues.length > 0 ? (
+                <>
+                  <p className="text-muted-foreground">Entradas fracas detectadas:</p>
+                  <ul className="space-y-1.5">
+                    {issues.map((it, i) => (
+                      <li key={i} className="text-muted-foreground">
+                        <span className="font-medium text-foreground">{it.label}.</span>{" "}
+                        {it.detail}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-muted-foreground">
+                  Os inputs parecem completos — a baixa confiança pode vir de cargo ambíguo
+                  em relação à trajetória ou de evidências quantitativas insuficientes (R$, %, escala).
+                </p>
+              )}
+              <p className="text-muted-foreground pt-1">
+                Sugestão: peça ao candidato mais detalhes quantitativos (orçamentos, métricas,
+                tempo por cargo) e refaça a avaliação.
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Section 3 — Pilares (técnicos + comportamental) */}
       <section className="mb-6">

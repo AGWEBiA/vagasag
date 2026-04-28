@@ -16,6 +16,50 @@ const CARGO_LABELS: Record<string, string> = {
   seo_specialist: "SEO Specialist",
 };
 
+// Réguas detalhadas de senioridade por cargo. Quanto mais específica, menos ambiguidade e maior confidence.
+const SENIORITY_RUBRICS: Record<string, string> = {
+  gestor_trafego: `
+- JÚNIOR: opera campanhas pequenas (<R$10k/mês), 1-2 plataformas (Meta/Google), segue briefing, otimiza por métricas básicas (CPC, CPM). Não estrutura funil sozinho.
+- PLENO: gerencia R$10k–R$100k/mês em múltiplas plataformas, estrutura funis completos, define KPIs (CPA, ROAS, LTV), faz testes A/B, reporta resultados sem supervisão.
+- SÊNIOR: gerencia R$100k+/mês ou múltiplas contas, define estratégia de aquisição ponta-a-ponta, lidera analistas, conecta tráfego a metas de negócio (CAC/LTV, payback), domina atribuição e mídia avançada.`,
+  copywriter: `
+- JÚNIOR: escreve peças curtas (anúncios, posts) seguindo briefing, com revisão obrigatória. Pouco domínio de pesquisa de público ou copy de conversão.
+- PLENO: produz copy de conversão (landing pages, e-mails, VSLs) com base em pesquisa própria, conhece frameworks (AIDA, PAS), trabalha com métricas de copy (CTR, conversão).
+- SÊNIOR: lidera estratégia de mensagem de campanhas, cria big ideas e narrativas de marca, mentora redatores, gera resultados mensuráveis em vendas/ARR.`,
+  designer: `
+- JÚNIOR: executa peças sob direção (posts, banners, ajustes), domínio básico de Figma/Adobe, sem repertório próprio.
+- PLENO: cria identidades visuais e sistemas de design, conduz projetos do briefing à entrega, autônomo em decisões visuais.
+- SÊNIOR: define direção de arte de marcas, lidera equipes de design, conecta design a estratégia de negócio, repertório consistente e prêmios/cases relevantes.`,
+  web_designer: `
+- JÚNIOR: monta páginas em builders (Webflow, WordPress, Elementor) seguindo template; pouco domínio de UX e responsividade avançada.
+- PLENO: cria sites completos do zero, domina UX/UI, performance (Core Web Vitals), CMS e integrações; entrega sem supervisão.
+- SÊNIOR: arquiteta sistemas web complexos (multilíngue, e-commerce, SaaS), lidera projetos com devs, define padrões de design system, otimiza para conversão e SEO.`,
+  desenvolvedor: `
+- JÚNIOR: implementa features pequenas com supervisão, segue padrões existentes, faz bugs simples; pouco domínio de arquitetura.
+- PLENO: desenvolve features completas de forma autônoma, escreve testes, faz code review, domina a stack do projeto.
+- SÊNIOR: arquiteta sistemas, define padrões técnicos, lidera decisões de stack, mentora devs, resolve problemas complexos de performance/escala.`,
+  social_media_manager: `
+- JÚNIOR: opera calendário de postagem, responde DMs, executa briefing de conteúdo. Métricas básicas (alcance, curtidas).
+- PLENO: planeja estratégia de conteúdo, produz/coordena criação, analisa engajamento e conversão, gerencia múltiplas marcas/canais.
+- SÊNIOR: define estratégia de presença digital ponta-a-ponta, lidera time (criadores, designers), conecta social a metas de negócio (vendas, leads, brand lift), gerencia crises.`,
+  seo_specialist: `
+- JÚNIOR: faz on-page básico (title, meta, headings), pesquisa de palavras-chave simples, segue checklist.
+- PLENO: conduz auditorias técnicas, estratégia de conteúdo SEO, link building, monitora rankings e tráfego orgânico, autônomo em projetos.
+- SÊNIOR: lidera estratégia SEO de domínios complexos, domina SEO técnico avançado (logs, JS rendering, internacionalização), conecta SEO a receita, mentora time.`,
+};
+
+// Pesos sugeridos por cargo (calibração automática). Usados como fallback quando há cargo conhecido.
+// A soma deve ser 100. Mantém compatibilidade com o cálculo atual.
+const CARGO_PESOS: Record<string, { tecnico: number; impacto: number; comportamental: number; estrategico: number; lideranca: number }> = {
+  gestor_trafego:        { tecnico: 30, impacto: 30, comportamental: 15, estrategico: 20, lideranca: 5 },
+  copywriter:            { tecnico: 35, impacto: 25, comportamental: 15, estrategico: 20, lideranca: 5 },
+  designer:              { tecnico: 40, impacto: 20, comportamental: 20, estrategico: 15, lideranca: 5 },
+  web_designer:          { tecnico: 40, impacto: 20, comportamental: 15, estrategico: 20, lideranca: 5 },
+  desenvolvedor:         { tecnico: 45, impacto: 20, comportamental: 15, estrategico: 15, lideranca: 5 },
+  social_media_manager:  { tecnico: 25, impacto: 25, comportamental: 20, estrategico: 20, lideranca: 10 },
+  seo_specialist:        { tecnico: 40, impacto: 25, comportamental: 10, estrategico: 20, lideranca: 5 },
+};
+
 const SYSTEM_PROMPT = `Você é um especialista sênior em avaliação de talentos para agências digitais, com mais de 15 anos de experiência em recrutamento, desenvolvimento de equipes de marketing digital, design e tecnologia, e também em avaliação comportamental (DISC, Big Five, entrevistas situacionais STAR).
 
 Sua missão é analisar o perfil profissional de um candidato e determinar com precisão (1) o seu nível de senioridade técnica para o cargo informado e (2) o seu perfil comportamental — caráter, proatividade, capacidade de trabalho em equipe, abertura a feedback e resiliência.
@@ -30,10 +74,17 @@ FRAMEWORK DE AVALIAÇÃO — 5 PILARES:
 
 Os pesos exatos de cada pilar podem variar — concentre-se em dar notas honestas (0-10) com justificativas claras. O cálculo da nota ponderada é feito posteriormente.
 
-CRITÉRIOS DE CLASSIFICAÇÃO DE SENIORIDADE:
-- JÚNIOR (0–4.9): Até 2 anos, executa tarefas com supervisão constante.
-- PLENO (5.0–7.4): 2 a 5 anos, autônomo em projetos de média complexidade.
-- SÊNIOR (7.5–10): +5 anos, lidera projetos complexos, visão estratégica.
+CRITÉRIOS GERAIS DE CLASSIFICAÇÃO DE SENIORIDADE (use como base, mas SEMPRE refine com a régua específica do cargo informada no prompt do usuário):
+- JÚNIOR (0–4.9): Em geral até 2 anos. Executa tarefas com supervisão constante; conhecimento prático limitado; pouca ou nenhuma autonomia em decisões; resultados sem contexto ou métricas claras.
+- PLENO (5.0–7.4): Em geral 2 a 5 anos. Autônomo em projetos de média complexidade; domina o ferramental e os processos do cargo; entrega resultados consistentes e mensuráveis; influencia colegas pontualmente.
+- SÊNIOR (7.5–10): Em geral +5 anos. Lidera projetos complexos com múltiplos stakeholders; toma decisões estratégicas; mentora pares; gera resultados de impacto significativo (orçamentos altos, KPIs de negócio, escala).
+
+REGRAS PARA REDUZIR AMBIGUIDADE NA SENIORIDADE:
+- Se o candidato cumpre TODOS os critérios do nível superior, classifique no nível superior (não fique "em cima do muro").
+- Se faltar UM critério, classifique no nível inferior e mencione o gap.
+- Tempo de experiência ISOLADO não define nível: peso maior para escopo, autonomia e resultados.
+- Quando faltam evidências quantitativas (R$, %, nº contas/projetos), reduza confidenceScore proporcionalmente (≤ 60).
+- Quando o cargo declarado for incompatível com a trajetória, classifique pelo desempenho real e justifique.
 
 EVIDÊNCIAS COMPORTAMENTAIS (NOVO — OBRIGATÓRIO):
 Em "evidenciasComportamentais", forneça 3 a 5 trechos LITERAIS extraídos das respostas do candidato (ou dos dados profissionais) que mais influenciaram a nota do pilar Comportamental. Para cada evidência:
@@ -458,9 +509,11 @@ Deno.serve(async (req) => {
       }
     }
 
+    const rubric = SENIORITY_RUBRICS[cargo] ?? "";
+
     const userPrompt = `Cargo avaliado: ${cargoLabel}
 Nome do candidato: ${nome}
-
+${rubric ? `\nRÉGUA DE SENIORIDADE ESPECÍFICA PARA ${cargoLabel.toUpperCase()} (use estes critérios como prioritários):${rubric}\n` : ""}
 DADOS PROFISSIONAIS:
 ${dadosProfissionais}
 
@@ -512,13 +565,21 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
       .select("tecnico, impacto, comportamental, estrategico, lideranca")
       .eq("id", 1)
       .maybeSingle();
-    const pesos = pesosRow ?? {
-      tecnico: 30,
-      impacto: 25,
-      comportamental: 20,
-      estrategico: 15,
-      lideranca: 10,
-    };
+
+    const DEFAULT_PESOS = { tecnico: 30, impacto: 25, comportamental: 20, estrategico: 15, lideranca: 10 };
+    const isDefaultGlobal =
+      !pesosRow ||
+      (Number(pesosRow.tecnico) === DEFAULT_PESOS.tecnico &&
+        Number(pesosRow.impacto) === DEFAULT_PESOS.impacto &&
+        Number(pesosRow.comportamental) === DEFAULT_PESOS.comportamental &&
+        Number(pesosRow.estrategico) === DEFAULT_PESOS.estrategico &&
+        Number(pesosRow.lideranca) === DEFAULT_PESOS.lideranca);
+
+    // Calibração automática por cargo: usa perfil do cargo quando o admin
+    // ainda não personalizou os pesos globais. Caso contrário, respeita o global.
+    const pesos = isDefaultGlobal && CARGO_PESOS[cargo]
+      ? CARGO_PESOS[cargo]
+      : (pesosRow ?? DEFAULT_PESOS);
 
     const notaPonderada =
       pilares.profundidadeTecnica.nota * (Number(pesos.tecnico) / 100) +
