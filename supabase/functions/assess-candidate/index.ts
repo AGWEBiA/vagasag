@@ -16,6 +16,50 @@ const CARGO_LABELS: Record<string, string> = {
   seo_specialist: "SEO Specialist",
 };
 
+// Réguas detalhadas de senioridade por cargo. Quanto mais específica, menos ambiguidade e maior confidence.
+const SENIORITY_RUBRICS: Record<string, string> = {
+  gestor_trafego: `
+- JÚNIOR: opera campanhas pequenas (<R$10k/mês), 1-2 plataformas (Meta/Google), segue briefing, otimiza por métricas básicas (CPC, CPM). Não estrutura funil sozinho.
+- PLENO: gerencia R$10k–R$100k/mês em múltiplas plataformas, estrutura funis completos, define KPIs (CPA, ROAS, LTV), faz testes A/B, reporta resultados sem supervisão.
+- SÊNIOR: gerencia R$100k+/mês ou múltiplas contas, define estratégia de aquisição ponta-a-ponta, lidera analistas, conecta tráfego a metas de negócio (CAC/LTV, payback), domina atribuição e mídia avançada.`,
+  copywriter: `
+- JÚNIOR: escreve peças curtas (anúncios, posts) seguindo briefing, com revisão obrigatória. Pouco domínio de pesquisa de público ou copy de conversão.
+- PLENO: produz copy de conversão (landing pages, e-mails, VSLs) com base em pesquisa própria, conhece frameworks (AIDA, PAS), trabalha com métricas de copy (CTR, conversão).
+- SÊNIOR: lidera estratégia de mensagem de campanhas, cria big ideas e narrativas de marca, mentora redatores, gera resultados mensuráveis em vendas/ARR.`,
+  designer: `
+- JÚNIOR: executa peças sob direção (posts, banners, ajustes), domínio básico de Figma/Adobe, sem repertório próprio.
+- PLENO: cria identidades visuais e sistemas de design, conduz projetos do briefing à entrega, autônomo em decisões visuais.
+- SÊNIOR: define direção de arte de marcas, lidera equipes de design, conecta design a estratégia de negócio, repertório consistente e prêmios/cases relevantes.`,
+  web_designer: `
+- JÚNIOR: monta páginas em builders (Webflow, WordPress, Elementor) seguindo template; pouco domínio de UX e responsividade avançada.
+- PLENO: cria sites completos do zero, domina UX/UI, performance (Core Web Vitals), CMS e integrações; entrega sem supervisão.
+- SÊNIOR: arquiteta sistemas web complexos (multilíngue, e-commerce, SaaS), lidera projetos com devs, define padrões de design system, otimiza para conversão e SEO.`,
+  desenvolvedor: `
+- JÚNIOR: implementa features pequenas com supervisão, segue padrões existentes, faz bugs simples; pouco domínio de arquitetura.
+- PLENO: desenvolve features completas de forma autônoma, escreve testes, faz code review, domina a stack do projeto.
+- SÊNIOR: arquiteta sistemas, define padrões técnicos, lidera decisões de stack, mentora devs, resolve problemas complexos de performance/escala.`,
+  social_media_manager: `
+- JÚNIOR: opera calendário de postagem, responde DMs, executa briefing de conteúdo. Métricas básicas (alcance, curtidas).
+- PLENO: planeja estratégia de conteúdo, produz/coordena criação, analisa engajamento e conversão, gerencia múltiplas marcas/canais.
+- SÊNIOR: define estratégia de presença digital ponta-a-ponta, lidera time (criadores, designers), conecta social a metas de negócio (vendas, leads, brand lift), gerencia crises.`,
+  seo_specialist: `
+- JÚNIOR: faz on-page básico (title, meta, headings), pesquisa de palavras-chave simples, segue checklist.
+- PLENO: conduz auditorias técnicas, estratégia de conteúdo SEO, link building, monitora rankings e tráfego orgânico, autônomo em projetos.
+- SÊNIOR: lidera estratégia SEO de domínios complexos, domina SEO técnico avançado (logs, JS rendering, internacionalização), conecta SEO a receita, mentora time.`,
+};
+
+// Pesos sugeridos por cargo (calibração automática). Usados como fallback quando há cargo conhecido.
+// A soma deve ser 100. Mantém compatibilidade com o cálculo atual.
+const CARGO_PESOS: Record<string, { tecnico: number; impacto: number; comportamental: number; estrategico: number; lideranca: number }> = {
+  gestor_trafego:        { tecnico: 30, impacto: 30, comportamental: 15, estrategico: 20, lideranca: 5 },
+  copywriter:            { tecnico: 35, impacto: 25, comportamental: 15, estrategico: 20, lideranca: 5 },
+  designer:              { tecnico: 40, impacto: 20, comportamental: 20, estrategico: 15, lideranca: 5 },
+  web_designer:          { tecnico: 40, impacto: 20, comportamental: 15, estrategico: 20, lideranca: 5 },
+  desenvolvedor:         { tecnico: 45, impacto: 20, comportamental: 15, estrategico: 15, lideranca: 5 },
+  social_media_manager:  { tecnico: 25, impacto: 25, comportamental: 20, estrategico: 20, lideranca: 10 },
+  seo_specialist:        { tecnico: 40, impacto: 25, comportamental: 10, estrategico: 20, lideranca: 5 },
+};
+
 const SYSTEM_PROMPT = `Você é um especialista sênior em avaliação de talentos para agências digitais, com mais de 15 anos de experiência em recrutamento, desenvolvimento de equipes de marketing digital, design e tecnologia, e também em avaliação comportamental (DISC, Big Five, entrevistas situacionais STAR).
 
 Sua missão é analisar o perfil profissional de um candidato e determinar com precisão (1) o seu nível de senioridade técnica para o cargo informado e (2) o seu perfil comportamental — caráter, proatividade, capacidade de trabalho em equipe, abertura a feedback e resiliência.
