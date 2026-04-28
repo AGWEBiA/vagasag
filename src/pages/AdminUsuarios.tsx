@@ -77,6 +77,7 @@ interface UserRow {
 }
 
 const ROLE_OPTIONS: AppRole[] = ["admin", "recrutador", "lider", "colaborador"];
+const MIN_PASSWORD_LENGTH = 6;
 
 const ROLE_BADGE: Record<AppRole, string> = {
   admin: "bg-gradient-gold text-gold-foreground",
@@ -160,8 +161,8 @@ const AdminUsuarios = () => {
   };
 
   const handleCreate = async () => {
-    if (!newEmail.trim() || !newPassword || newPassword.length < 8) {
-      toast.error("Email e senha (mín. 8 caracteres) são obrigatórios.");
+    if (!newEmail.trim() || !newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Email e senha (mín. ${MIN_PASSWORD_LENGTH} caracteres) são obrigatórios.`);
       return;
     }
     setCreating(true);
@@ -256,8 +257,8 @@ const AdminUsuarios = () => {
       toast.error("Email é obrigatório.");
       return;
     }
-    if (editPassword && editPassword.length < 8) {
-      toast.error("Nova senha deve ter ao menos 8 caracteres.");
+    if (editPassword && editPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Nova senha deve ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.`);
       return;
     }
     if (editRoles.length === 0) {
@@ -400,7 +401,7 @@ const AdminUsuarios = () => {
         email,
         role: validRole,
         full_name: fullName || undefined,
-        password: password && password.length >= 8 ? password : undefined,
+        password: password && password.length >= MIN_PASSWORD_LENGTH ? password : undefined,
       };
     });
     setBulkBusy(true);
@@ -760,7 +761,7 @@ const AdminUsuarios = () => {
             <DialogDescription>
               Uma linha por usuário no formato:{" "}
               <code className="text-gold">email, papel, nome, senha</code>.
-              Se a senha for omitida (ou tiver menos de 8 caracteres), o sistema gera uma automaticamente.
+              Se a senha for omitida (ou tiver menos de {MIN_PASSWORD_LENGTH} caracteres), o sistema gera uma automaticamente.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -804,7 +805,7 @@ const AdminUsuarios = () => {
               className="font-mono text-xs resize-none"
             />
             <p className="text-[11px] text-muted-foreground">
-              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador". Senha precisa ter ao menos 8 caracteres.
+              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador". Senha precisa ter ao menos {MIN_PASSWORD_LENGTH} caracteres.
             </p>
 
             {bulkResults && (
@@ -952,7 +953,7 @@ const AdminUsuarios = () => {
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Mínimo de 8 caracteres. A senha antiga é descartada ao salvar.
+                Mínimo de {MIN_PASSWORD_LENGTH} caracteres. A senha antiga é descartada ao salvar.
               </p>
             </div>
             <div className="space-y-1.5">
