@@ -761,7 +761,7 @@ const AdminUsuarios = () => {
             <DialogDescription>
               Uma linha por usuário no formato:{" "}
               <code className="text-gold">email, papel, nome, senha</code>.
-              Se a senha for omitida (ou tiver menos de 8 caracteres), o sistema gera uma automaticamente.
+              Se a senha for omitida (ou tiver menos de {MIN_PASSWORD_LENGTH} caracteres), o sistema gera uma automaticamente.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -805,7 +805,7 @@ const AdminUsuarios = () => {
               className="font-mono text-xs resize-none"
             />
             <p className="text-[11px] text-muted-foreground">
-              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador". Senha precisa ter ao menos 8 caracteres.
+              Papéis aceitos: {ROLE_OPTIONS.join(", ")}. Se omitido, usa "colaborador". Senha precisa ter ao menos {MIN_PASSWORD_LENGTH} caracteres.
             </p>
 
             {bulkResults && (
@@ -953,7 +953,7 @@ const AdminUsuarios = () => {
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Mínimo de 8 caracteres. A senha antiga é descartada ao salvar.
+                Mínimo de {MIN_PASSWORD_LENGTH} caracteres. A senha antiga é descartada ao salvar.
               </p>
             </div>
             <div className="space-y-1.5">
