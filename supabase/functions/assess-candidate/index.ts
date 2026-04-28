@@ -565,13 +565,21 @@ Analise este perfil e retorne o JSON de avaliação conforme as instruções.`;
       .select("tecnico, impacto, comportamental, estrategico, lideranca")
       .eq("id", 1)
       .maybeSingle();
-    const pesos = pesosRow ?? {
-      tecnico: 30,
-      impacto: 25,
-      comportamental: 20,
-      estrategico: 15,
-      lideranca: 10,
-    };
+
+    const DEFAULT_PESOS = { tecnico: 30, impacto: 25, comportamental: 20, estrategico: 15, lideranca: 10 };
+    const isDefaultGlobal =
+      !pesosRow ||
+      (Number(pesosRow.tecnico) === DEFAULT_PESOS.tecnico &&
+        Number(pesosRow.impacto) === DEFAULT_PESOS.impacto &&
+        Number(pesosRow.comportamental) === DEFAULT_PESOS.comportamental &&
+        Number(pesosRow.estrategico) === DEFAULT_PESOS.estrategico &&
+        Number(pesosRow.lideranca) === DEFAULT_PESOS.lideranca);
+
+    // Calibração automática por cargo: usa perfil do cargo quando o admin
+    // ainda não personalizou os pesos globais. Caso contrário, respeita o global.
+    const pesos = isDefaultGlobal && CARGO_PESOS[cargo]
+      ? CARGO_PESOS[cargo]
+      : (pesosRow ?? DEFAULT_PESOS);
 
     const notaPonderada =
       pilares.profundidadeTecnica.nota * (Number(pesos.tecnico) / 100) +
