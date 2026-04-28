@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Analytics from "./pages/Analytics.tsx";
 import NovaAvaliacao from "./pages/NovaAvaliacao.tsx";
@@ -41,6 +42,7 @@ const App = () => (
           <Routes>
             {/* Public */}
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/vagas" element={<PortalVagas />} />
             <Route path="/vagas/:id" element={<VagaPublica />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
