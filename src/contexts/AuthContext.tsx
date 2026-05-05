@@ -18,13 +18,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Set up listener FIRST
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
+      // Avoid re-render storms on TOKEN_REFRESHED / tab-focus when nothing
+      // meaningful changed (same user). Without this, every tab switch
+      // causes a new session object → cascading effects → page "reloads".
+      setSession((prev) => {
+        if (prev?.user?.id === s?.user?.id && prev?.access_token === s?.access_token) {
+          return prev;
+        }
+        return s;
+      });
       setLoading(false);
     });
 
     // Then fetch existing session
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+      setSession((prev) => prev ?? data.session);
       setLoading(false);
     });
 
