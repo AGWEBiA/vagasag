@@ -166,10 +166,13 @@ const VagaPublica = () => {
       })
       .select("id")
       .single();
+
     if (error || !cand) {
       setSubmitting(false);
-      console.error(error);
-      toast.error("Não foi possível enviar sua candidatura.");
+      console.error("Erro inserção candidatura:", error);
+      toast.error(
+        `Não foi possível enviar sua candidatura: ${error?.message || "Erro desconhecido"}`
+      );
       return;
     }
     // Inserir respostas
@@ -192,7 +195,11 @@ const VagaPublica = () => {
       const { error: rErr } = await supabase
         .from("candidatura_respostas")
         .insert(respostasRows);
-      if (rErr) console.error("Erro respostas:", rErr);
+      if (rErr) {
+        console.error("Erro respostas:", rErr);
+        // Opcional: toast.error("Suas respostas adicionais não puderam ser salvas, mas sua candidatura foi enviada.");
+      }
+    }
     }
     // Dispara e-mail de confirmação (best-effort, não bloqueia)
     enviarEmailConfirmacaoCandidatura({
@@ -334,14 +341,19 @@ const VagaPublica = () => {
               />
 
               <div className="space-y-2">
-                <Label>Sua experiência profissional *</Label>
+                <Label className="flex justify-between">
+                  <span>Sua experiência profissional *</span>
+                  <span className={`text-[10px] ${form.dados_profissionais.trim().length >= 80 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {form.dados_profissionais.trim().length} / 80 caracteres mín.
+                  </span>
+                </Label>
                 <Textarea
                   rows={8}
                   value={form.dados_profissionais}
                   onChange={(e) =>
                     setForm({ ...form, dados_profissionais: e.target.value })
                   }
-                  placeholder="Conte sobre sua experiência: empresas, projetos, ferramentas, conquistas mensuráveis e tempo de atuação."
+                  placeholder={vaga ? CARGO_HINTS[vaga.cargo] || "Conte sobre sua experiência..." : "Conte sobre sua experiência..."}
                 />
                 <p className="text-[11px] text-muted-foreground">
                   Quanto mais detalhes, melhor a análise. Inclua métricas e resultados.
