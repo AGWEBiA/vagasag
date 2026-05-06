@@ -548,7 +548,7 @@ const VagaPublica = () => {
                     </p>
                   </div>
                   {perguntas.map((p) => (
-                    <div key={p.id} className="space-y-2">
+                    <div key={p.id} id={`question-${p.id}`} className="space-y-2">
                       <Label className={fieldErrors[p.id] ? "text-destructive" : ""}>
                         {p.texto}
                         {p.obrigatoria && <span className="text-gold ml-1">*</span>}
