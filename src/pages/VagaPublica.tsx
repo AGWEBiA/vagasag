@@ -186,6 +186,21 @@ const VagaPublica = () => {
     }
   };
 
+  const scrollToFirstError = () => {
+    const firstErrorId = Object.keys(fieldErrors)[0];
+    if (!firstErrorId) return;
+
+    let element = document.getElementById(`field-${firstErrorId}`);
+    if (!element) {
+      // Tenta encontrar pelo ID da pergunta se não for um campo fixo
+      element = document.getElementById(`question-${firstErrorId}`);
+    }
+
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
   const submit = async (e?: React.FormEvent, isRetry = false) => {
     e?.preventDefault();
     if (!vaga) return;
@@ -193,19 +208,15 @@ const VagaPublica = () => {
     setFieldErrors({});
 
     const parsed = candidaturaSchema.safeParse(form);
+    const errors: Record<string, string> = {};
+    
     if (!parsed.success) {
-      const errors: Record<string, string> = {};
       parsed.error.errors.forEach((err) => {
         if (err.path[0]) errors[err.path[0] as string] = err.message;
       });
-      setFieldErrors(errors);
-      toast.error("Verifique os campos obrigatórios.");
-      void logSubmission("validation_failed", JSON.stringify(errors));
-      return;
     }
 
     // Validar perguntas obrigatórias
-    const pErrors: Record<string, string> = {};
     for (const p of perguntas) {
       if (!p.obrigatoria) continue;
       const r = respostas[p.id];
@@ -214,14 +225,14 @@ const VagaPublica = () => {
           ? typeof r?.numero === "number"
           : (r?.texto ?? "").trim().length > 0;
       if (!ok) {
-        pErrors[p.id] = `A pergunta "${p.texto}" é obrigatória.`;
+        errors[p.id] = `A pergunta "${p.texto}" é obrigatória.`;
       }
     }
 
-    if (Object.keys(pErrors).length > 0) {
-      setFieldErrors((prev) => ({ ...prev, ...pErrors }));
-      toast.error("Responda todas as perguntas obrigatórias.");
-      void logSubmission("validation_failed", JSON.stringify(pErrors));
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      toast.error("Verifique os campos pendentes.");
+      void logSubmission("validation_failed", JSON.stringify(errors));
       return;
     }
 
@@ -232,13 +243,13 @@ const VagaPublica = () => {
         .from("candidaturas")
         .insert({
           vaga_id: vaga.id,
-          nome: parsed.data.nome,
-          email: parsed.data.email,
-          telefone: parsed.data.telefone || null,
-          linkedin: parsed.data.linkedin || null,
-          portfolio: parsed.data.portfolio || null,
-          dados_profissionais: parsed.data.dados_profissionais,
-          informacoes_adicionais: parsed.data.informacoes_adicionais || null,
+          nome: parsed.data!.nome,
+          email: parsed.data!.email,
+          telefone: parsed.data!.telefone || null,
+          linkedin: parsed.data!.linkedin || null,
+          portfolio: parsed.data!.portfolio || null,
+          dados_profissionais: parsed.data!.dados_profissionais,
+          informacoes_adicionais: parsed.data!.informacoes_adicionais || null,
         })
         .select("id")
         .single();
@@ -276,8 +287,8 @@ const VagaPublica = () => {
       // Dispara e-mail de confirmação (best-effort)
       enviarEmailConfirmacaoCandidatura({
         candidaturaId: cand.id,
-        nome: parsed.data.nome,
-        email: parsed.data.email,
+        nome: parsed.data!.nome,
+        email: parsed.data!.email,
         vaga: vaga.titulo,
       }).catch((e) => console.warn("email confirmação falhou", e));
 
