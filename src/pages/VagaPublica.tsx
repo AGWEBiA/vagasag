@@ -170,15 +170,41 @@ const VagaPublica = () => {
     });
   };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const logSubmission = async (status: string, errorMsg?: string) => {
     if (!vaga) return;
+    try {
+      await supabase.from("candidatura_logs").insert({
+        vaga_id: vaga.id,
+        payload: { form, respostas },
+        status,
+        error: errorMsg,
+        user_agent: navigator.userAgent,
+      });
+    } catch (e) {
+      console.warn("Falha ao registrar log de auditoria", e);
+    }
+  };
+
+  const submit = async (e?: React.FormEvent, isRetry = false) => {
+    e?.preventDefault();
+    if (!vaga) return;
+    setSubmissionError(null);
+    setFieldErrors({});
+
     const parsed = candidaturaSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos.");
+      const errors: Record<string, string> = {};
+      parsed.error.errors.forEach((err) => {
+        if (err.path[0]) errors[err.path[0] as string] = err.message;
+      });
+      setFieldErrors(errors);
+      toast.error("Verifique os campos obrigatórios.");
+      void logSubmission("validation_failed", JSON.stringify(errors));
       return;
     }
+
     // Validar perguntas obrigatórias
+    const pErrors: Record<string, string> = {};
     for (const p of perguntas) {
       if (!p.obrigatoria) continue;
       const r = respostas[p.id];
@@ -187,70 +213,92 @@ const VagaPublica = () => {
           ? typeof r?.numero === "number"
           : (r?.texto ?? "").trim().length > 0;
       if (!ok) {
-        toast.error(`Responda: "${p.texto}"`);
-        return;
+        pErrors[p.id] = `A pergunta "${p.texto}" é obrigatória.`;
       }
     }
-    setSubmitting(true);
-    const { data: cand, error } = await supabase
-      .from("candidaturas")
-      .insert({
-        vaga_id: vaga.id,
-        nome: parsed.data.nome,
-        email: parsed.data.email,
-        telefone: parsed.data.telefone || null,
-        linkedin: parsed.data.linkedin || null,
-        portfolio: parsed.data.portfolio || null,
-        dados_profissionais: parsed.data.dados_profissionais,
-        informacoes_adicionais: parsed.data.informacoes_adicionais || null,
-      })
-      .select("id")
-      .single();
 
-    if (error || !cand) {
-      setSubmitting(false);
-      console.error("Erro inserção candidatura:", error);
-      toast.error(
-        `Não foi possível enviar sua candidatura: ${error?.message || "Erro desconhecido"}`
-      );
+    if (Object.keys(pErrors).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...pErrors }));
+      toast.error("Responda todas as perguntas obrigatórias.");
+      void logSubmission("validation_failed", JSON.stringify(pErrors));
       return;
     }
-    // Inserir respostas
-    const respostasRows = perguntas
-      .map((p) => {
-        const r = respostas[p.id];
-        if (!r) return null;
-        const hasText = (r.texto ?? "").trim().length > 0;
-        const hasNum = typeof r.numero === "number";
-        if (!hasText && !hasNum) return null;
-        return {
-          candidatura_id: cand.id,
-          vaga_pergunta_id: p.id,
-          resposta_texto: hasText ? r.texto!.trim() : null,
-          resposta_numero: hasNum ? r.numero! : null,
-        };
-      })
-      .filter((x): x is NonNullable<typeof x> => x !== null);
-    if (respostasRows.length > 0) {
-      const { error: rErr } = await supabase
-        .from("candidatura_respostas")
-        .insert(respostasRows);
-      if (rErr) {
-        console.error("Erro respostas:", rErr);
+
+    setSubmitting(true);
+    
+    try {
+      const { data: cand, error } = await supabase
+        .from("candidaturas")
+        .insert({
+          vaga_id: vaga.id,
+          nome: parsed.data.nome,
+          email: parsed.data.email,
+          telefone: parsed.data.telefone || null,
+          linkedin: parsed.data.linkedin || null,
+          portfolio: parsed.data.portfolio || null,
+          dados_profissionais: parsed.data.dados_profissionais,
+          informacoes_adicionais: parsed.data.informacoes_adicionais || null,
+        })
+        .select("id")
+        .single();
+
+      if (error || !cand) {
+        throw error || new Error("Falha ao criar candidatura.");
       }
+
+      // Inserir respostas
+      const respostasRows = perguntas
+        .map((p) => {
+          const r = respostas[p.id];
+          if (!r) return null;
+          const hasText = (r.texto ?? "").trim().length > 0;
+          const hasNum = typeof r.numero === "number";
+          if (!hasText && !hasNum) return null;
+          return {
+            candidatura_id: cand.id,
+            vaga_pergunta_id: p.id,
+            resposta_texto: hasText ? r.texto!.trim() : null,
+            resposta_numero: hasNum ? r.numero! : null,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      if (respostasRows.length > 0) {
+        const { error: rErr } = await supabase
+          .from("candidatura_respostas")
+          .insert(respostasRows);
+        if (rErr) {
+          console.error("Erro respostas:", rErr);
+        }
+      }
+
+      // Dispara e-mail de confirmação (best-effort)
+      enviarEmailConfirmacaoCandidatura({
+        candidaturaId: cand.id,
+        nome: parsed.data.nome,
+        email: parsed.data.email,
+        vaga: vaga.titulo,
+      }).catch((e) => console.warn("email confirmação falhou", e));
+
+      void logSubmission("success");
+      clearDraft();
+      setSuccess(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err: any) {
+      console.error("Erro na submissão:", err);
+      const msg = err.message || "Erro desconhecido ao enviar dados.";
+      setSubmissionError(msg);
+      void logSubmission("error", msg);
+      
+      if (!isRetry && (err.message?.includes("fetch") || err.status === 0 || err.code === "PGRST301")) {
+        toast.info("Erro de conexão. Tentando novamente em 3 segundos...");
+        setTimeout(() => void submit(undefined, true), 3000);
+      } else {
+        toast.error(`Falha no envio: ${msg}`);
+      }
+    } finally {
+      setSubmitting(false);
     }
-
-    // Dispara e-mail de confirmação (best-effort, não bloqueia)
-    enviarEmailConfirmacaoCandidatura({
-      candidaturaId: cand.id,
-      nome: parsed.data.nome,
-      email: parsed.data.email,
-      vaga: vaga.titulo,
-    }).catch((e) => console.warn("email confirmação falhou", e));
-
-    setSubmitting(false);
-    setSuccess(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -330,7 +378,7 @@ const VagaPublica = () => {
             </article>
 
             <form
-              onSubmit={submit}
+              onSubmit={(e) => void submit(e)}
               className="surface-card rounded-xl p-8 space-y-5 animate-fade-in"
             >
               <div>
@@ -354,7 +402,7 @@ const VagaPublica = () => {
                       type="button" 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => submit(undefined)} 
+                      onClick={() => void submit(undefined)} 
                       className="w-fit"
                       disabled={submitting}
                     >
