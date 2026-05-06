@@ -76,6 +76,7 @@ const App = () => (
             <Route path="/admin/perguntas" element={<ProtectedRoute><AdminPerguntas /></ProtectedRoute>} />
             <Route path="/admin/pipeline" element={<AdminRoute><AdminPipeline /></AdminRoute>} />
             <Route path="/admin/branding" element={<AdminRoute><AdminBranding /></AdminRoute>} />
+            <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
