@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   Palette,
   Menu,
+  FileSearch,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
