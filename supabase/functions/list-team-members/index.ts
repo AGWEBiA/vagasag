@@ -25,13 +25,19 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader) return json({ error: "Não autenticado" }, 401);
+    if (!authHeader.startsWith("Bearer ")) {
+      return json({ error: "Não autenticado" }, 401);
+    }
 
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData, error: uErr } = await userClient.auth.getUser();
-    if (uErr || !userData?.user) return json({ error: "Não autenticado" }, 401);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: uErr } = await userClient.auth.getClaims(token);
+    if (uErr || !claims?.claims?.sub) {
+      console.warn("Auth claims falhou:", uErr?.message);
+      return json({ error: "Não autenticado" }, 401);
+    }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
