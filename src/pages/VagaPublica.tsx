@@ -197,10 +197,9 @@ const VagaPublica = () => {
         .insert(respostasRows);
       if (rErr) {
         console.error("Erro respostas:", rErr);
-        // Opcional: toast.error("Suas respostas adicionais não puderam ser salvas, mas sua candidatura foi enviada.");
       }
     }
-    }
+
     // Dispara e-mail de confirmação (best-effort, não bloqueia)
     enviarEmailConfirmacaoCandidatura({
       candidaturaId: cand.id,
