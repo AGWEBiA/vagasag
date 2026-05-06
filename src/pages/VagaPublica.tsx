@@ -450,46 +450,56 @@ const VagaPublica = () => {
               )}
 
               <div className="grid gap-4 md:grid-cols-2">
+                <div id="field-nome">
+                  <Field
+                    label="Nome completo *"
+                    value={form.nome}
+                    onChange={(v) => setForm({ ...form, nome: v })}
+                    placeholder="Seu nome"
+                    error={fieldErrors.nome}
+                  />
+                </div>
+                <div id="field-email">
+                  <Field
+                    label="E-mail *"
+                    type="email"
+                    value={form.email}
+                    onChange={(v) => setForm({ ...form, email: v })}
+                    placeholder="voce@email.com"
+                    error={fieldErrors.email}
+                  />
+                </div>
+                <div id="field-telefone">
+                  <Field
+                    label="Telefone / WhatsApp"
+                    value={form.telefone}
+                    onChange={(v) => setForm({ ...form, telefone: v })}
+                    placeholder="(11) 99999-0000"
+                    error={fieldErrors.telefone}
+                  />
+                </div>
+                <div id="field-linkedin">
+                  <Field
+                    label="LinkedIn"
+                    value={form.linkedin}
+                    onChange={(v) => setForm({ ...form, linkedin: v })}
+                    placeholder="https://linkedin.com/in/..."
+                    error={fieldErrors.linkedin}
+                  />
+                </div>
+              </div>
+
+              <div id="field-portfolio">
                 <Field
-                  label="Nome completo *"
-                  value={form.nome}
-                  onChange={(v) => setForm({ ...form, nome: v })}
-                  placeholder="Seu nome"
-                  error={fieldErrors.nome}
-                />
-                <Field
-                  label="E-mail *"
-                  type="email"
-                  value={form.email}
-                  onChange={(v) => setForm({ ...form, email: v })}
-                  placeholder="voce@email.com"
-                  error={fieldErrors.email}
-                />
-                <Field
-                  label="Telefone / WhatsApp"
-                  value={form.telefone}
-                  onChange={(v) => setForm({ ...form, telefone: v })}
-                  placeholder="(11) 99999-0000"
-                  error={fieldErrors.telefone}
-                />
-                <Field
-                  label="LinkedIn"
-                  value={form.linkedin}
-                  onChange={(v) => setForm({ ...form, linkedin: v })}
-                  placeholder="https://linkedin.com/in/..."
-                  error={fieldErrors.linkedin}
+                  label="Portfólio / Site"
+                  value={form.portfolio}
+                  onChange={(v) => setForm({ ...form, portfolio: v })}
+                  placeholder="https://..."
+                  error={fieldErrors.portfolio}
                 />
               </div>
 
-              <Field
-                label="Portfólio / Site"
-                value={form.portfolio}
-                onChange={(v) => setForm({ ...form, portfolio: v })}
-                placeholder="https://..."
-                error={fieldErrors.portfolio}
-              />
-
-              <div className="space-y-2">
+              <div className="space-y-2" id="field-dados_profissionais">
                 <Label className="flex justify-between">
                   <span className={fieldErrors.dados_profissionais ? "text-destructive" : ""}>
                     Sua experiência profissional *
