@@ -404,6 +404,30 @@ const VagaPublica = () => {
 
               <CVUploader onParsed={aplicarCV} />
 
+              {Object.keys(fieldErrors).length > 0 && (
+                <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2 border-destructive/50 bg-destructive/5">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle className="font-semibold">Pendências no formulário</AlertTitle>
+                  <AlertDescription className="space-y-3">
+                    <p className="text-sm">
+                      Existem <strong>{Object.keys(fieldErrors).length}</strong> campo(s) obrigatório(s) ou com erros que precisam de sua atenção antes de enviar.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        type="button" 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={scrollToFirstError}
+                        className="h-8 text-xs"
+                      >
+                        <ArrowDown className="h-3 w-3 mr-1" />
+                        Ir para o primeiro erro
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {submissionError && (
                 <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
                   <AlertCircle className="h-4 w-4" />
