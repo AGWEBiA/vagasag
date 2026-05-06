@@ -354,7 +354,7 @@ const VagaPublica = () => {
                       type="button" 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => submit()} 
+                      onClick={() => submit(undefined)} 
                       className="w-fit"
                       disabled={submitting}
                     >
