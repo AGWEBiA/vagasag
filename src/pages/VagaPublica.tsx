@@ -11,6 +11,7 @@ import {
   Send,
   AlertCircle,
   RefreshCcw,
+  ArrowDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -185,6 +186,21 @@ const VagaPublica = () => {
     }
   };
 
+  const scrollToFirstError = () => {
+    const firstErrorId = Object.keys(fieldErrors)[0];
+    if (!firstErrorId) return;
+
+    let element = document.getElementById(`field-${firstErrorId}`);
+    if (!element) {
+      // Tenta encontrar pelo ID da pergunta se não for um campo fixo
+      element = document.getElementById(`question-${firstErrorId}`);
+    }
+
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
   const submit = async (e?: React.FormEvent, isRetry = false) => {
     e?.preventDefault();
     if (!vaga) return;
@@ -192,19 +208,15 @@ const VagaPublica = () => {
     setFieldErrors({});
 
     const parsed = candidaturaSchema.safeParse(form);
+    const errors: Record<string, string> = {};
+    
     if (!parsed.success) {
-      const errors: Record<string, string> = {};
       parsed.error.errors.forEach((err) => {
         if (err.path[0]) errors[err.path[0] as string] = err.message;
       });
-      setFieldErrors(errors);
-      toast.error("Verifique os campos obrigatórios.");
-      void logSubmission("validation_failed", JSON.stringify(errors));
-      return;
     }
 
     // Validar perguntas obrigatórias
-    const pErrors: Record<string, string> = {};
     for (const p of perguntas) {
       if (!p.obrigatoria) continue;
       const r = respostas[p.id];
@@ -213,14 +225,14 @@ const VagaPublica = () => {
           ? typeof r?.numero === "number"
           : (r?.texto ?? "").trim().length > 0;
       if (!ok) {
-        pErrors[p.id] = `A pergunta "${p.texto}" é obrigatória.`;
+        errors[p.id] = `A pergunta "${p.texto}" é obrigatória.`;
       }
     }
 
-    if (Object.keys(pErrors).length > 0) {
-      setFieldErrors((prev) => ({ ...prev, ...pErrors }));
-      toast.error("Responda todas as perguntas obrigatórias.");
-      void logSubmission("validation_failed", JSON.stringify(pErrors));
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      toast.error("Verifique os campos pendentes.");
+      void logSubmission("validation_failed", JSON.stringify(errors));
       return;
     }
 
@@ -231,13 +243,13 @@ const VagaPublica = () => {
         .from("candidaturas")
         .insert({
           vaga_id: vaga.id,
-          nome: parsed.data.nome,
-          email: parsed.data.email,
-          telefone: parsed.data.telefone || null,
-          linkedin: parsed.data.linkedin || null,
-          portfolio: parsed.data.portfolio || null,
-          dados_profissionais: parsed.data.dados_profissionais,
-          informacoes_adicionais: parsed.data.informacoes_adicionais || null,
+          nome: parsed.data!.nome,
+          email: parsed.data!.email,
+          telefone: parsed.data!.telefone || null,
+          linkedin: parsed.data!.linkedin || null,
+          portfolio: parsed.data!.portfolio || null,
+          dados_profissionais: parsed.data!.dados_profissionais,
+          informacoes_adicionais: parsed.data!.informacoes_adicionais || null,
         })
         .select("id")
         .single();
@@ -275,8 +287,8 @@ const VagaPublica = () => {
       // Dispara e-mail de confirmação (best-effort)
       enviarEmailConfirmacaoCandidatura({
         candidaturaId: cand.id,
-        nome: parsed.data.nome,
-        email: parsed.data.email,
+        nome: parsed.data!.nome,
+        email: parsed.data!.email,
         vaga: vaga.titulo,
       }).catch((e) => console.warn("email confirmação falhou", e));
 
@@ -392,6 +404,30 @@ const VagaPublica = () => {
 
               <CVUploader onParsed={aplicarCV} />
 
+              {Object.keys(fieldErrors).length > 0 && (
+                <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2 border-destructive/50 bg-destructive/5">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle className="font-semibold">Pendências no formulário</AlertTitle>
+                  <AlertDescription className="space-y-3">
+                    <p className="text-sm">
+                      Existem <strong>{Object.keys(fieldErrors).length}</strong> campo(s) obrigatório(s) ou com erros que precisam de sua atenção antes de enviar.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        type="button" 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={scrollToFirstError}
+                        className="h-8 text-xs"
+                      >
+                        <ArrowDown className="h-3 w-3 mr-1" />
+                        Ir para o primeiro erro
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {submissionError && (
                 <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
                   <AlertCircle className="h-4 w-4" />
@@ -414,46 +450,56 @@ const VagaPublica = () => {
               )}
 
               <div className="grid gap-4 md:grid-cols-2">
+                <div id="field-nome">
+                  <Field
+                    label="Nome completo *"
+                    value={form.nome}
+                    onChange={(v) => setForm({ ...form, nome: v })}
+                    placeholder="Seu nome"
+                    error={fieldErrors.nome}
+                  />
+                </div>
+                <div id="field-email">
+                  <Field
+                    label="E-mail *"
+                    type="email"
+                    value={form.email}
+                    onChange={(v) => setForm({ ...form, email: v })}
+                    placeholder="voce@email.com"
+                    error={fieldErrors.email}
+                  />
+                </div>
+                <div id="field-telefone">
+                  <Field
+                    label="Telefone / WhatsApp"
+                    value={form.telefone}
+                    onChange={(v) => setForm({ ...form, telefone: v })}
+                    placeholder="(11) 99999-0000"
+                    error={fieldErrors.telefone}
+                  />
+                </div>
+                <div id="field-linkedin">
+                  <Field
+                    label="LinkedIn"
+                    value={form.linkedin}
+                    onChange={(v) => setForm({ ...form, linkedin: v })}
+                    placeholder="https://linkedin.com/in/..."
+                    error={fieldErrors.linkedin}
+                  />
+                </div>
+              </div>
+
+              <div id="field-portfolio">
                 <Field
-                  label="Nome completo *"
-                  value={form.nome}
-                  onChange={(v) => setForm({ ...form, nome: v })}
-                  placeholder="Seu nome"
-                  error={fieldErrors.nome}
-                />
-                <Field
-                  label="E-mail *"
-                  type="email"
-                  value={form.email}
-                  onChange={(v) => setForm({ ...form, email: v })}
-                  placeholder="voce@email.com"
-                  error={fieldErrors.email}
-                />
-                <Field
-                  label="Telefone / WhatsApp"
-                  value={form.telefone}
-                  onChange={(v) => setForm({ ...form, telefone: v })}
-                  placeholder="(11) 99999-0000"
-                  error={fieldErrors.telefone}
-                />
-                <Field
-                  label="LinkedIn"
-                  value={form.linkedin}
-                  onChange={(v) => setForm({ ...form, linkedin: v })}
-                  placeholder="https://linkedin.com/in/..."
-                  error={fieldErrors.linkedin}
+                  label="Portfólio / Site"
+                  value={form.portfolio}
+                  onChange={(v) => setForm({ ...form, portfolio: v })}
+                  placeholder="https://..."
+                  error={fieldErrors.portfolio}
                 />
               </div>
 
-              <Field
-                label="Portfólio / Site"
-                value={form.portfolio}
-                onChange={(v) => setForm({ ...form, portfolio: v })}
-                placeholder="https://..."
-                error={fieldErrors.portfolio}
-              />
-
-              <div className="space-y-2">
+              <div className="space-y-2" id="field-dados_profissionais">
                 <Label className="flex justify-between">
                   <span className={fieldErrors.dados_profissionais ? "text-destructive" : ""}>
                     Sua experiência profissional *
@@ -502,7 +548,7 @@ const VagaPublica = () => {
                     </p>
                   </div>
                   {perguntas.map((p) => (
-                    <div key={p.id} className="space-y-2">
+                    <div key={p.id} id={`question-${p.id}`} className="space-y-2">
                       <Label className={fieldErrors[p.id] ? "text-destructive" : ""}>
                         {p.texto}
                         {p.obrigatoria && <span className="text-gold ml-1">*</span>}

@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   Palette,
   Menu,
+  FileSearch,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -47,6 +48,7 @@ const ADMIN_NAV = [
   { to: "/admin/pipeline", label: "Pipeline", icon: Layers, badge: "Admin" },
   { to: "/admin/branding", label: "Branding", icon: Palette, badge: "Admin" },
   { to: "/admin/ia", label: "Configuração de IA", icon: Cpu, badge: "Admin" },
+  { to: "/admin/logs", label: "Logs de Auditoria", icon: FileSearch, badge: "Admin" },
 ];
 
 export const AppShell = ({ children }: { children: ReactNode }) => {

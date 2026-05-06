@@ -28,6 +28,7 @@ import PortalVagas from "./pages/PortalVagas.tsx";
 import VagaPublica from "./pages/VagaPublica.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Ajuda from "./pages/Ajuda.tsx";
+import AdminLogs from "./pages/AdminLogs.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/admin/perguntas" element={<ProtectedRoute><AdminPerguntas /></ProtectedRoute>} />
             <Route path="/admin/pipeline" element={<AdminRoute><AdminPipeline /></AdminRoute>} />
             <Route path="/admin/branding" element={<AdminRoute><AdminBranding /></AdminRoute>} />
+            <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
