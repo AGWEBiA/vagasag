@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import {
@@ -9,6 +9,8 @@ import {
   Loader2,
   CheckCircle2,
   Send,
+  AlertCircle,
+  RefreshCcw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ import { ESCALA_LABEL, type VagaPergunta } from "@/lib/perguntas";
 import { CVUploader, type ParsedCVFields } from "@/components/CVUploader";
 import { enviarEmailConfirmacaoCandidatura } from "@/lib/emails";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Vaga {
   id: string;
@@ -59,6 +62,8 @@ const VagaPublica = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     nome: "",
     email: "",
@@ -68,6 +73,41 @@ const VagaPublica = () => {
     dados_profissionais: "",
     informacoes_adicionais: "",
   });
+
+  const lastSavedRef = useRef<string>("");
+
+  // Recupera rascunho
+  useEffect(() => {
+    if (!id) return;
+    const draft = localStorage.getItem(`draft-candidatura-${id}`);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        setForm(parsed.form || {});
+        setRespostas(parsed.respostas || {});
+        lastSavedRef.current = draft;
+      } catch (e) {
+        console.warn("Falha ao carregar rascunho", e);
+      }
+    }
+  }, [id]);
+
+  // Salva rascunho
+  useEffect(() => {
+    if (!id || success) return;
+    const timeout = setTimeout(() => {
+      const current = JSON.stringify({ form, respostas });
+      if (current !== lastSavedRef.current) {
+        localStorage.setItem(`draft-candidatura-${id}`, current);
+        lastSavedRef.current = current;
+      }
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [id, form, respostas, success]);
+
+  const clearDraft = useCallback(() => {
+    if (id) localStorage.removeItem(`draft-candidatura-${id}`);
+  }, [id]);
 
   useEffect(() => {
     void load();
@@ -130,15 +170,41 @@ const VagaPublica = () => {
     });
   };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const logSubmission = async (status: string, errorMsg?: string) => {
     if (!vaga) return;
+    try {
+      await supabase.from("candidatura_logs").insert({
+        vaga_id: vaga.id,
+        payload: { form, respostas },
+        status,
+        error: errorMsg,
+        user_agent: navigator.userAgent,
+      });
+    } catch (e) {
+      console.warn("Falha ao registrar log de auditoria", e);
+    }
+  };
+
+  const submit = async (e?: React.FormEvent, isRetry = false) => {
+    e?.preventDefault();
+    if (!vaga) return;
+    setSubmissionError(null);
+    setFieldErrors({});
+
     const parsed = candidaturaSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos.");
+      const errors: Record<string, string> = {};
+      parsed.error.errors.forEach((err) => {
+        if (err.path[0]) errors[err.path[0] as string] = err.message;
+      });
+      setFieldErrors(errors);
+      toast.error("Verifique os campos obrigatórios.");
+      void logSubmission("validation_failed", JSON.stringify(errors));
       return;
     }
+
     // Validar perguntas obrigatórias
+    const pErrors: Record<string, string> = {};
     for (const p of perguntas) {
       if (!p.obrigatoria) continue;
       const r = respostas[p.id];
@@ -147,70 +213,92 @@ const VagaPublica = () => {
           ? typeof r?.numero === "number"
           : (r?.texto ?? "").trim().length > 0;
       if (!ok) {
-        toast.error(`Responda: "${p.texto}"`);
-        return;
+        pErrors[p.id] = `A pergunta "${p.texto}" é obrigatória.`;
       }
     }
-    setSubmitting(true);
-    const { data: cand, error } = await supabase
-      .from("candidaturas")
-      .insert({
-        vaga_id: vaga.id,
-        nome: parsed.data.nome,
-        email: parsed.data.email,
-        telefone: parsed.data.telefone || null,
-        linkedin: parsed.data.linkedin || null,
-        portfolio: parsed.data.portfolio || null,
-        dados_profissionais: parsed.data.dados_profissionais,
-        informacoes_adicionais: parsed.data.informacoes_adicionais || null,
-      })
-      .select("id")
-      .single();
 
-    if (error || !cand) {
-      setSubmitting(false);
-      console.error("Erro inserção candidatura:", error);
-      toast.error(
-        `Não foi possível enviar sua candidatura: ${error?.message || "Erro desconhecido"}`
-      );
+    if (Object.keys(pErrors).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...pErrors }));
+      toast.error("Responda todas as perguntas obrigatórias.");
+      void logSubmission("validation_failed", JSON.stringify(pErrors));
       return;
     }
-    // Inserir respostas
-    const respostasRows = perguntas
-      .map((p) => {
-        const r = respostas[p.id];
-        if (!r) return null;
-        const hasText = (r.texto ?? "").trim().length > 0;
-        const hasNum = typeof r.numero === "number";
-        if (!hasText && !hasNum) return null;
-        return {
-          candidatura_id: cand.id,
-          vaga_pergunta_id: p.id,
-          resposta_texto: hasText ? r.texto!.trim() : null,
-          resposta_numero: hasNum ? r.numero! : null,
-        };
-      })
-      .filter((x): x is NonNullable<typeof x> => x !== null);
-    if (respostasRows.length > 0) {
-      const { error: rErr } = await supabase
-        .from("candidatura_respostas")
-        .insert(respostasRows);
-      if (rErr) {
-        console.error("Erro respostas:", rErr);
+
+    setSubmitting(true);
+    
+    try {
+      const { data: cand, error } = await supabase
+        .from("candidaturas")
+        .insert({
+          vaga_id: vaga.id,
+          nome: parsed.data.nome,
+          email: parsed.data.email,
+          telefone: parsed.data.telefone || null,
+          linkedin: parsed.data.linkedin || null,
+          portfolio: parsed.data.portfolio || null,
+          dados_profissionais: parsed.data.dados_profissionais,
+          informacoes_adicionais: parsed.data.informacoes_adicionais || null,
+        })
+        .select("id")
+        .single();
+
+      if (error || !cand) {
+        throw error || new Error("Falha ao criar candidatura.");
       }
+
+      // Inserir respostas
+      const respostasRows = perguntas
+        .map((p) => {
+          const r = respostas[p.id];
+          if (!r) return null;
+          const hasText = (r.texto ?? "").trim().length > 0;
+          const hasNum = typeof r.numero === "number";
+          if (!hasText && !hasNum) return null;
+          return {
+            candidatura_id: cand.id,
+            vaga_pergunta_id: p.id,
+            resposta_texto: hasText ? r.texto!.trim() : null,
+            resposta_numero: hasNum ? r.numero! : null,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      if (respostasRows.length > 0) {
+        const { error: rErr } = await supabase
+          .from("candidatura_respostas")
+          .insert(respostasRows);
+        if (rErr) {
+          console.error("Erro respostas:", rErr);
+        }
+      }
+
+      // Dispara e-mail de confirmação (best-effort)
+      enviarEmailConfirmacaoCandidatura({
+        candidaturaId: cand.id,
+        nome: parsed.data.nome,
+        email: parsed.data.email,
+        vaga: vaga.titulo,
+      }).catch((e) => console.warn("email confirmação falhou", e));
+
+      void logSubmission("success");
+      clearDraft();
+      setSuccess(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err: any) {
+      console.error("Erro na submissão:", err);
+      const msg = err.message || "Erro desconhecido ao enviar dados.";
+      setSubmissionError(msg);
+      void logSubmission("error", msg);
+      
+      if (!isRetry && (err.message?.includes("fetch") || err.status === 0 || err.code === "PGRST301")) {
+        toast.info("Erro de conexão. Tentando novamente em 3 segundos...");
+        setTimeout(() => void submit(undefined, true), 3000);
+      } else {
+        toast.error(`Falha no envio: ${msg}`);
+      }
+    } finally {
+      setSubmitting(false);
     }
-
-    // Dispara e-mail de confirmação (best-effort, não bloqueia)
-    enviarEmailConfirmacaoCandidatura({
-      candidaturaId: cand.id,
-      nome: parsed.data.nome,
-      email: parsed.data.email,
-      vaga: vaga.titulo,
-    }).catch((e) => console.warn("email confirmação falhou", e));
-
-    setSubmitting(false);
-    setSuccess(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -290,7 +378,7 @@ const VagaPublica = () => {
             </article>
 
             <form
-              onSubmit={submit}
+              onSubmit={(e) => void submit(e)}
               className="surface-card rounded-xl p-8 space-y-5 animate-fade-in"
             >
               <div>
@@ -304,12 +392,34 @@ const VagaPublica = () => {
 
               <CVUploader onParsed={aplicarCV} />
 
+              {submissionError && (
+                <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Erro no envio</AlertTitle>
+                  <AlertDescription className="flex flex-col gap-3">
+                    <p>{submissionError}</p>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => void submit(undefined)} 
+                      className="w-fit"
+                      disabled={submitting}
+                    >
+                      <RefreshCcw className={`h-4 w-4 mr-2 ${submitting ? 'animate-spin' : ''}`} />
+                      Tentar reenviar agora
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="grid gap-4 md:grid-cols-2">
                 <Field
                   label="Nome completo *"
                   value={form.nome}
                   onChange={(v) => setForm({ ...form, nome: v })}
                   placeholder="Seu nome"
+                  error={fieldErrors.nome}
                 />
                 <Field
                   label="E-mail *"
@@ -317,18 +427,21 @@ const VagaPublica = () => {
                   value={form.email}
                   onChange={(v) => setForm({ ...form, email: v })}
                   placeholder="voce@email.com"
+                  error={fieldErrors.email}
                 />
                 <Field
                   label="Telefone / WhatsApp"
                   value={form.telefone}
                   onChange={(v) => setForm({ ...form, telefone: v })}
                   placeholder="(11) 99999-0000"
+                  error={fieldErrors.telefone}
                 />
                 <Field
                   label="LinkedIn"
                   value={form.linkedin}
                   onChange={(v) => setForm({ ...form, linkedin: v })}
                   placeholder="https://linkedin.com/in/..."
+                  error={fieldErrors.linkedin}
                 />
               </div>
 
@@ -337,23 +450,30 @@ const VagaPublica = () => {
                 value={form.portfolio}
                 onChange={(v) => setForm({ ...form, portfolio: v })}
                 placeholder="https://..."
+                error={fieldErrors.portfolio}
               />
 
               <div className="space-y-2">
                 <Label className="flex justify-between">
-                  <span>Sua experiência profissional *</span>
-                  <span className={`text-[10px] ${form.dados_profissionais.trim().length >= 80 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  <span className={fieldErrors.dados_profissionais ? "text-destructive" : ""}>
+                    Sua experiência profissional *
+                  </span>
+                  <span className={`text-[10px] ${form.dados_profissionais.trim().length >= 80 ? 'text-green-500' : fieldErrors.dados_profissionais ? 'text-destructive' : 'text-muted-foreground'}`}>
                     {form.dados_profissionais.trim().length} / 80 caracteres mín.
                   </span>
                 </Label>
                 <Textarea
                   rows={8}
                   value={form.dados_profissionais}
+                  className={fieldErrors.dados_profissionais ? "border-destructive ring-destructive" : ""}
                   onChange={(e) =>
                     setForm({ ...form, dados_profissionais: e.target.value })
                   }
                   placeholder={vaga ? CARGO_HINTS[vaga.cargo] || "Conte sobre sua experiência..." : "Conte sobre sua experiência..."}
                 />
+                {fieldErrors.dados_profissionais && (
+                  <p className="text-xs font-medium text-destructive">{fieldErrors.dados_profissionais}</p>
+                )}
                 <p className="text-[11px] text-muted-foreground">
                   Quanto mais detalhes, melhor a análise. Inclua métricas e resultados.
                 </p>
@@ -383,21 +503,25 @@ const VagaPublica = () => {
                   </div>
                   {perguntas.map((p) => (
                     <div key={p.id} className="space-y-2">
-                      <Label>
+                      <Label className={fieldErrors[p.id] ? "text-destructive" : ""}>
                         {p.texto}
                         {p.obrigatoria && <span className="text-gold ml-1">*</span>}
                       </Label>
                       {p.tipo === "texto" && (
-                        <Textarea
-                          rows={3}
-                          value={respostas[p.id]?.texto ?? ""}
-                          onChange={(e) =>
-                            setResposta(p.id, { texto: e.target.value })
-                          }
-                        />
+                        <>
+                          <Textarea
+                            rows={3}
+                            className={fieldErrors[p.id] ? "border-destructive" : ""}
+                            value={respostas[p.id]?.texto ?? ""}
+                            onChange={(e) =>
+                              setResposta(p.id, { texto: e.target.value })
+                            }
+                          />
+                          {fieldErrors[p.id] && <p className="text-xs text-destructive">{fieldErrors[p.id]}</p>}
+                        </>
                       )}
                       {p.tipo === "escolha" && (
-                        <div className="space-y-1.5">
+                        <div className={`space-y-1.5 p-2 rounded-md ${fieldErrors[p.id] ? "bg-destructive/10 border border-destructive" : ""}`}>
                           {p.opcoes.map((opt) => (
                             <label
                               key={opt}
@@ -414,28 +538,34 @@ const VagaPublica = () => {
                               {opt}
                             </label>
                           ))}
+                          {fieldErrors[p.id] && <p className="text-xs text-destructive">{fieldErrors[p.id]}</p>}
                         </div>
                       )}
                       {p.tipo === "escala" && (
-                        <div className="flex gap-2">
-                          {[1, 2, 3, 4, 5].map((n) => {
-                            const active = respostas[p.id]?.numero === n;
-                            return (
-                              <button
-                                key={n}
-                                type="button"
-                                onClick={() => setResposta(p.id, { numero: n })}
-                                className={`flex-1 rounded-md border py-2 text-sm font-medium transition ${
-                                  active
-                                    ? "bg-gradient-gold text-gold-foreground border-transparent shadow-gold"
-                                    : "border-sidebar-border bg-surface-elevated text-body hover:border-gold/40"
-                                }`}
-                                title={ESCALA_LABEL[n]}
-                              >
-                                {n}
-                              </button>
-                            );
-                          })}
+                        <div className="space-y-1">
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((n) => {
+                              const active = respostas[p.id]?.numero === n;
+                              return (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => setResposta(p.id, { numero: n })}
+                                  className={`flex-1 rounded-md border py-2 text-sm font-medium transition ${
+                                    active
+                                      ? "bg-gradient-gold text-gold-foreground border-transparent shadow-gold"
+                                      : fieldErrors[p.id]
+                                      ? "border-destructive bg-surface-elevated text-body hover:border-gold/40"
+                                      : "border-sidebar-border bg-surface-elevated text-body hover:border-gold/40"
+                                  }`}
+                                  title={ESCALA_LABEL[n]}
+                                >
+                                  {n}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {fieldErrors[p.id] && <p className="text-xs text-destructive">{fieldErrors[p.id]}</p>}
                         </div>
                       )}
                     </div>
@@ -477,22 +607,26 @@ const Field = ({
   value,
   onChange,
   placeholder,
+  error,
   type = "text",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  error?: string;
   type?: string;
 }) => (
   <div className="space-y-2">
-    <Label>{label}</Label>
+    <Label className={error ? "text-destructive" : ""}>{label}</Label>
     <Input
       type={type}
       value={value}
       placeholder={placeholder}
+      className={error ? "border-destructive ring-destructive" : ""}
       onChange={(e) => onChange(e.target.value)}
     />
+    {error && <p className="text-xs font-medium text-destructive">{error}</p>}
   </div>
 );
 

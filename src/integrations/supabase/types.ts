@@ -330,6 +330,44 @@ export type Database = {
         }
         Relationships: []
       }
+      candidatura_logs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json | null
+          status: string
+          user_agent: string | null
+          vaga_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json | null
+          status: string
+          user_agent?: string | null
+          vaga_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json | null
+          status?: string
+          user_agent?: string | null
+          vaga_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidatura_logs_vaga_id_fkey"
+            columns: ["vaga_id"]
+            isOneToOne: false
+            referencedRelation: "vagas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidatura_notas: {
         Row: {
           autor_id: string
