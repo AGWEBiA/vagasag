@@ -28,6 +28,7 @@ import PortalVagas from "./pages/PortalVagas.tsx";
 import VagaPublica from "./pages/VagaPublica.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
 import Ajuda from "./pages/Ajuda.tsx";
+import AdminLogs from "./pages/AdminLogs.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
