@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NotasInternas } from "@/components/NotasInternas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CandidaturaTimeline } from "@/components/CandidaturaTimeline";
 
 interface Vaga {
   id: string;
