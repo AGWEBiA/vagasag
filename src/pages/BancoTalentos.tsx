@@ -618,16 +618,31 @@ const BancoTalentos = () => {
                       </p>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEdit(t);
-                    }}
-                  >
-                    <Pencil className="h-3.5 w-3.5 mr-1" /> Gerir
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(t);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5 mr-1" /> Gerir
+                    </Button>
+                    {isAdminMaster && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(t);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </article>
             );
