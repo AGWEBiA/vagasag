@@ -679,10 +679,11 @@ const BancoTalentos = () => {
 
       {/* View details dialog */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           {viewing && (() => {
             const vagaV = vagas.find((v) => v.id === viewing.vaga_id);
             const assV = viewing.candidate_id ? assessmentsByEmail[viewing.candidate_id] : undefined;
+            const history = outrasCandidaturas[viewing.email?.toLowerCase()] ?? [];
             return (
               <>
                 <DialogHeader>
