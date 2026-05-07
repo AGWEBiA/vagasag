@@ -514,6 +514,8 @@ const PersonList = ({
   onEvaluate,
   onView,
   onViewAnswers,
+  onDelete,
+  isAdminMaster,
   emptyHint,
 }: {
   people: PersonRow[];
