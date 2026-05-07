@@ -882,5 +882,51 @@ const ComparisonBlock = ({
   );
 };
 
+const CandidatoVagasHistory = ({ candidateId }: { candidateId: string | null }) => {
+  const { data: candidaturas, isLoading } = useQuery({
+    queryKey: ["candidate-vagas-history", candidateId],
+    queryFn: async () => {
+      if (!candidateId) return [];
+      
+      // Primeiro, pegar o email deste candidato
+      const { data: cand } = await supabase.from("candidates").select("email:nome").eq("id", candidateId).maybeSingle();
+      const email = (cand as any)?.email;
+      if (!email) return [];
+
+      // Agora buscar todas as candidaturas por email
+      const { data, error } = await supabase
+        .from("candidaturas")
+        .select("id, created_at, visualizada, status, vaga_id, vagas(titulo, cargo)")
+        .ilike("email", email)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!candidateId,
+  });
+
+  if (isLoading) return <Skeleton className="h-20 w-full" />;
+  if (!candidaturas?.length) return <p className="text-sm text-muted-foreground py-4">Nenhum histórico de vagas encontrado.</p>;
+
+  return (
+    <div className="space-y-3 pt-2">
+      {candidaturas.map((c) => (
+        <div key={c.id} className="surface-card rounded-lg p-3 border border-sidebar-border/60 flex items-center justify-between">
+          <div>
+            <div className="font-medium text-sm">{(c.vagas as any)?.titulo || "Vaga desconhecida"}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {CARGO_LABEL[(c.vagas as any)?.cargo] || (c.vagas as any)?.cargo} · Inscrito em {new Date(c.created_at).toLocaleDateString("pt-BR")}
+            </div>
+          </div>
+          <Badge variant="outline" className="text-[10px] capitalize">
+            {c.status.replace("_", " ")}
+          </Badge>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default Relatorio;
 
