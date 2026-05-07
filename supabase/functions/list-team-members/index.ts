@@ -32,10 +32,9 @@ Deno.serve(async (req) => {
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: uErr } = await userClient.auth.getClaims(token);
-    if (uErr || !claims?.claims?.sub) {
-      console.warn("Auth claims falhou:", uErr?.message);
+    const { data: userData, error: uErr } = await userClient.auth.getUser();
+    if (uErr || !userData?.user?.id) {
+      console.warn("Auth getUser falhou:", uErr?.message);
       return json({ error: "Não autenticado" }, 401);
     }
 
