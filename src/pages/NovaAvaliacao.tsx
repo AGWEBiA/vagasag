@@ -639,6 +639,18 @@ const PersonList = ({
                 )}
                 {isRunning ? "Avaliando..." : hasAssessment ? "Reavaliar" : "Avaliar"}
               </Button>
+              {isAdminMaster && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete?.(p)}
+                  disabled={isRunning}
+                  className="text-destructive hover:bg-destructive/10"
+                  title="Excluir permanentemente"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         );
