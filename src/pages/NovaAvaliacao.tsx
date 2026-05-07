@@ -17,6 +17,7 @@ import {
   FileText,
   Download,
   Filter,
+  Trash2,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import { AppShell } from "@/components/AppShell";
@@ -32,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   Dialog,
   DialogContent,
