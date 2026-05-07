@@ -166,6 +166,11 @@ const BancoTalentos = () => {
       const candidateIds = (c as Talento[])
         .map((t) => t.candidate_id)
         .filter(Boolean) as string[];
+      
+      const emails = (c as Talento[])
+        .map((t) => t.email)
+        .filter(Boolean) as string[];
+
       if (candidateIds.length > 0) {
         const { data: ass } = await supabase
           .from("assessments")
@@ -176,6 +181,25 @@ const BancoTalentos = () => {
           map[row.candidate_id] = row as AssessmentInfo;
         });
         setAssessmentsByEmail(map);
+      }
+
+      if (emails.length > 0) {
+        // Buscar todas as candidaturas desses emails para mostrar histórico de vagas
+        const { data: allCand } = await supabase
+          .from("candidaturas")
+          .select("id, email, created_at, vaga_id, vagas(titulo)")
+          .in("email", emails)
+          .order("created_at", { ascending: false });
+        
+        const candMap: Record<string, any[]> = {};
+        (allCand ?? []).forEach((cand: any) => {
+          const email = cand.email?.toLowerCase();
+          if (email) {
+            if (!candMap[email]) candMap[email] = [];
+            candMap[email].push(cand);
+          }
+        });
+        setOutrasCandidaturas(candMap);
       }
     }
     setLoading(false);
