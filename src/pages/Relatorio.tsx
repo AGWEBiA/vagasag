@@ -98,6 +98,7 @@ interface Assessment {
 const Relatorio = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAdminMaster } = useUserRole();
   const { pesos } = useAssessmentPesos();
   const [exporting, setExporting] = useState(false);
 
