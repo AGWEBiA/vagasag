@@ -374,9 +374,31 @@ const Relatorio = () => {
             </div>
           </div>
         </div>
-        <p className="mt-5 text-body/90 max-w-3xl">
-          {SENIORIDADE_DESC[s]}
-        </p>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-sidebar-border/30">
+          <p className="text-body/90 max-w-2xl text-sm italic">
+            {SENIORIDADE_DESC[s]}
+          </p>
+          {isAdminMaster && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                onClick={handleDeleteAssessment}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir esta versão
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                onClick={handleDeletePerson}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir candidato completo
+              </Button>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Histórico de versões + comparação */}
