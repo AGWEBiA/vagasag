@@ -305,6 +305,28 @@ const NovaAvaliacao = () => {
     }
   };
 
+  const handleDelete = async (person: PersonRow) => {
+    if (!isAdminMaster) return;
+    if (!confirm(`Tem certeza que deseja excluir permanentemente "${person.nome}"? Esta ação não pode ser desfeita.`)) return;
+
+    try {
+      if (person.isVirtual) {
+        // Excluir candidatura virtual
+        const candId = person.id.slice(5);
+        const { error } = await supabase.from("candidaturas").delete().eq("id", candId);
+        if (error) throw error;
+      } else {
+        // Excluir candidato registrado
+        const { error } = await supabase.from("candidates").delete().eq("id", person.id);
+        if (error) throw error;
+      }
+      toast.success("Excluído com sucesso.");
+      queryClient.invalidateQueries({ queryKey: ["people-with-assessments"] });
+    } catch (err: any) {
+      toast.error("Erro ao excluir: " + (err.message || "Erro desconhecido"));
+    }
+  };
+
   return (
     <AppShell>
       <header className="mb-6 animate-fade-in flex flex-col md:flex-row md:items-end md:justify-between gap-4">
