@@ -427,6 +427,8 @@ const NovaAvaliacao = () => {
               onEvaluate={handleEvaluateClick}
               onView={(id) => navigate(`/relatorio/${id}`)}
               onViewAnswers={(p) => setViewing(p)}
+              onDelete={handleDelete}
+              isAdminMaster={isAdminMaster}
               emptyHint="Nenhum membro do time enviou autoavaliação ainda. Eles podem fazer login e enviar pela página de Autoavaliação."
             />
           </TabsContent>
