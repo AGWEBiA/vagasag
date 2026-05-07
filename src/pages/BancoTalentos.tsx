@@ -815,15 +815,26 @@ const BancoTalentos = () => {
                   >
                     <Repeat className="h-4 w-4 mr-2" /> Reaproveitar em outra vaga
                   </Button>
-                  <Button
-                    onClick={() => {
-                      const t = viewing;
-                      setViewing(null);
-                      openEdit(t);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4 mr-2" /> Gerir talento
-                  </Button>
+                  <div className="flex gap-2 ml-auto">
+                    {isAdminMaster && (
+                      <Button
+                        variant="outline"
+                        className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                        onClick={() => handleDelete(viewing)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => {
+                        const t = viewing;
+                        setViewing(null);
+                        openEdit(t);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" /> Gerir talento
+                    </Button>
+                  </div>
                 </DialogFooter>
               </>
             );
