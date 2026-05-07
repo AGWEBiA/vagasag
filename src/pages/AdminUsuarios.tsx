@@ -76,10 +76,11 @@ interface UserRow {
   roles: AppRole[];
 }
 
-const ROLE_OPTIONS: AppRole[] = ["admin", "recrutador", "lider", "colaborador"];
+const ROLE_OPTIONS: AppRole[] = ["admin_master", "admin", "recrutador", "lider", "colaborador"];
 const MIN_PASSWORD_LENGTH = 6;
 
 const ROLE_BADGE: Record<AppRole, string> = {
+  admin_master: "bg-gradient-gold text-gold-foreground ring-2 ring-gold/50",
   admin: "bg-gradient-gold text-gold-foreground",
   lider: "bg-gold/20 text-gold border border-gold/40",
   recrutador: "bg-pleno-bg text-body border border-sidebar-border",
@@ -435,6 +436,7 @@ const AdminUsuarios = () => {
 
   const counts = useMemo(() => {
     const c: Record<AppRole, number> = {
+      admin_master: 0,
       admin: 0,
       recrutador: 0,
       lider: 0,
@@ -482,7 +484,7 @@ const AdminUsuarios = () => {
       <ShareAutoavaliacaoCard />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         {ROLE_OPTIONS.map((r) => (
           <div key={r} className="surface-card rounded-lg p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider">

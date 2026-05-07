@@ -328,7 +328,15 @@ export type Database = {
           id?: string
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "candidatura_eventos_candidatura_id_fkey"
+            columns: ["candidatura_id"]
+            isOneToOne: false
+            referencedRelation: "candidaturas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       candidatura_logs: {
         Row: {
@@ -434,7 +442,15 @@ export type Database = {
           resposta_texto?: string | null
           vaga_pergunta_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "candidatura_respostas_candidatura_id_fkey"
+            columns: ["candidatura_id"]
+            isOneToOne: false
+            referencedRelation: "candidaturas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       candidaturas: {
         Row: {
@@ -456,6 +472,7 @@ export type Database = {
           talent_status: string
           telefone: string | null
           vaga_id: string
+          visualizada: boolean | null
         }
         Insert: {
           candidate_id?: string | null
@@ -476,6 +493,7 @@ export type Database = {
           talent_status?: string
           telefone?: string | null
           vaga_id: string
+          visualizada?: boolean | null
         }
         Update: {
           candidate_id?: string | null
@@ -496,6 +514,7 @@ export type Database = {
           talent_status?: string
           telefone?: string | null
           vaga_id?: string
+          visualizada?: boolean | null
         }
         Relationships: [
           {
@@ -1009,7 +1028,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "recrutador" | "user" | "lider" | "colaborador"
+      app_role:
+        | "admin"
+        | "recrutador"
+        | "user"
+        | "lider"
+        | "colaborador"
+        | "admin_master"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1137,7 +1162,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "recrutador", "user", "lider", "colaborador"],
+      app_role: [
+        "admin",
+        "recrutador",
+        "user",
+        "lider",
+        "colaborador",
+        "admin_master",
+      ],
     },
   },
 } as const

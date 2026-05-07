@@ -43,6 +43,7 @@ interface Candidatura {
   tags: string[];
   created_at: string;
   status: string;
+  visualizada: boolean;
 }
 
 const VagaPipeline = () => {
@@ -80,7 +81,7 @@ const VagaPipeline = () => {
       supabase
         .from("candidaturas")
         .select(
-          "id, nome, email, estagio_id, estagio_atualizado_em, candidate_id, tags, created_at, status",
+          "id, nome, email, estagio_id, estagio_atualizado_em, candidate_id, tags, created_at, status, visualizada",
         )
         .eq("vaga_id", vagaId)
         .order("created_at", { ascending: false }),
@@ -338,7 +339,12 @@ const CardEstatico = ({
 const CardConteudo = ({ cand }: { cand: Candidatura }) => (
   <>
     <div className="flex items-start justify-between gap-2">
-      <div className="font-medium text-sm truncate">{cand.nome}</div>
+      <div className="flex items-center gap-1.5 truncate">
+        <div className="font-medium text-sm truncate">{cand.nome}</div>
+        {!cand.visualizada && (
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+        )}
+      </div>
       {cand.candidate_id && (
         <Sparkles className="h-3 w-3 text-gold shrink-0" />
       )}

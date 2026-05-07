@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type AppRole = "admin" | "recrutador" | "lider" | "colaborador";
+export type AppRole = "admin_master" | "admin" | "recrutador" | "lider" | "colaborador";
 
 export const ROLE_LABELS: Record<AppRole, string> = {
+  admin_master: "Admin Master",
   admin: "Administrador",
   recrutador: "Recrutador",
   lider: "Líder",
@@ -12,6 +13,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
+  admin_master: "Acesso total e permissão para exclusão de dados críticos.",
   admin: "Acesso total ao sistema, gestão de usuários e configurações.",
   recrutador: "Cria vagas e avalia candidatos que ele mesmo cadastrou.",
   lider: "Vê todas as avaliações do time e candidatos.",
@@ -51,7 +53,8 @@ export function useUserRole() {
     };
   }, [user, authLoading]);
 
-  const isAdmin = roles.includes("admin");
+  const isAdminMaster = roles.includes("admin_master");
+  const isAdmin = isAdminMaster || roles.includes("admin");
   const isLider = isAdmin || roles.includes("lider");
   const isRecrutador = isAdmin || roles.includes("recrutador");
   const isColaborador = roles.includes("colaborador");
@@ -60,6 +63,7 @@ export function useUserRole() {
 
   return {
     roles,
+    isAdminMaster,
     isAdmin,
     isLider,
     isRecrutador,
