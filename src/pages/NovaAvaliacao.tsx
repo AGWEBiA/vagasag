@@ -414,6 +414,8 @@ const NovaAvaliacao = () => {
               onEvaluate={handleEvaluateClick}
               onView={(id) => navigate(`/relatorio/${id}`)}
               onViewAnswers={(p) => setViewing(p)}
+              onDelete={handleDelete}
+              isAdminMaster={isAdminMaster}
               emptyHint="Nenhum candidato cadastrado nesta categoria. Use 'Cadastrar novo' ou aguarde candidaturas pelo portal de vagas."
             />
           </TabsContent>
