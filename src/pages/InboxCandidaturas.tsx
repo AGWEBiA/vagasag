@@ -21,8 +21,11 @@ import {
   Sparkles,
   CheckCircle2,
   ExternalLink,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 import { CARGO_LABEL } from "@/lib/seniority";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -54,11 +57,13 @@ interface Candidatura {
   candidate_id: string | null;
   created_at: string;
   estagio_id: string | null;
+  visualizada: boolean;
 }
 
 const InboxCandidaturas = () => {
   const { vagaId } = useParams<{ vagaId: string }>();
   const navigate = useNavigate();
+  const { isAdminMaster } = useUserRole();
   const [searchParams] = useSearchParams();
   const candParam = searchParams.get("cand");
   const [vaga, setVaga] = useState<Vaga | null>(null);
@@ -67,6 +72,52 @@ const InboxCandidaturas = () => {
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState<string | null>(null);
   const [selected, setSelected] = useState<Candidatura | null>(null);
+
+  useEffect(() => {
+    if (selected && !selected.visualizada) {
+      void markAsViewed(selected.id);
+    }
+  }, [selected?.id]);
+
+  const markAsViewed = async (id: string) => {
+    const { error } = await supabase
+      .from("candidaturas")
+      .update({ visualizada: true })
+      .eq("id", id);
+    if (!error) {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, visualizada: true } : item,
+        ),
+      );
+      if (selected?.id === id) {
+        setSelected((prev) => (prev ? { ...prev, visualizada: true } : null));
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selected || !isAdminMaster) return;
+    if (
+      !confirm(
+        `Tem certeza que deseja excluir a candidatura de "${selected.nome}" permanentemente?`,
+      )
+    )
+      return;
+
+    const { error } = await supabase
+      .from("candidaturas")
+      .delete()
+      .eq("id", selected.id);
+
+    if (error) {
+      toast.error("Erro ao excluir candidatura: " + error.message);
+    } else {
+      toast.success("Candidatura excluída com sucesso.");
+      setItems((prev) => prev.filter((i) => i.id !== selected.id));
+      setSelected(null);
+    }
+  };
 
   useEffect(() => {
     document.title = "Candidaturas | Seniority Hub";
@@ -240,7 +291,12 @@ const InboxCandidaturas = () => {
                 )}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <div className="font-medium truncate">{c.nome}</div>
+                  <div className="flex items-center gap-2 truncate">
+                    <div className="font-medium truncate">{c.nome}</div>
+                    {!c.visualizada && (
+                      <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" title="Nova inscrição" />
+                    )}
+                  </div>
                   <StatusBadge status={c.status} />
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{c.email}</div>
@@ -381,6 +437,16 @@ const InboxCandidaturas = () => {
                       <Sparkles className="h-4 w-4 mr-2" />
                     )}
                     Avaliar com IA
+                  </Button>
+                )}
+                {isAdminMaster && (
+                  <Button
+                    variant="outline"
+                    onClick={handleDelete}
+                    className="ml-auto text-destructive border-destructive/20 hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir Candidatura
                   </Button>
                 )}
               </div>
