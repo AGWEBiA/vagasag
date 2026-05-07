@@ -834,9 +834,40 @@ const BancoTalentos = () => {
                       </div>
                     </section>
                   )}
-                </div>
+                  </TabsContent>
 
-                <DialogFooter className="mt-4 gap-2 flex-wrap">
+                  <TabsContent value="vagas" className="mt-0">
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold mb-3">Histórico de Inscrições</h4>
+                      {history.map((h: any) => (
+                        <div key={h.id} className="surface-card rounded-lg p-3 border border-sidebar-border/60 flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-sm">{h.vagas?.titulo || "Vaga desconhecida"}</div>
+                            <div className="text-[10px] text-muted-foreground">
+                              Inscrito em {new Date(h.created_at).toLocaleDateString("pt-BR")}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {h.id === viewing.id ? "Atual" : "Anterior"}
+                          </Badge>
+                        </div>
+                      ))}
+                      {history.length === 0 && (
+                        <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma outra inscrição encontrada.</p>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="notas" className="mt-0">
+                    <CandidaturaTimeline candidaturaId={viewing.id} />
+                  </TabsContent>
+
+                  <TabsContent value="notas_v2" className="mt-0">
+                    <NotasInternas candidaturaId={viewing.id} />
+                  </TabsContent>
+                </Tabs>
+
+                <DialogFooter className="mt-6 gap-2 flex-wrap border-t border-sidebar-border/30 pt-4">
                   <Button variant="ghost" onClick={() => setViewing(null)}>
                     Fechar
                   </Button>
