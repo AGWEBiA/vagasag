@@ -719,7 +719,15 @@ const BancoTalentos = () => {
                   </div>
                 </DialogHeader>
 
-                <div className="space-y-5 mt-2">
+                <Tabs defaultValue="detalhes" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 max-w-lg mb-4">
+                    <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+                    <TabsTrigger value="vagas">Vagas ({history.length})</TabsTrigger>
+                    <TabsTrigger value="notas">Linha do Tempo</TabsTrigger>
+                    <TabsTrigger value="notas_v2">Notas Internas</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="detalhes" className="space-y-5 mt-2">
                   {/* Contato */}
                   <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-border bg-card/50 p-4">
                     <div className="flex items-center gap-2 text-sm">
