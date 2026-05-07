@@ -86,6 +86,7 @@ const formatDate = (iso: string) =>
 const NovaAvaliacao = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isAdminMaster } = useUserRole();
   const [tab, setTab] = useState<Origem>("candidato");
   const [search, setSearch] = useState("");
   const [subCategoria, setSubCategoria] = useState<SubCategoria>("todos");
