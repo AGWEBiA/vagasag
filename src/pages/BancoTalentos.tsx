@@ -39,6 +39,7 @@ import {
   FileText,
   Eye,
   Repeat,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
