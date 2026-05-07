@@ -98,7 +98,7 @@ const STATUS_BADGE: Record<string, string> = {
 const SENIORIDADES = ["junior", "pleno", "senior", "especialista"];
 
 const BancoTalentos = () => {
-  const { hasPanelAccess, loading: roleLoading } = useUserRole();
+  const { hasPanelAccess, isAdminMaster, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Talento[]>([]);
   const [vagas, setVagas] = useState<Vaga[]>([]);
