@@ -31,7 +31,7 @@ type Action =
     }
   | { action: "delete"; user_id: string };
 
-type AppRole = "admin" | "recrutador" | "lider" | "colaborador";
+type AppRole = "admin_master" | "admin" | "recrutador" | "lider" | "colaborador";
 interface BulkUser {
   email: string;
   password?: string;
@@ -43,7 +43,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-const ALLOWED_ROLES: AppRole[] = ["admin", "recrutador", "lider", "colaborador"];
+const ALLOWED_ROLES: AppRole[] = ["admin_master", "admin", "recrutador", "lider", "colaborador"];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -66,7 +66,7 @@ serve(async (req) => {
       .select("role")
       .eq("user_id", userData.user.id);
     if (rolesErr) throw rolesErr;
-    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin" || r.role === "admin_master");
     if (!isAdmin) {
       return json({ error: "Apenas admins podem usar este endpoint." }, 403);
     }
@@ -230,7 +230,7 @@ async function handleUpdateUser(
     if (cleanRoles.length === 0) {
       return json({ error: "Selecione ao menos um papel." }, 400);
     }
-    if (body.user_id === callerId && !cleanRoles.includes("admin")) {
+    if (body.user_id === callerId && !cleanRoles.includes("admin") && !cleanRoles.includes("admin_master")) {
       return json(
         { error: "Você não pode remover o seu próprio papel de admin." },
         400,
@@ -278,7 +278,7 @@ async function handleSetRoles(
   }
 
   // Não permite o admin remover o próprio papel admin (lockout safety)
-  if (body.user_id === callerId && !cleanRoles.includes("admin")) {
+  if (body.user_id === callerId && !cleanRoles.includes("admin") && !cleanRoles.includes("admin_master")) {
     return json(
       { error: "Você não pode remover o seu próprio papel de admin." },
       400,
