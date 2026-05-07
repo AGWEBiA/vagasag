@@ -107,6 +107,7 @@ const BancoTalentos = () => {
   const [assessmentsByEmail, setAssessmentsByEmail] = useState<
     Record<string, AssessmentInfo>
   >({});
+  const [outrasCandidaturas, setOutrasCandidaturas] = useState<Record<string, any[]>>({});
 
   // Filtros
   const [search, setSearch] = useState("");
