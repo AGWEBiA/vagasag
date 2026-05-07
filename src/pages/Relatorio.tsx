@@ -32,6 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
@@ -374,31 +376,44 @@ const Relatorio = () => {
             </div>
           </div>
         </div>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-sidebar-border/30">
-          <p className="text-body/90 max-w-2xl text-sm italic">
-            {SENIORIDADE_DESC[s]}
-          </p>
-          {isAdminMaster && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                onClick={handleDeleteAssessment}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir esta versão
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                onClick={handleDeletePerson}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir candidato completo
-              </Button>
+        <Tabs defaultValue="resumo" className="w-full mt-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-sm mb-4">
+            <TabsTrigger value="resumo">Resumo do Nível</TabsTrigger>
+            <TabsTrigger value="historico_candidato">Vagas Inscritas</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="resumo" className="mt-0">
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+              <p className="text-body/90 max-w-2xl text-sm italic">
+                {SENIORIDADE_DESC[s]}
+              </p>
+              {isAdminMaster && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                    onClick={handleDeleteAssessment}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir esta versão
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                    onClick={handleDeletePerson}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir candidato completo
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="historico_candidato" className="mt-0">
+            <CandidatoVagasHistory candidateId={candidateId} />
+          </TabsContent>
+        </Tabs>
       </header>
 
       {/* Histórico de versões + comparação */}
@@ -408,10 +423,10 @@ const Relatorio = () => {
             <div>
               <h2 className="font-display text-lg font-semibold flex items-center gap-2">
                 <HistoryIcon className="h-4 w-4 text-gold" />
-                Histórico desta pessoa
+                Histórico de avaliações
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {history.length} avaliações registradas. Selecione uma versão para visualizar.
+                {history.length} avaliações registradas para este candidato.
               </p>
             </div>
             <Select value={data.id} onValueChange={(v) => navigate(`/relatorio/${v}`)}>
@@ -864,6 +879,52 @@ const ComparisonBlock = ({
           );
         })}
       </div>
+    </div>
+  );
+};
+
+const CandidatoVagasHistory = ({ candidateId }: { candidateId: string | null }) => {
+  const { data: candidaturas, isLoading } = useQuery({
+    queryKey: ["candidate-vagas-history", candidateId],
+    queryFn: async () => {
+      if (!candidateId) return [];
+      
+      // Primeiro, pegar o email deste candidato
+      const { data: cand } = await supabase.from("candidates").select("email:nome").eq("id", candidateId).maybeSingle();
+      const email = (cand as any)?.email;
+      if (!email) return [];
+
+      // Agora buscar todas as candidaturas por email
+      const { data, error } = await supabase
+        .from("candidaturas")
+        .select("id, created_at, visualizada, status, vaga_id, vagas(titulo, cargo)")
+        .ilike("email", email)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!candidateId,
+  });
+
+  if (isLoading) return <Skeleton className="h-20 w-full" />;
+  if (!candidaturas?.length) return <p className="text-sm text-muted-foreground py-4">Nenhum histórico de vagas encontrado.</p>;
+
+  return (
+    <div className="space-y-3 pt-2">
+      {candidaturas.map((c) => (
+        <div key={c.id} className="surface-card rounded-lg p-3 border border-sidebar-border/60 flex items-center justify-between">
+          <div>
+            <div className="font-medium text-sm">{(c.vagas as any)?.titulo || "Vaga desconhecida"}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {CARGO_LABEL[(c.vagas as any)?.cargo] || (c.vagas as any)?.cargo} · Inscrito em {new Date(c.created_at).toLocaleDateString("pt-BR")}
+            </div>
+          </div>
+          <Badge variant="outline" className="text-[10px] capitalize">
+            {c.status.replace("_", " ")}
+          </Badge>
+        </div>
+      ))}
     </div>
   );
 };

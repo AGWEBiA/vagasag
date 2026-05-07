@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NotasInternas } from "@/components/NotasInternas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CandidaturaTimeline } from "@/components/CandidaturaTimeline";
 
 interface Vaga {
   id: string;
@@ -106,6 +107,7 @@ const BancoTalentos = () => {
   const [assessmentsByEmail, setAssessmentsByEmail] = useState<
     Record<string, AssessmentInfo>
   >({});
+  const [outrasCandidaturas, setOutrasCandidaturas] = useState<Record<string, any[]>>({});
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -164,6 +166,11 @@ const BancoTalentos = () => {
       const candidateIds = (c as Talento[])
         .map((t) => t.candidate_id)
         .filter(Boolean) as string[];
+      
+      const emails = (c as Talento[])
+        .map((t) => t.email)
+        .filter(Boolean) as string[];
+
       if (candidateIds.length > 0) {
         const { data: ass } = await supabase
           .from("assessments")
@@ -174,6 +181,25 @@ const BancoTalentos = () => {
           map[row.candidate_id] = row as AssessmentInfo;
         });
         setAssessmentsByEmail(map);
+      }
+
+      if (emails.length > 0) {
+        // Buscar todas as candidaturas desses emails para mostrar histórico de vagas
+        const { data: allCand } = await supabase
+          .from("candidaturas")
+          .select("id, email, created_at, vaga_id, vagas(titulo)")
+          .in("email", emails)
+          .order("created_at", { ascending: false });
+        
+        const candMap: Record<string, any[]> = {};
+        (allCand ?? []).forEach((cand: any) => {
+          const email = cand.email?.toLowerCase();
+          if (email) {
+            if (!candMap[email]) candMap[email] = [];
+            candMap[email].push(cand);
+          }
+        });
+        setOutrasCandidaturas(candMap);
       }
     }
     setLoading(false);
@@ -653,10 +679,11 @@ const BancoTalentos = () => {
 
       {/* View details dialog */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           {viewing && (() => {
             const vagaV = vagas.find((v) => v.id === viewing.vaga_id);
             const assV = viewing.candidate_id ? assessmentsByEmail[viewing.candidate_id] : undefined;
+            const history = outrasCandidaturas[viewing.email?.toLowerCase()] ?? [];
             return (
               <>
                 <DialogHeader>
@@ -692,7 +719,15 @@ const BancoTalentos = () => {
                   </div>
                 </DialogHeader>
 
-                <div className="space-y-5 mt-2">
+                <Tabs defaultValue="detalhes" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 max-w-lg mb-4">
+                    <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+                    <TabsTrigger value="vagas">Vagas ({history.length})</TabsTrigger>
+                    <TabsTrigger value="notas">Linha do Tempo</TabsTrigger>
+                    <TabsTrigger value="notas_v2">Notas Internas</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="detalhes" className="space-y-5 mt-2">
                   {/* Contato */}
                   <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-border bg-card/50 p-4">
                     <div className="flex items-center gap-2 text-sm">
@@ -799,9 +834,40 @@ const BancoTalentos = () => {
                       </div>
                     </section>
                   )}
-                </div>
+                  </TabsContent>
 
-                <DialogFooter className="mt-4 gap-2 flex-wrap">
+                  <TabsContent value="vagas" className="mt-0">
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold mb-3">Histórico de Inscrições</h4>
+                      {history.map((h: any) => (
+                        <div key={h.id} className="surface-card rounded-lg p-3 border border-sidebar-border/60 flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-sm">{h.vagas?.titulo || "Vaga desconhecida"}</div>
+                            <div className="text-[10px] text-muted-foreground">
+                              Inscrito em {new Date(h.created_at).toLocaleDateString("pt-BR")}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {h.id === viewing.id ? "Atual" : "Anterior"}
+                          </Badge>
+                        </div>
+                      ))}
+                      {history.length === 0 && (
+                        <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma outra inscrição encontrada.</p>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="notas" className="mt-0">
+                    <CandidaturaTimeline candidaturaId={viewing.id} />
+                  </TabsContent>
+
+                  <TabsContent value="notas_v2" className="mt-0">
+                    <NotasInternas candidaturaId={viewing.id} />
+                  </TabsContent>
+                </Tabs>
+
+                <DialogFooter className="mt-6 gap-2 flex-wrap border-t border-sidebar-border/30 pt-4">
                   <Button variant="ghost" onClick={() => setViewing(null)}>
                     Fechar
                   </Button>
