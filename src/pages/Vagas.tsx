@@ -63,6 +63,7 @@ const Vagas = () => {
   const { user } = useAuth();
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Vaga | null>(null);
@@ -84,12 +85,17 @@ const Vagas = () => {
     if (error) toast.error("Erro ao carregar vagas.");
     else setVagas((data ?? []) as Vaga[]);
 
-    const { data: cs } = await supabase.from("candidaturas").select("vaga_id");
+    const { data: cs } = await supabase.from("candidaturas").select("vaga_id, visualizada");
     const map: Record<string, number> = {};
+    const unreadMap: Record<string, number> = {};
     (cs ?? []).forEach((c: any) => {
       map[c.vaga_id] = (map[c.vaga_id] ?? 0) + 1;
+      if (!c.visualizada) {
+        unreadMap[c.vaga_id] = (unreadMap[c.vaga_id] ?? 0) + 1;
+      }
     });
     setCounts(map);
+    setUnreadCounts(unreadMap);
 
     setLoading(false);
   };
@@ -265,6 +271,11 @@ const Vagas = () => {
                   >
                     <Inbox className="h-3.5 w-3.5" />
                     {counts[v.id] ?? 0} candidatura{(counts[v.id] ?? 0) === 1 ? "" : "s"}
+                    {(unreadCounts[v.id] ?? 0) > 0 && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-pulse">
+                        {unreadCounts[v.id]}
+                      </span>
+                    )}
                   </Link>
                   <div className="flex gap-1">
                     <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
