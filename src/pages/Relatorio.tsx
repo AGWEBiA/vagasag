@@ -374,31 +374,44 @@ const Relatorio = () => {
             </div>
           </div>
         </div>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-sidebar-border/30">
-          <p className="text-body/90 max-w-2xl text-sm italic">
-            {SENIORIDADE_DESC[s]}
-          </p>
-          {isAdminMaster && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                onClick={handleDeleteAssessment}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir esta versão
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                onClick={handleDeletePerson}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir candidato completo
-              </Button>
+        <Tabs defaultValue="resumo" className="w-full mt-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-sm mb-4">
+            <TabsTrigger value="resumo">Resumo do Nível</TabsTrigger>
+            <TabsTrigger value="historico_candidato">Vagas Inscritas</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="resumo" className="mt-0">
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+              <p className="text-body/90 max-w-2xl text-sm italic">
+                {SENIORIDADE_DESC[s]}
+              </p>
+              {isAdminMaster && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                    onClick={handleDeleteAssessment}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir esta versão
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                    onClick={handleDeletePerson}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir candidato completo
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="historico_candidato" className="mt-0">
+            <CandidatoVagasHistory candidateId={candidateId} />
+          </TabsContent>
+        </Tabs>
       </header>
 
       {/* Histórico de versões + comparação */}
@@ -408,10 +421,10 @@ const Relatorio = () => {
             <div>
               <h2 className="font-display text-lg font-semibold flex items-center gap-2">
                 <HistoryIcon className="h-4 w-4 text-gold" />
-                Histórico desta pessoa
+                Histórico de avaliações
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {history.length} avaliações registradas. Selecione uma versão para visualizar.
+                {history.length} avaliações registradas para este candidato.
               </p>
             </div>
             <Select value={data.id} onValueChange={(v) => navigate(`/relatorio/${v}`)}>
