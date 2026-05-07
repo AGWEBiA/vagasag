@@ -17,6 +17,7 @@ import {
   FileText,
   Download,
   Filter,
+  Trash2,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import { AppShell } from "@/components/AppShell";
@@ -32,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   Dialog,
   DialogContent,
@@ -84,6 +86,7 @@ const formatDate = (iso: string) =>
 const NovaAvaliacao = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isAdminMaster } = useUserRole();
   const [tab, setTab] = useState<Origem>("candidato");
   const [search, setSearch] = useState("");
   const [subCategoria, setSubCategoria] = useState<SubCategoria>("todos");
@@ -302,6 +305,28 @@ const NovaAvaliacao = () => {
     }
   };
 
+  const handleDelete = async (person: PersonRow) => {
+    if (!isAdminMaster) return;
+    if (!confirm(`Tem certeza que deseja excluir permanentemente "${person.nome}"? Esta ação não pode ser desfeita.`)) return;
+
+    try {
+      if (person.isVirtual) {
+        // Excluir candidatura virtual
+        const candId = person.id.slice(5);
+        const { error } = await supabase.from("candidaturas").delete().eq("id", candId);
+        if (error) throw error;
+      } else {
+        // Excluir candidato registrado
+        const { error } = await supabase.from("candidates").delete().eq("id", person.id);
+        if (error) throw error;
+      }
+      toast.success("Excluído com sucesso.");
+      queryClient.invalidateQueries({ queryKey: ["people-with-assessments"] });
+    } catch (err: any) {
+      toast.error("Erro ao excluir: " + (err.message || "Erro desconhecido"));
+    }
+  };
+
   return (
     <AppShell>
       <header className="mb-6 animate-fade-in flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -389,6 +414,8 @@ const NovaAvaliacao = () => {
               onEvaluate={handleEvaluateClick}
               onView={(id) => navigate(`/relatorio/${id}`)}
               onViewAnswers={(p) => setViewing(p)}
+              onDelete={handleDelete}
+              isAdminMaster={isAdminMaster}
               emptyHint="Nenhum candidato cadastrado nesta categoria. Use 'Cadastrar novo' ou aguarde candidaturas pelo portal de vagas."
             />
           </TabsContent>
@@ -400,6 +427,8 @@ const NovaAvaliacao = () => {
               onEvaluate={handleEvaluateClick}
               onView={(id) => navigate(`/relatorio/${id}`)}
               onViewAnswers={(p) => setViewing(p)}
+              onDelete={handleDelete}
+              isAdminMaster={isAdminMaster}
               emptyHint="Nenhum membro do time enviou autoavaliação ainda. Eles podem fazer login e enviar pela página de Autoavaliação."
             />
           </TabsContent>
@@ -511,6 +540,8 @@ const PersonList = ({
   onEvaluate,
   onView,
   onViewAnswers,
+  onDelete,
+  isAdminMaster,
   emptyHint,
 }: {
   people: PersonRow[];
@@ -519,6 +550,8 @@ const PersonList = ({
   onEvaluate: (p: PersonRow) => void;
   onView: (assessmentId: string) => void;
   onViewAnswers: (p: PersonRow) => void;
+  onDelete?: (p: PersonRow) => void;
+  isAdminMaster?: boolean;
   emptyHint: string;
 }) => {
   if (isLoading) {
@@ -634,6 +667,18 @@ const PersonList = ({
                 )}
                 {isRunning ? "Avaliando..." : hasAssessment ? "Reavaliar" : "Avaliar"}
               </Button>
+              {isAdminMaster && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete?.(p)}
+                  disabled={isRunning}
+                  className="text-destructive hover:bg-destructive/10"
+                  title="Excluir permanentemente"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         );

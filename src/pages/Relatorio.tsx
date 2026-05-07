@@ -20,6 +20,7 @@ import {
   Quote,
   FileDown,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import {
   CARGO_LABEL,
@@ -96,6 +98,7 @@ interface Assessment {
 const Relatorio = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAdminMaster } = useUserRole();
   const { pesos } = useAssessmentPesos();
   const [exporting, setExporting] = useState(false);
 
@@ -137,6 +140,39 @@ const Relatorio = () => {
       toast.error(`Falha ao gerar PDF: ${e instanceof Error ? e.message : "erro"}`);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleDeleteAssessment = async () => {
+    if (!id || !isAdminMaster) return;
+    if (!confirm("Tem certeza que deseja excluir permanentemente esta avaliação? O histórico das outras versões será mantido.")) return;
+    
+    const { error } = await supabase.from("assessments").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+    } else {
+      toast.success("Avaliação excluída.");
+      navigate("/historico");
+    }
+  };
+
+  const handleDeletePerson = async () => {
+    if (!candidateId || !isAdminMaster || !data) return;
+    if (!confirm(`Tem certeza que deseja excluir permanentemente "${data.candidates?.nome}" e TODOS os seus dados/relatórios? Esta ação não pode ser desfeita.`)) return;
+    
+    // Tenta encontrar a candidatura relacionada para excluir também
+    const { data: cand } = await supabase.from("candidaturas").select("id").eq("candidate_id", candidateId).maybeSingle();
+    
+    if (cand) {
+      await supabase.from("candidaturas").delete().eq("id", cand.id);
+    }
+    
+    const { error } = await supabase.from("candidates").delete().eq("id", candidateId);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+    } else {
+      toast.success("Candidato excluído.");
+      navigate("/historico");
     }
   };
 
@@ -338,9 +374,31 @@ const Relatorio = () => {
             </div>
           </div>
         </div>
-        <p className="mt-5 text-body/90 max-w-3xl">
-          {SENIORIDADE_DESC[s]}
-        </p>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-sidebar-border/30">
+          <p className="text-body/90 max-w-2xl text-sm italic">
+            {SENIORIDADE_DESC[s]}
+          </p>
+          {isAdminMaster && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                onClick={handleDeleteAssessment}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir esta versão
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                onClick={handleDeletePerson}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir candidato completo
+              </Button>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Histórico de versões + comparação */}

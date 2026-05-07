@@ -39,6 +39,7 @@ import {
   FileText,
   Eye,
   Repeat,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -98,7 +99,7 @@ const STATUS_BADGE: Record<string, string> = {
 const SENIORIDADES = ["junior", "pleno", "senior", "especialista"];
 
 const BancoTalentos = () => {
-  const { hasPanelAccess, loading: roleLoading } = useUserRole();
+  const { hasPanelAccess, isAdminMaster, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Talento[]>([]);
   const [vagas, setVagas] = useState<Vaga[]>([]);
@@ -327,6 +328,27 @@ const BancoTalentos = () => {
     setReaproveitando(null);
     setVagaDestino("");
     void load();
+  };
+
+  const handleDelete = async (t: Talento) => {
+    if (!isAdminMaster) return;
+    if (
+      !confirm(
+        `Tem certeza que deseja excluir permanentemente "${t.nome}" e todos os seus dados? Esta ação não pode ser desfeita.`
+      )
+    )
+      return;
+
+    const { error } = await supabase.from("candidaturas").delete().eq("id", t.id);
+
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+    } else {
+      toast.success("Excluído com sucesso.");
+      setItems((prev) => prev.filter((i) => i.id !== t.id));
+      setViewing(null);
+      setEditing(null);
+    }
   };
 
   if (roleLoading) {
@@ -597,16 +619,31 @@ const BancoTalentos = () => {
                       </p>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEdit(t);
-                    }}
-                  >
-                    <Pencil className="h-3.5 w-3.5 mr-1" /> Gerir
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(t);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5 mr-1" /> Gerir
+                    </Button>
+                    {isAdminMaster && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(t);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </article>
             );
@@ -778,15 +815,26 @@ const BancoTalentos = () => {
                   >
                     <Repeat className="h-4 w-4 mr-2" /> Reaproveitar em outra vaga
                   </Button>
-                  <Button
-                    onClick={() => {
-                      const t = viewing;
-                      setViewing(null);
-                      openEdit(t);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4 mr-2" /> Gerir talento
-                  </Button>
+                  <div className="flex gap-2 ml-auto">
+                    {isAdminMaster && (
+                      <Button
+                        variant="outline"
+                        className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                        onClick={() => handleDelete(viewing)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => {
+                        const t = viewing;
+                        setViewing(null);
+                        openEdit(t);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" /> Gerir talento
+                    </Button>
+                  </div>
                 </DialogFooter>
               </>
             );
