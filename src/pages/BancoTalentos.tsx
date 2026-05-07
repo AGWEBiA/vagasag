@@ -329,6 +329,27 @@ const BancoTalentos = () => {
     void load();
   };
 
+  const handleDelete = async (t: Talento) => {
+    if (!isAdminMaster) return;
+    if (
+      !confirm(
+        `Tem certeza que deseja excluir permanentemente "${t.nome}" e todos os seus dados? Esta ação não pode ser desfeita.`
+      )
+    )
+      return;
+
+    const { error } = await supabase.from("candidaturas").delete().eq("id", t.id);
+
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+    } else {
+      toast.success("Excluído com sucesso.");
+      setItems((prev) => prev.filter((i) => i.id !== t.id));
+      setViewing(null);
+      setEditing(null);
+    }
+  };
+
   if (roleLoading) {
     return (
       <AppShell>
