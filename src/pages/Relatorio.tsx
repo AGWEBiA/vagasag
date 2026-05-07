@@ -143,6 +143,39 @@ const Relatorio = () => {
     }
   };
 
+  const handleDeleteAssessment = async () => {
+    if (!id || !isAdminMaster) return;
+    if (!confirm("Tem certeza que deseja excluir permanentemente esta avaliação? O histórico das outras versões será mantido.")) return;
+    
+    const { error } = await supabase.from("assessments").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+    } else {
+      toast.success("Avaliação excluída.");
+      navigate("/historico");
+    }
+  };
+
+  const handleDeletePerson = async () => {
+    if (!candidateId || !isAdminMaster || !data) return;
+    if (!confirm(`Tem certeza que deseja excluir permanentemente "${data.candidates?.nome}" e TODOS os seus dados/relatórios? Esta ação não pode ser desfeita.`)) return;
+    
+    // Tenta encontrar a candidatura relacionada para excluir também
+    const { data: cand } = await supabase.from("candidaturas").select("id").eq("candidate_id", candidateId).maybeSingle();
+    
+    if (cand) {
+      await supabase.from("candidaturas").delete().eq("id", cand.id);
+    }
+    
+    const { error } = await supabase.from("candidates").delete().eq("id", candidateId);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+    } else {
+      toast.success("Candidato excluído.");
+      navigate("/historico");
+    }
+  };
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["assessment", id],
