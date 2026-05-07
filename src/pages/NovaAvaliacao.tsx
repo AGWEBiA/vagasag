@@ -522,6 +522,8 @@ const PersonList = ({
   onEvaluate: (p: PersonRow) => void;
   onView: (assessmentId: string) => void;
   onViewAnswers: (p: PersonRow) => void;
+  onDelete?: (p: PersonRow) => void;
+  isAdminMaster?: boolean;
   emptyHint: string;
 }) => {
   if (isLoading) {
