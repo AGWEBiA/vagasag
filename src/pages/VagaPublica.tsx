@@ -125,26 +125,39 @@ const VagaPublica = () => {
 
   useEffect(() => {
     void load();
-  }, [id]);
+  }, [slugOrId]);
 
   const load = async () => {
-    if (!id) return;
+    if (!slugOrId) return;
     setLoading(true);
-    const { data } = await supabase
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    
+    let query = supabase
       .from("vagas")
       .select("*")
-      .eq("id", id)
-      .eq("status", "aberta")
-      .maybeSingle();
-    setVaga((data as Vaga) ?? null);
-    if (data) document.title = `${(data as Vaga).titulo} | Seniority Hub`;
+      .eq("status", "aberta");
 
-    const { data: ps } = await supabase
-      .from("vaga_perguntas")
-      .select("*")
-      .eq("vaga_id", id)
-      .order("ordem", { ascending: true });
-    setPerguntas((ps ?? []) as VagaPergunta[]);
+    if (isUUID) {
+      query = query.eq("id", slugOrId);
+    } else {
+      query = query.eq("slug", slugOrId);
+    }
+
+    const { data } = await query.maybeSingle();
+    const vagaData = data as Vaga;
+    setVaga(vagaData ?? null);
+
+    if (vagaData) {
+      document.title = `${vagaData.titulo} | Seniority Hub`;
+
+      const { data: ps } = await supabase
+        .from("vaga_perguntas")
+        .select("*")
+        .eq("vaga_id", vagaData.id)
+        .order("ordem", { ascending: true });
+      setPerguntas((ps ?? []) as VagaPergunta[]);
+    }
 
     setLoading(false);
   };
