@@ -46,7 +46,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/vagas" element={<PortalVagas />} />
-            <Route path="/vagas/:id/:slug?" element={<VagaPublica />} />
+            <Route path="/vagas/:slugOrId" element={<VagaPublica />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             {/* Authenticated (qualquer login) */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
