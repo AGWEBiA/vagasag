@@ -544,6 +544,7 @@ const BancoTalentos = () => {
       ) : (
         <div className="grid gap-3">
           {filtered.map((t) => {
+            const history = t.email ? (outrasCandidaturas[t.email.toLowerCase()] ?? []) : [];
             const vaga = vagas.find((v) => v.id === t.vaga_id);
             const ass = t.candidate_id ? assessmentsByEmail[t.candidate_id] : undefined;
             return (
@@ -611,6 +612,10 @@ const BancoTalentos = () => {
                           <Briefcase className="h-3 w-3" /> {vaga.titulo}
                         </span>
                       )}
+                      {history.length > 1 && (
+                        <span className="flex items-center gap-1 text-gold/80 font-medium">
+                          <Repeat className="h-3 w-3" /> {history.length} inscrições
+                        </span>
                       <span className="flex items-center gap-1">
                         <CalendarDays className="h-3 w-3" />
                         {new Date(t.created_at).toLocaleDateString("pt-BR")}
