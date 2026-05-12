@@ -477,12 +477,10 @@ const SyncStatusCard = () => {
               </button>
             </div>
             <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
-                SISTEMA OK
-              </Badge>
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Última migration: <span className="font-mono text-xs">{syncData.last_migration_name}</span>
-            </p>
+              <p>
+                Última migration: <span className="font-mono text-xs">{syncData.last_migration_name}</span>
+              </p>
+            </div>
           </div>
         </div>
         
