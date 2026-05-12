@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -40,6 +46,7 @@ import {
   Eye,
   Repeat,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -112,10 +119,12 @@ const BancoTalentos = () => {
   // Filtros
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
-  const [vagaFilter, setVagaFilter] = useState<string>("todos");
+  const [vagaFilter, setVagaFilter] = useState<string[]>([]);
   const [senioridadeFilter, setSenioridadeFilter] = useState<string>("todos");
   const [tagFilter, setTagFilter] = useState<string>("");
   const [periodoFilter, setPeriodoFilter] = useState<string>("todos");
+  const [dataInicio, setDataInicio] = useState<string>("");
+  const [dataFim, setDataFim] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
   // Visualização e Edição
@@ -220,16 +229,29 @@ const BancoTalentos = () => {
       "30d": 30 * 86400_000,
       "90d": 90 * 86400_000,
     };
+    
+    const dInicio = dataInicio ? new Date(dataInicio).getTime() : null;
+    const dFim = dataFim ? new Date(dataFim).getTime() : null;
     return items.filter((t) => {
       if (term) {
         const blob = `${t.nome} ${t.email} ${t.dados_profissionais} ${(t.skills ?? []).join(" ")}`.toLowerCase();
         if (!blob.includes(term)) return false;
       }
       if (statusFilter !== "todos" && t.talent_status !== statusFilter) return false;
-      if (vagaFilter !== "todos") {
+      if (vagaFilter.length > 0) {
         const history = t.email ? (outrasCandidaturas[t.email.toLowerCase()] ?? []) : [];
-        const appliedToVaga = history.some(h => h.vaga_id === vagaFilter);
-        if (!appliedToVaga) return false;
+        const appliedToAnySelected = history.some(h => {
+          const isVagaMatch = vagaFilter.includes(h.vaga_id);
+          if (!isVagaMatch) return false;
+          
+          // Se houver filtro de data, validar contra a data da candidatura específica no histórico
+          const hTime = new Date(h.created_at).getTime();
+          if (dInicio && hTime < dInicio) return false;
+          if (dFim && hTime > dFim + 86400000) return false; // +1 dia para incluir o dia final
+          
+          return true;
+        });
+        if (!appliedToAnySelected) return false;
       }
       if (tag) {
         const has = (t.tags ?? []).some((x) => x.toLowerCase().includes(tag));
@@ -239,7 +261,7 @@ const BancoTalentos = () => {
         const a = t.candidate_id ? assessmentsByEmail[t.candidate_id] : undefined;
         if (!a || a.senioridade_detectada !== senioridadeFilter) return false;
       }
-      if (periodoFilter !== "todos") {
+      if (periodoFilter !== "todos" && vagaFilter.length === 0) {
         const limit = periodoMs[periodoFilter];
         if (limit && now - new Date(t.created_at).getTime() > limit) return false;
       }
@@ -250,6 +272,8 @@ const BancoTalentos = () => {
     search,
     statusFilter,
     vagaFilter,
+    dataInicio,
+    dataFim,
     tagFilter,
     senioridadeFilter,
     periodoFilter,
@@ -309,10 +333,12 @@ const BancoTalentos = () => {
   const clearFilters = () => {
     setSearch("");
     setStatusFilter("todos");
-    setVagaFilter("todos");
+    setVagaFilter([]);
     setSenioridadeFilter("todos");
     setTagFilter("");
     setPeriodoFilter("todos");
+    setDataInicio("");
+    setDataFim("");
   };
 
   const reaproveitarEmVaga = async () => {
@@ -455,10 +481,12 @@ const BancoTalentos = () => {
             Filtros
           </Button>
           {(statusFilter !== "todos" ||
-            vagaFilter !== "todos" ||
+            vagaFilter.length > 0 ||
             senioridadeFilter !== "todos" ||
             tagFilter ||
             periodoFilter !== "todos" ||
+            dataInicio ||
+            dataFim ||
             search) && (
             <Button variant="ghost" onClick={clearFilters}>
               <X className="h-4 w-4 mr-1" /> Limpar
@@ -470,19 +498,77 @@ const BancoTalentos = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 rounded-lg border border-border bg-card/50 p-4 animate-fade-in">
             <div>
               <Label className="text-xs">Vaga de candidatura</Label>
-              <Select value={vagaFilter} onValueChange={setVagaFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas</SelectItem>
-                  {vagas.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.titulo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                    size="sm"
+                  >
+                    <span className="truncate">
+                      {vagaFilter.length === 0
+                        ? "Todas"
+                        : vagaFilter.length === 1
+                        ? vagas.find((v) => v.id === vagaFilter[0])?.titulo
+                        : `${vagaFilter.length} vagas`}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <div className="p-2 border-b border-border flex items-center justify-between">
+                    <span className="text-xs font-semibold">Selecionar vagas</span>
+                    {vagaFilter.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-1 text-[10px]"
+                        onClick={() => setVagaFilter([])}
+                      >
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto p-1">
+                    {vagas.map((v) => (
+                      <div
+                        key={v.id}
+                        className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm cursor-pointer"
+                        onClick={() => {
+                          const current = [...vagaFilter];
+                          const idx = current.indexOf(v.id);
+                          if (idx > -1) {
+                            current.splice(idx, 1);
+                          } else {
+                            current.push(v.id);
+                          }
+                          setVagaFilter(current);
+                        }}
+                      >
+                        <Checkbox checked={vagaFilter.includes(v.id)} />
+                        <span className="text-sm truncate">{v.titulo}</span>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label className="text-xs">Data de candidatura</Label>
+              <div className="flex gap-1">
+                <Input
+                  type="date"
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                  className="text-[10px] h-8 p-1"
+                />
+                <Input
+                  type="date"
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                  className="text-[10px] h-8 p-1"
+                />
+              </div>
             </div>
             <div>
               <Label className="text-xs">Senioridade (IA)</Label>
@@ -527,6 +613,20 @@ const BancoTalentos = () => {
                   <SelectItem value="90d">Últimos 90 dias</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Tag</Label>
+              <Input
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+                placeholder={allTags.length ? `ex: ${allTags[0]}` : "ex: react"}
+                list="all-tags"
+              />
+              <datalist id="all-tags">
+                {allTags.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
             </div>
           </div>
         )}
