@@ -301,6 +301,9 @@ const Vagas = () => {
                     )}
                   </Link>
                   <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => copyLink(v)} title="Copiar link público">
+                      <Link2 className="h-3.5 w-3.5" />
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
