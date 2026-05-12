@@ -743,6 +743,36 @@ export type Database = {
           },
         ]
       }
+      github_sync_status: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_commit_hash: string
+          last_commit_message: string | null
+          last_migration_name: string
+          last_sync_at: string | null
+          repo_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_commit_hash: string
+          last_commit_message?: string | null
+          last_migration_name: string
+          last_sync_at?: string | null
+          repo_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_commit_hash?: string
+          last_commit_message?: string | null
+          last_migration_name?: string
+          last_sync_at?: string | null
+          repo_url?: string | null
+        }
+        Relationships: []
+      }
       pipeline_estagios: {
         Row: {
           ativo: boolean
