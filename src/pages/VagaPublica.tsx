@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import {
@@ -109,6 +109,18 @@ const VagaPublica = () => {
   const clearDraft = useCallback(() => {
     if (id) localStorage.removeItem(`draft-candidatura-${id}`);
   }, [id]);
+
+  const descricaoCompleta = useMemo(() => {
+    if (!vaga) return "";
+    let texto = vaga.descricao;
+    if (vaga.requisitos) {
+      texto += `\n\nRequisitos:\n${vaga.requisitos}`;
+    }
+    if (vaga.beneficios) {
+      texto += `\n\nBenefícios:\n${vaga.beneficios}`;
+    }
+    return texto;
+  }, [vaga]);
 
   useEffect(() => {
     void load();
@@ -384,9 +396,7 @@ const VagaPublica = () => {
                 )}
               </div>
 
-              <Section title="Sobre a vaga">{vaga.descricao}</Section>
-              {vaga.requisitos && <Section title="Requisitos">{vaga.requisitos}</Section>}
-              {vaga.beneficios && <Section title="Benefícios">{vaga.beneficios}</Section>}
+              <Section title="Descrição da Vaga">{descricaoCompleta}</Section>
             </article>
 
             <form

@@ -6,6 +6,7 @@ import { CARGO_LABEL } from "@/lib/seniority";
 import { Button } from "@/components/ui/button";
 import { useBranding } from "@/hooks/useBranding";
 import { BrandLogo } from "@/components/BrandLogo";
+import { slugify } from "@/lib/utils";
 
 interface VagaListItem {
   id: string;
@@ -87,7 +88,7 @@ const PortalVagas = () => {
             {vagas.map((v) => (
               <Link
                 key={v.id}
-                to={`/vagas/${v.id}`}
+                to={`/vagas/${v.id}/${slugify(v.titulo)}`}
                 className="surface-card rounded-xl p-4 sm:p-6 flex flex-col gap-3 hover:ring-1 hover:ring-gold/40 hover:shadow-gold transition group"
               >
                 <div className="text-xs text-gold uppercase tracking-widest font-semibold">
