@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { CARGOS, CARGO_LABEL } from "@/lib/seniority";
-import { cn } from "@/lib/utils";
+import { cn, stripHtml } from "@/lib/utils";
 import {
   VagaPerguntasEditor,
   savePerguntasForVaga,
@@ -266,7 +266,7 @@ const Vagas = () => {
                 {CARGO_LABEL[v.cargo]} · {v.modalidade}
                 {v.localizacao ? ` · ${v.localizacao}` : ""}
               </div>
-              <p className="text-sm text-body line-clamp-3">{v.descricao}</p>
+              <p className="text-sm text-body line-clamp-3">{stripHtml(v.descricao)}</p>
               <div className="flex flex-col gap-2 pt-2 border-t border-sidebar-border mt-auto">
                 <Button
                   asChild
