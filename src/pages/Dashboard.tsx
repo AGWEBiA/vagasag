@@ -36,6 +36,8 @@ import {
   confidenceColorClass,
 } from "@/lib/seniority";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface AssessmentRow {
   id: string;
