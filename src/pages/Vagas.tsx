@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox, Layers } from "lucide-react";
+import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox, Layers, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
