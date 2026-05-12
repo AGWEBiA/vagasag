@@ -15,6 +15,11 @@ import {
   Palette,
   Menu,
   FileSearch,
+  Github,
+  History,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -37,6 +42,7 @@ const BASE_NAV = [
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/nova-avaliacao", label: "Nova Avaliação", icon: Sparkles, badge: "IA" },
   { to: "/historico", label: "Histórico", icon: History },
+  { to: "/historico-deploy", label: "Deploy", icon: Github },
   { to: "/vagas-admin", label: "Vagas", icon: Briefcase },
   { to: "/banco-talentos", label: "Talentos", icon: Users2 },
   { to: "/ajuda", label: "Ajuda", icon: LifeBuoy },

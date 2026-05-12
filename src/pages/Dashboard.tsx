@@ -19,6 +19,9 @@ import {
   TrendingUp,
   Layers,
   UserPlus,
+  Github,
+  CheckCircle2,
+  ExternalLink,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -175,6 +178,8 @@ const Dashboard = () => {
           accent
         />
       </section>
+
+      <SyncStatusCard />
 
       <section className="grid gap-6 lg:grid-cols-2 mb-8">
         <div className="surface-card rounded-xl p-4 sm:p-6">
@@ -382,6 +387,69 @@ const MetricCard = ({
     <div className="font-display text-3xl font-semibold">{value}</div>
   </div>
 );
+
+const SyncStatusCard = () => {
+  const { data: syncStatus, isLoading } = useQuery({
+    queryKey: ["github-sync-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('github_sync_status' as any)
+        .select('*')
+        .order('last_sync_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (isLoading) return <Skeleton className="h-24 w-full mb-8 rounded-xl" />;
+  if (!syncStatus) return null;
+
+  const repoUrl = syncStatus.repo_url || "https://github.com/lovable-user/project-repo";
+  const commitUrl = `${repoUrl}/commit/${syncStatus.last_commit_hash}`;
+
+  return (
+    <div className="surface-card rounded-xl p-4 mb-8 border border-green-500/20 bg-green-500/5 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-green-500/20 p-2.5 rounded-full">
+            <CheckCircle2 className="h-6 w-6 text-green-500" />
+          </div>
+          <div>
+            <h3 className="font-semibold flex items-center gap-2">
+              Sincronizado com GitHub
+              <Badge className="bg-green-500/20 text-green-500 hover:bg-green-500/30 border-none text-[10px]">
+                LIVE
+              </Badge>
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Última migration: <span className="font-mono text-xs">{syncStatus.last_migration_name}</span>
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden md:block">
+            <p className="text-xs font-medium">Commit {syncStatus.last_commit_hash}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {new Date(syncStatus.last_sync_at).toLocaleString('pt-BR')}
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="border-gold/40 hover:text-gold h-9"
+            onClick={() => window.open(commitUrl, '_blank')}
+          >
+            <Github className="h-4 w-4 mr-2" />
+            Abrir Commit
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const EmptyMini = ({ text }: { text: string }) => (
   <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">
