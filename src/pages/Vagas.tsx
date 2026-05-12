@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { CARGOS, CARGO_LABEL } from "@/lib/seniority";
-import { cn, stripHtml } from "@/lib/utils";
+import { cn, stripHtml, slugify } from "@/lib/utils";
 import {
   VagaPerguntasEditor,
   savePerguntasForVaga,
