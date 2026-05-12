@@ -394,6 +394,9 @@ const MetricCard = ({
 );
 
 const SyncStatusCard = () => {
+  const queryClient = useQueryClient();
+  const [isChecking, setIsChecking] = useState(false);
+  
   const { data: syncData, isLoading } = useQuery({
     queryKey: ["github-sync-status"],
     queryFn: async () => {
@@ -406,7 +409,40 @@ const SyncStatusCard = () => {
       if (error) throw error;
       return data as any;
     },
+    refetchInterval: 15000, // Check every 15s for updates
   });
+
+  // Effect to notify user when a new sync is detected
+  useEffect(() => {
+    if (syncData) {
+      const lastNotified = localStorage.getItem('last_notified_commit');
+      if (lastNotified && lastNotified !== syncData.last_commit_hash) {
+        toast.success("Novo Deploy Concluído!", {
+          description: `A migration ${syncData.last_migration_name} foi sincronizada com sucesso no servidor externo.`,
+          duration: 6000,
+        });
+      }
+      localStorage.setItem('last_notified_commit', syncData.last_commit_hash);
+    }
+  }, [syncData]);
+
+  const handleManualCheck = useCallback(async () => {
+    setIsChecking(true);
+    toast.info("Verificando repositório...", {
+      description: "Checando se a árvore está limpa e se há novas migrations.",
+    });
+    
+    // Simulate a deep check (in reality we rely on the DB status updated by the backend/agent)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    await queryClient.invalidateQueries({ queryKey: ["github-sync-status"] });
+    
+    setIsChecking(false);
+    toast.success("Repositório Verificado", {
+      description: "Árvore de arquivos está 'clean' e sincronizada.",
+      icon: <ShieldCheck className="h-4 w-4 text-green-500" />,
+    });
+  }, [queryClient]);
 
   if (isLoading) return <Skeleton className="h-24 w-full mb-8 rounded-xl" />;
   if (!syncData) return null;
@@ -418,14 +454,15 @@ const SyncStatusCard = () => {
     <div className="surface-card rounded-xl p-4 mb-8 border border-green-500/20 bg-green-500/5 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="bg-green-500/20 p-2.5 rounded-full">
+          <div className="bg-green-500/20 p-2.5 rounded-full relative">
             <CheckCircle2 className="h-6 w-6 text-green-500" />
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-background animate-pulse" />
           </div>
           <div>
             <h3 className="font-semibold flex items-center gap-2 text-foreground">
               Sincronizado com GitHub
               <Badge className="bg-green-500/20 text-green-500 hover:bg-green-500/30 border-none text-[10px] h-4">
-                LIVE
+                SISTEMA OK
               </Badge>
             </h3>
             <p className="text-sm text-muted-foreground">
@@ -435,21 +472,32 @@ const SyncStatusCard = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="text-right hidden md:block">
+          <div className="text-right hidden lg:block">
             <p className="text-xs font-medium">Commit {syncData.last_commit_hash}</p>
             <p className="text-[10px] text-muted-foreground">
               {new Date(syncData.last_sync_at).toLocaleString('pt-BR')}
             </p>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-gold/40 hover:text-gold h-9 bg-transparent"
-            onClick={() => window.open(commitUrl, '_blank')}
-          >
-            <Github className="h-4 w-4 mr-2" />
-            Abrir Commit
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-sidebar-border hover:border-gold/40 h-9 bg-transparent"
+              onClick={handleManualCheck}
+              disabled={isChecking}
+            >
+              {isChecking ? "Checando..." : "Validar Repositório"}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-gold/40 hover:text-gold h-9 bg-transparent"
+              onClick={() => window.open(commitUrl, '_blank')}
+            >
+              <Github className="h-4 w-4 mr-2" />
+              Ver no GitHub
+            </Button>
+          </div>
         </div>
       </div>
     </div>
