@@ -24,6 +24,7 @@ import {
   ExternalLink,
   ShieldCheck,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -459,9 +460,23 @@ const SyncStatusCard = () => {
             <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-background animate-pulse" />
           </div>
           <div>
-            <h3 className="font-semibold flex items-center gap-2 text-foreground">
-              Sincronizado com GitHub
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-foreground">
+                Sincronizado com GitHub
+              </h3>
               <Badge className="bg-green-500/20 text-green-500 hover:bg-green-500/30 border-none text-[10px] h-4">
+                TREE CLEAN
+              </Badge>
+              <button 
+                onClick={handleManualCheck}
+                disabled={isChecking}
+                className="text-muted-foreground hover:text-gold transition-colors ml-1 p-0.5"
+                title="Verificar integridade da árvore e migrations"
+              >
+                <RefreshCw className={cn("h-3 w-3", isChecking && "animate-spin")} />
+              </button>
+            </div>
+            <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
                 SISTEMA OK
               </Badge>
             </h3>
