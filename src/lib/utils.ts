@@ -16,3 +16,8 @@ export function slugify(text: string) {
     .replace(/[\s_-]+/g, "-") // replace spaces and underscores with -
     .replace(/^-+|-+$/g, ""); // remove leading/trailing -
 }
+
+export function stripHtml(html: string) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent || "";
+}
