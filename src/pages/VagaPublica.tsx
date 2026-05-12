@@ -54,7 +54,7 @@ const candidaturaSchema = z.object({
 });
 
 const VagaPublica = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slugOrId } = useParams<{ slugOrId: string }>();
   const navigate = useNavigate();
   const [vaga, setVaga] = useState<Vaga | null>(null);
   const [perguntas, setPerguntas] = useState<VagaPergunta[]>([]);
