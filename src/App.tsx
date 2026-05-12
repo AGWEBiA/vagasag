@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Analytics from "./pages/Analytics.tsx";
 import NovaAvaliacao from "./pages/NovaAvaliacao.tsx";
 import Historico from "./pages/Historico.tsx";
+import HistoricoSincronizacao from "./pages/HistoricoSincronizacao.tsx";
 import Relatorio from "./pages/Relatorio.tsx";
 import Vagas from "./pages/Vagas.tsx";
 import InboxCandidaturas from "./pages/InboxCandidaturas.tsx";
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/nova-avaliacao" element={<ProtectedRoute><NovaAvaliacao /></ProtectedRoute>} />
             <Route path="/historico" element={<ProtectedRoute><Historico /></ProtectedRoute>} />
+            <Route path="/historico-deploy" element={<ProtectedRoute><HistoricoSincronizacao /></ProtectedRoute>} />
             <Route path="/relatorio/:id" element={<ProtectedRoute><Relatorio /></ProtectedRoute>} />
             <Route path="/vagas-admin" element={<ProtectedRoute><Vagas /></ProtectedRoute>} />
             <Route path="/banco-talentos" element={<ProtectedRoute><BancoTalentos /></ProtectedRoute>} />
