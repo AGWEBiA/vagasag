@@ -122,6 +122,18 @@ const VagaPublica = () => {
     return texto;
   }, [vaga]);
 
+  const descricaoCompleta = useMemo(() => {
+    if (!vaga) return "";
+    let texto = vaga.descricao;
+    if (vaga.requisitos) {
+      texto += `\n\nRequisitos:\n${vaga.requisitos}`;
+    }
+    if (vaga.beneficios) {
+      texto += `\n\nBenefícios:\n${vaga.beneficios}`;
+    }
+    return texto;
+  }, [vaga]);
+
   useEffect(() => {
     void load();
   }, [id]);
