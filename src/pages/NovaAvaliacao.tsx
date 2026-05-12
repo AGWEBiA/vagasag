@@ -283,7 +283,10 @@ const NovaAvaliacao = () => {
       });
       if (error) throw error;
       if (!data?.assessment?.id) throw new Error("Resposta inválida da IA.");
-      toast.success(expectReassess ? "Reavaliação concluída!" : "Avaliação concluída!");
+      toast.success(expectReassess ? "Reavaliação concluída!" : "Avaliação concluída!", {
+        description: "A nova avaliação foi registrada e o commit de migração será gerado.",
+        duration: 5000,
+      });
       queryClient.invalidateQueries({ queryKey: ["people-with-assessments"] });
       navigate(`/relatorio/${data.assessment.id}`);
     } catch (err: any) {
