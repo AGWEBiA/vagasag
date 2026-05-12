@@ -226,7 +226,11 @@ const BancoTalentos = () => {
         if (!blob.includes(term)) return false;
       }
       if (statusFilter !== "todos" && t.talent_status !== statusFilter) return false;
-      if (vagaFilter !== "todos" && t.vaga_id !== vagaFilter) return false;
+      if (vagaFilter !== "todos") {
+        const history = t.email ? (outrasCandidaturas[t.email.toLowerCase()] ?? []) : [];
+        const appliedToVaga = history.some(h => h.vaga_id === vagaFilter);
+        if (!appliedToVaga) return false;
+      }
       if (tag) {
         const has = (t.tags ?? []).some((x) => x.toLowerCase().includes(tag));
         if (!has) return false;
@@ -250,6 +254,7 @@ const BancoTalentos = () => {
     senioridadeFilter,
     periodoFilter,
     assessmentsByEmail,
+    outrasCandidaturas,
   ]);
 
   const counts = useMemo(() => {
@@ -464,7 +469,7 @@ const BancoTalentos = () => {
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 rounded-lg border border-border bg-card/50 p-4 animate-fade-in">
             <div>
-              <Label className="text-xs">Vaga de origem</Label>
+              <Label className="text-xs">Vaga de candidatura</Label>
               <Select value={vagaFilter} onValueChange={setVagaFilter}>
                 <SelectTrigger>
                   <SelectValue />
