@@ -10,6 +10,7 @@ import { slugify, stripHtml } from "@/lib/utils";
 
 interface VagaListItem {
   id: string;
+  slug: string;
   titulo: string;
   cargo: string;
   descricao: string;
