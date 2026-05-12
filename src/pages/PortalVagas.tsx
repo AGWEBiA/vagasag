@@ -6,7 +6,7 @@ import { CARGO_LABEL } from "@/lib/seniority";
 import { Button } from "@/components/ui/button";
 import { useBranding } from "@/hooks/useBranding";
 import { BrandLogo } from "@/components/BrandLogo";
-import { slugify } from "@/lib/utils";
+import { slugify, stripHtml } from "@/lib/utils";
 
 interface VagaListItem {
   id: string;
@@ -97,7 +97,7 @@ const PortalVagas = () => {
                 <h3 className="font-display text-xl font-semibold leading-tight group-hover:text-gold transition">
                   {v.titulo}
                 </h3>
-                <p className="text-sm text-body/80 line-clamp-3">{v.descricao}</p>
+                <p className="text-sm text-body/80 line-clamp-3">{stripHtml(v.descricao)}</p>
                 <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground mt-auto pt-3 border-t border-sidebar-border">
                   <span className="inline-flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
