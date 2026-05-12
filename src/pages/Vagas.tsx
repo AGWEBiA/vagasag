@@ -195,6 +195,12 @@ const Vagas = () => {
     }
   };
 
+  const copyLink = (v: Vaga) => {
+    const url = `${window.location.origin}/vagas/${v.slug || v.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copiado!");
+  };
+
   return (
     <AppShell>
       <header className="mb-8 animate-fade-in flex flex-wrap gap-4 items-start justify-between">
