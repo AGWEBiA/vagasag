@@ -391,7 +391,7 @@ const MetricCard = ({
 );
 
 const SyncStatusCard = () => {
-  const { data: syncStatus, isLoading } = useQuery({
+  const { data: syncData, isLoading } = useQuery({
     queryKey: ["github-sync-status"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -401,15 +401,15 @@ const SyncStatusCard = () => {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as any;
     },
   });
 
   if (isLoading) return <Skeleton className="h-24 w-full mb-8 rounded-xl" />;
-  if (!syncStatus) return null;
+  if (!syncData) return null;
 
-  const repoUrl = syncStatus.repo_url || "https://github.com/lovable-user/project-repo";
-  const commitUrl = `${repoUrl}/commit/${syncStatus.last_commit_hash}`;
+  const repoUrl = syncData.repo_url || "https://github.com/lovable-user/project-repo";
+  const commitUrl = `${repoUrl}/commit/${syncData.last_commit_hash}`;
 
   return (
     <div className="surface-card rounded-xl p-4 mb-8 border border-green-500/20 bg-green-500/5 animate-fade-in">
@@ -419,29 +419,29 @@ const SyncStatusCard = () => {
             <CheckCircle2 className="h-6 w-6 text-green-500" />
           </div>
           <div>
-            <h3 className="font-semibold flex items-center gap-2">
+            <h3 className="font-semibold flex items-center gap-2 text-foreground">
               Sincronizado com GitHub
-              <Badge className="bg-green-500/20 text-green-500 hover:bg-green-500/30 border-none text-[10px]">
+              <Badge className="bg-green-500/20 text-green-500 hover:bg-green-500/30 border-none text-[10px] h-4">
                 LIVE
               </Badge>
             </h3>
             <p className="text-sm text-muted-foreground">
-              Última migration: <span className="font-mono text-xs">{syncStatus.last_migration_name}</span>
+              Última migration: <span className="font-mono text-xs">{syncData.last_migration_name}</span>
             </p>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
           <div className="text-right hidden md:block">
-            <p className="text-xs font-medium">Commit {syncStatus.last_commit_hash}</p>
+            <p className="text-xs font-medium">Commit {syncData.last_commit_hash}</p>
             <p className="text-[10px] text-muted-foreground">
-              {new Date(syncStatus.last_sync_at).toLocaleString('pt-BR')}
+              {new Date(syncData.last_sync_at).toLocaleString('pt-BR')}
             </p>
           </div>
           <Button 
             variant="outline" 
             size="sm" 
-            className="border-gold/40 hover:text-gold h-9"
+            className="border-gold/40 hover:text-gold h-9 bg-transparent"
             onClick={() => window.open(commitUrl, '_blank')}
           >
             <Github className="h-4 w-4 mr-2" />
