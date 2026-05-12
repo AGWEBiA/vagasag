@@ -36,6 +36,7 @@ import "react-quill/dist/quill.snow.css";
 
 interface Vaga {
   id: string;
+  slug: string;
   titulo: string;
   cargo: string;
   descricao: string;
