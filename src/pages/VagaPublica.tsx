@@ -142,7 +142,7 @@ const VagaPublica = () => {
     if (isUUID) {
       query = query.eq("id", slugOrId);
     } else {
-      query = query.eq("slug", slugOrId);
+      query = query.eq("slug", slugify(slugOrId));
     }
 
     const { data } = await query.maybeSingle();
