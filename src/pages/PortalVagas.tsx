@@ -34,7 +34,7 @@ const PortalVagas = () => {
     setLoading(true);
     const { data } = await supabase
       .from("vagas")
-      .select("id,titulo,cargo,descricao,modalidade,localizacao,faixa_salarial,created_at")
+      .select("id,slug,titulo,cargo,descricao,modalidade,localizacao,faixa_salarial,created_at")
       .eq("status", "aberta")
       .order("created_at", { ascending: false });
     setVagas((data ?? []) as VagaListItem[]);
