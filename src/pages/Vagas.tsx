@@ -391,6 +391,15 @@ const Vagas = () => {
                 value={form.descricao} 
                 onChange={(value) => setForm({ ...form, descricao: value })}
                 className="bg-background rounded-md [&_.ql-container]:h-64 [&_.ql-editor]:text-body"
+                modules={{
+                  toolbar: [
+                    [{ header: [2, 3, false] }],
+                    ["bold", "italic", "underline"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    ["link"],
+                    ["clean"],
+                  ],
+                }}
               />
             </div>
             <div className="space-y-2">
