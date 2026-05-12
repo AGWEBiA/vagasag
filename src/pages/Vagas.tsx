@@ -162,7 +162,10 @@ const Vagas = () => {
       toast.error("Vaga salva, mas falhou ao salvar perguntas.");
       console.error(pErr);
     } else {
-      toast.success(editing ? "Vaga atualizada!" : "Vaga publicada!");
+      toast.success(editing ? "Vaga atualizada!" : "Vaga publicada!", {
+        description: "As alterações foram registradas e o commit de migração será gerado.",
+        duration: 5000,
+      });
     }
     setOpen(false);
     void load();
