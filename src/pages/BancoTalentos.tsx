@@ -261,7 +261,7 @@ const BancoTalentos = () => {
         const a = t.candidate_id ? assessmentsByEmail[t.candidate_id] : undefined;
         if (!a || a.senioridade_detectada !== senioridadeFilter) return false;
       }
-      if (periodoFilter !== "todos") {
+      if (periodoFilter !== "todos" && vagaFilter.length === 0) {
         const limit = periodoMs[periodoFilter];
         if (limit && now - new Date(t.created_at).getTime() > limit) return false;
       }
@@ -272,6 +272,8 @@ const BancoTalentos = () => {
     search,
     statusFilter,
     vagaFilter,
+    dataInicio,
+    dataFim,
     tagFilter,
     senioridadeFilter,
     periodoFilter,
