@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CARGO_LABEL, CARGO_HINTS } from "@/lib/seniority";
 import { ESCALA_LABEL, type VagaPergunta } from "@/lib/perguntas";
+import { slugify } from "@/lib/utils";
 import { CVUploader, type ParsedCVFields } from "@/components/CVUploader";
 import { enviarEmailConfirmacaoCandidatura } from "@/lib/emails";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Vaga {
   id: string;
+  slug: string;
   titulo: string;
   cargo: string;
   descricao: string;
@@ -53,7 +55,7 @@ const candidaturaSchema = z.object({
 });
 
 const VagaPublica = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slugOrId } = useParams<{ slugOrId: string }>();
   const navigate = useNavigate();
   const [vaga, setVaga] = useState<Vaga | null>(null);
   const [perguntas, setPerguntas] = useState<VagaPergunta[]>([]);
@@ -79,8 +81,8 @@ const VagaPublica = () => {
 
   // Recupera rascunho
   useEffect(() => {
-    if (!id) return;
-    const draft = localStorage.getItem(`draft-candidatura-${id}`);
+    if (!slugOrId) return;
+    const draft = localStorage.getItem(`draft-candidatura-${slugOrId}`);
     if (draft) {
       try {
         const parsed = JSON.parse(draft);
@@ -91,24 +93,24 @@ const VagaPublica = () => {
         console.warn("Falha ao carregar rascunho", e);
       }
     }
-  }, [id]);
+  }, [slugOrId]);
 
   // Salva rascunho
   useEffect(() => {
-    if (!id || success) return;
+    if (!slugOrId || success) return;
     const timeout = setTimeout(() => {
       const current = JSON.stringify({ form, respostas });
       if (current !== lastSavedRef.current) {
-        localStorage.setItem(`draft-candidatura-${id}`, current);
+        localStorage.setItem(`draft-candidatura-${slugOrId}`, current);
         lastSavedRef.current = current;
       }
     }, 1000);
     return () => clearTimeout(timeout);
-  }, [id, form, respostas, success]);
+  }, [slugOrId, form, respostas, success]);
 
   const clearDraft = useCallback(() => {
-    if (id) localStorage.removeItem(`draft-candidatura-${id}`);
-  }, [id]);
+    if (slugOrId) localStorage.removeItem(`draft-candidatura-${slugOrId}`);
+  }, [slugOrId]);
 
   const descricaoCompleta = useMemo(() => {
     if (!vaga) return "";
@@ -124,26 +126,39 @@ const VagaPublica = () => {
 
   useEffect(() => {
     void load();
-  }, [id]);
+  }, [slugOrId]);
 
   const load = async () => {
-    if (!id) return;
+    if (!slugOrId) return;
     setLoading(true);
-    const { data } = await supabase
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    
+    let query = supabase
       .from("vagas")
       .select("*")
-      .eq("id", id)
-      .eq("status", "aberta")
-      .maybeSingle();
-    setVaga((data as Vaga) ?? null);
-    if (data) document.title = `${(data as Vaga).titulo} | Seniority Hub`;
+      .eq("status", "aberta");
 
-    const { data: ps } = await supabase
-      .from("vaga_perguntas")
-      .select("*")
-      .eq("vaga_id", id)
-      .order("ordem", { ascending: true });
-    setPerguntas((ps ?? []) as VagaPergunta[]);
+    if (isUUID) {
+      query = query.eq("id", slugOrId);
+    } else {
+      query = query.eq("slug", slugify(slugOrId));
+    }
+
+    const { data } = await query.maybeSingle();
+    const vagaData = data as Vaga;
+    setVaga(vagaData ?? null);
+
+    if (vagaData) {
+      document.title = `${vagaData.titulo} | Seniority Hub`;
+
+      const { data: ps } = await supabase
+        .from("vaga_perguntas")
+        .select("*")
+        .eq("vaga_id", vagaData.id)
+        .order("ordem", { ascending: true });
+      setPerguntas((ps ?? []) as VagaPergunta[]);
+    }
 
     setLoading(false);
   };

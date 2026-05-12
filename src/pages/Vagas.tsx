@@ -20,12 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox, Layers } from "lucide-react";
+import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox, Layers, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { CARGOS, CARGO_LABEL } from "@/lib/seniority";
-import { cn, stripHtml } from "@/lib/utils";
+import { cn, stripHtml, slugify } from "@/lib/utils";
 import {
   VagaPerguntasEditor,
   savePerguntasForVaga,
@@ -36,6 +36,7 @@ import "react-quill/dist/quill.snow.css";
 
 interface Vaga {
   id: string;
+  slug: string;
   titulo: string;
   cargo: string;
   descricao: string;
@@ -141,8 +142,10 @@ const Vagas = () => {
     }
     if (!user) return;
     setSaving(true);
+    const slug = slugify(form.titulo);
     const payload = {
       ...form,
+      slug,
       requisitos: form.requisitos.trim() || null,
       beneficios: form.beneficios.trim() || null,
       localizacao: form.localizacao.trim() || null,
@@ -190,6 +193,12 @@ const Vagas = () => {
       toast.success("Vaga excluída.");
       void load();
     }
+  };
+
+  const copyLink = (v: Vaga) => {
+    const url = `${window.location.origin}/vagas/${v.slug || v.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copiado!");
   };
 
   return (
@@ -292,6 +301,9 @@ const Vagas = () => {
                     )}
                   </Link>
                   <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => copyLink(v)} title="Copiar link público">
+                      <Link2 className="h-3.5 w-3.5" />
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>

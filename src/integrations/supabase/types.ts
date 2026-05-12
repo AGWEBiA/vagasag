@@ -983,6 +983,7 @@ export type Database = {
           localizacao: string | null
           modalidade: string
           requisitos: string | null
+          slug: string | null
           status: string
           titulo: string
           updated_at: string
@@ -998,6 +999,7 @@ export type Database = {
           localizacao?: string | null
           modalidade?: string
           requisitos?: string | null
+          slug?: string | null
           status?: string
           titulo: string
           updated_at?: string
@@ -1013,6 +1015,7 @@ export type Database = {
           localizacao?: string | null
           modalidade?: string
           requisitos?: string | null
+          slug?: string | null
           status?: string
           titulo?: string
           updated_at?: string

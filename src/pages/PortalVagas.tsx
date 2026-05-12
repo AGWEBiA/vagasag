@@ -10,6 +10,7 @@ import { slugify, stripHtml } from "@/lib/utils";
 
 interface VagaListItem {
   id: string;
+  slug: string;
   titulo: string;
   cargo: string;
   descricao: string;
@@ -33,7 +34,7 @@ const PortalVagas = () => {
     setLoading(true);
     const { data } = await supabase
       .from("vagas")
-      .select("id,titulo,cargo,descricao,modalidade,localizacao,faixa_salarial,created_at")
+      .select("id,slug,titulo,cargo,descricao,modalidade,localizacao,faixa_salarial,created_at")
       .eq("status", "aberta")
       .order("created_at", { ascending: false });
     setVagas((data ?? []) as VagaListItem[]);
@@ -88,7 +89,7 @@ const PortalVagas = () => {
             {vagas.map((v) => (
               <Link
                 key={v.id}
-                to={`/vagas/${v.id}/${slugify(v.titulo)}`}
+                to={`/vagas/${v.slug || v.id}`}
                 className="surface-card rounded-xl p-4 sm:p-6 flex flex-col gap-3 hover:ring-1 hover:ring-gold/40 hover:shadow-gold transition group"
               >
                 <div className="text-xs text-gold uppercase tracking-widest font-semibold">
