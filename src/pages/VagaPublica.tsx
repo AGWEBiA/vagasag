@@ -80,8 +80,8 @@ const VagaPublica = () => {
 
   // Recupera rascunho
   useEffect(() => {
-    if (!id) return;
-    const draft = localStorage.getItem(`draft-candidatura-${id}`);
+    if (!slugOrId) return;
+    const draft = localStorage.getItem(`draft-candidatura-${slugOrId}`);
     if (draft) {
       try {
         const parsed = JSON.parse(draft);
@@ -92,24 +92,24 @@ const VagaPublica = () => {
         console.warn("Falha ao carregar rascunho", e);
       }
     }
-  }, [id]);
+  }, [slugOrId]);
 
   // Salva rascunho
   useEffect(() => {
-    if (!id || success) return;
+    if (!slugOrId || success) return;
     const timeout = setTimeout(() => {
       const current = JSON.stringify({ form, respostas });
       if (current !== lastSavedRef.current) {
-        localStorage.setItem(`draft-candidatura-${id}`, current);
+        localStorage.setItem(`draft-candidatura-${slugOrId}`, current);
         lastSavedRef.current = current;
       }
     }, 1000);
     return () => clearTimeout(timeout);
-  }, [id, form, respostas, success]);
+  }, [slugOrId, form, respostas, success]);
 
   const clearDraft = useCallback(() => {
-    if (id) localStorage.removeItem(`draft-candidatura-${id}`);
-  }, [id]);
+    if (slugOrId) localStorage.removeItem(`draft-candidatura-${slugOrId}`);
+  }, [slugOrId]);
 
   const descricaoCompleta = useMemo(() => {
     if (!vaga) return "";
