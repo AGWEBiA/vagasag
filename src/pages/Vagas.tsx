@@ -111,12 +111,21 @@ const Vagas = () => {
 
   const openEdit = (v: Vaga) => {
     setEditing(v);
+    
+    let fullDesc = v.descricao;
+    if (!/<[a-z][\s\S]*>/i.test(fullDesc)) {
+      if (v.requisitos) fullDesc += `\n\nRequisitos:\n${v.requisitos}`;
+      if (v.beneficios) fullDesc += `\n\nBenefícios:\n${v.beneficios}`;
+      // Replace newlines with <br> and wrap in <p> so Quill interprets it well
+      fullDesc = `<p>${fullDesc.replace(/\n/g, '<br>')}</p>`;
+    }
+
     setForm({
       titulo: v.titulo,
       cargo: v.cargo,
-      descricao: v.descricao,
-      requisitos: v.requisitos ?? "",
-      beneficios: v.beneficios ?? "",
+      descricao: fullDesc,
+      requisitos: "",
+      beneficios: "",
       modalidade: v.modalidade,
       localizacao: v.localizacao ?? "",
       faixa_salarial: v.faixa_salarial ?? "",
