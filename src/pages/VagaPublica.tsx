@@ -396,7 +396,7 @@ const VagaPublica = () => {
                 )}
               </div>
 
-              <Section title="Descrição da Vaga">{descricaoCompleta}</Section>
+              <Section title="Descrição da Vaga" isHtml={/<[a-z][\s\S]*>/i.test(descricaoCompleta)}>{descricaoCompleta}</Section>
             </article>
 
             <form
