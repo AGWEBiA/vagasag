@@ -142,8 +142,10 @@ const Vagas = () => {
     }
     if (!user) return;
     setSaving(true);
+    const slug = slugify(form.titulo);
     const payload = {
       ...form,
+      slug,
       requisitos: form.requisitos.trim() || null,
       beneficios: form.beneficios.trim() || null,
       localizacao: form.localizacao.trim() || null,
