@@ -226,7 +226,11 @@ const BancoTalentos = () => {
         if (!blob.includes(term)) return false;
       }
       if (statusFilter !== "todos" && t.talent_status !== statusFilter) return false;
-      if (vagaFilter !== "todos" && t.vaga_id !== vagaFilter) return false;
+      if (vagaFilter !== "todos") {
+        const history = t.email ? (outrasCandidaturas[t.email.toLowerCase()] ?? []) : [];
+        const appliedToVaga = history.some(h => h.vaga_id === vagaFilter);
+        if (!appliedToVaga) return false;
+      }
       if (tag) {
         const has = (t.tags ?? []).some((x) => x.toLowerCase().includes(tag));
         if (!has) return false;
@@ -250,6 +254,7 @@ const BancoTalentos = () => {
     senioridadeFilter,
     periodoFilter,
     assessmentsByEmail,
+    outrasCandidaturas,
   ]);
 
   const counts = useMemo(() => {
@@ -464,7 +469,7 @@ const BancoTalentos = () => {
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 rounded-lg border border-border bg-card/50 p-4 animate-fade-in">
             <div>
-              <Label className="text-xs">Vaga de origem</Label>
+              <Label className="text-xs">Vaga de candidatura</Label>
               <Select value={vagaFilter} onValueChange={setVagaFilter}>
                 <SelectTrigger>
                   <SelectValue />
@@ -544,6 +549,7 @@ const BancoTalentos = () => {
       ) : (
         <div className="grid gap-3">
           {filtered.map((t) => {
+            const history = t.email ? (outrasCandidaturas[t.email.toLowerCase()] ?? []) : [];
             const vaga = vagas.find((v) => v.id === t.vaga_id);
             const ass = t.candidate_id ? assessmentsByEmail[t.candidate_id] : undefined;
             return (
@@ -609,6 +615,11 @@ const BancoTalentos = () => {
                       {vaga && (
                         <span className="flex items-center gap-1">
                           <Briefcase className="h-3 w-3" /> {vaga.titulo}
+                        </span>
+                      )}
+                      {history.length > 1 && (
+                        <span className="flex items-center gap-1 text-gold/80 font-medium">
+                          <Repeat className="h-3 w-3" /> {history.length} inscrições
                         </span>
                       )}
                       <span className="flex items-center gap-1">
