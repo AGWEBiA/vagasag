@@ -31,6 +31,8 @@ import {
   savePerguntasForVaga,
   type DraftPergunta,
 } from "@/components/VagaPerguntasEditor";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 interface Vaga {
   id: string;
@@ -109,12 +111,21 @@ const Vagas = () => {
 
   const openEdit = (v: Vaga) => {
     setEditing(v);
+    
+    let fullDesc = v.descricao;
+    if (!/<[a-z][\s\S]*>/i.test(fullDesc)) {
+      if (v.requisitos) fullDesc += `\n\nRequisitos:\n${v.requisitos}`;
+      if (v.beneficios) fullDesc += `\n\nBenefícios:\n${v.beneficios}`;
+      // Replace newlines with <br> and wrap in <p> so Quill interprets it well
+      fullDesc = `<p>${fullDesc.replace(/\n/g, '<br>')}</p>`;
+    }
+
     setForm({
       titulo: v.titulo,
       cargo: v.cargo,
-      descricao: v.descricao,
-      requisitos: v.requisitos ?? "",
-      beneficios: v.beneficios ?? "",
+      descricao: fullDesc,
+      requisitos: "",
+      beneficios: "",
       modalidade: v.modalidade,
       localizacao: v.localizacao ?? "",
       faixa_salarial: v.faixa_salarial ?? "",
@@ -374,29 +385,21 @@ const Vagas = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Descrição</Label>
-              <Textarea
-                rows={5}
-                value={form.descricao}
-                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                placeholder="O que o profissional vai fazer no dia a dia."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Requisitos (opcional)</Label>
-              <Textarea
-                rows={3}
-                value={form.requisitos}
-                onChange={(e) => setForm({ ...form, requisitos: e.target.value })}
-                placeholder="Ex: 3+ anos com Meta Ads, ROAS comprovado..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Benefícios (opcional)</Label>
-              <Textarea
-                rows={2}
-                value={form.beneficios}
-                onChange={(e) => setForm({ ...form, beneficios: e.target.value })}
+              <Label>Descrição completa (inclua requisitos e benefícios)</Label>
+              <ReactQuill 
+                theme="snow" 
+                value={form.descricao} 
+                onChange={(value) => setForm({ ...form, descricao: value })}
+                className="bg-background rounded-md [&_.ql-container]:h-64 [&_.ql-editor]:text-body"
+                modules={{
+                  toolbar: [
+                    [{ header: [2, 3, false] }],
+                    ["bold", "italic", "underline"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    ["link"],
+                    ["clean"],
+                  ],
+                }}
               />
             </div>
             <div className="space-y-2">
