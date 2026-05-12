@@ -616,6 +616,7 @@ const BancoTalentos = () => {
                         <span className="flex items-center gap-1 text-gold/80 font-medium">
                           <Repeat className="h-3 w-3" /> {history.length} inscrições
                         </span>
+                      )}
                       <span className="flex items-center gap-1">
                         <CalendarDays className="h-3 w-3" />
                         {new Date(t.created_at).toLocaleDateString("pt-BR")}
