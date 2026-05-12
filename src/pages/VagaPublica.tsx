@@ -649,12 +649,19 @@ const VagaPublica = () => {
   );
 };
 
-const Section = ({ title, children }: { title: string; children: string }) => (
-  <div className="mb-5">
-    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
+const Section = ({ title, children, isHtml = false }: { title: string; children: string; isHtml?: boolean }) => (
+  <div className="mb-8">
+    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-3">
       {title}
     </h3>
-    <p className="text-body whitespace-pre-line leading-relaxed">{children}</p>
+    {isHtml ? (
+      <div 
+        className="prose prose-invert max-w-none text-body prose-headings:font-display prose-headings:text-foreground prose-a:text-gold prose-strong:text-foreground prose-table:w-full prose-td:border prose-td:border-sidebar-border prose-td:p-3 prose-th:border prose-th:border-sidebar-border prose-th:p-3 prose-th:bg-surface-elevated prose-th:text-left prose-ul:list-disc prose-ol:list-decimal prose-p:leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: children }} 
+      />
+    ) : (
+      <p className="text-body whitespace-pre-line leading-relaxed">{children}</p>
+    )}
   </div>
 );
 
