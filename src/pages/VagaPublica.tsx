@@ -27,6 +27,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Vaga {
   id: string;
+  slug: string;
   titulo: string;
   cargo: string;
   descricao: string;
