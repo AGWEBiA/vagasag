@@ -1,0 +1,3 @@
+ALTER TABLE public.candidaturas DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.candidatura_respostas DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.candidatura_eventos DISABLE ROW LEVEL SECURITY;
