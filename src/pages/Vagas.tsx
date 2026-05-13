@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox, Layers, Link2 } from "lucide-react";
+import { Briefcase, Plus, ExternalLink, Pencil, Loader2, Trash2, Inbox, Layers, Link2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -72,6 +72,7 @@ const Vagas = () => {
   const [editing, setEditing] = useState<Vaga | null>(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [generatingIA, setGeneratingIA] = useState(false);
   const [perguntasDraft, setPerguntasDraft] = useState<DraftPergunta[]>([]);
 
   useEffect(() => {
@@ -183,6 +184,38 @@ const Vagas = () => {
     }
     setOpen(false);
     void load();
+  };
+
+  const generateWithIA = async () => {
+    if (!form.titulo.trim()) {
+      toast.error("Informe pelo menos o título para a IA gerar a descrição.");
+      return;
+    }
+
+    setGeneratingIA(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-job-description", {
+        body: {
+          titulo: form.titulo,
+          cargo: form.cargo ? CARGO_LABEL[form.cargo] : "",
+          modalidade: form.modalidade,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.content) {
+        setForm((prev) => ({ ...prev, descricao: data.content }));
+        toast.success("Descrição gerada pela IA!");
+      } else {
+        throw new Error("Resposta vazia da IA.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao gerar descrição com IA.");
+    } finally {
+      setGeneratingIA(false);
+    }
   };
 
   const remove = async (v: Vaga) => {
