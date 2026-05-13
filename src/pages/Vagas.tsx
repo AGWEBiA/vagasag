@@ -436,7 +436,24 @@ const Vagas = () => {
             <div className="space-y-4">
               <h4 className="text-sm font-semibold uppercase tracking-wider text-gold/80 border-b border-gold/20 pb-1">Descrição e Requisitos</h4>
               <div className="space-y-2">
-                <Label>Conteúdo da Vaga (Dica: Use títulos para separar seções)</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Conteúdo da Vaga (Dica: Use títulos para separar seções)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateWithIA}
+                    disabled={generatingIA}
+                    className="h-7 text-[10px] border-gold/40 text-gold hover:bg-gold/10"
+                  >
+                    {generatingIA ? (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 mr-1" />
+                    )}
+                    Gerar com IA
+                  </Button>
+                </div>
                 <ReactQuill 
                   theme="snow" 
                   value={form.descricao} 
