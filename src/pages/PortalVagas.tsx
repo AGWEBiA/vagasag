@@ -118,13 +118,13 @@ const PortalVagas = () => {
         )}
       </main>
 
-      <footer className="border-t border-sidebar-border mt-20 py-10 text-center text-xs text-muted-foreground relative">
+      <footer className="border-t border-sidebar-border mt-20 py-10 text-center text-xs text-muted-foreground relative" id="portal-footer">
         <div className="flex flex-col items-center gap-4">
           <a
             href="https://wa.me/5548996670822"
             target="_blank"
             rel="noopener noreferrer"
-            className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-3.5 rounded-full shadow-lg hover:bg-[#20ba5a] transition-all hover:scale-110 active:scale-95 group"
+            className="fixed bottom-6 right-6 z-[9999] bg-[#25D366] text-white p-3.5 rounded-full shadow-lg hover:bg-[#20ba5a] transition-all hover:scale-110 active:scale-95 group"
             title="Fale conosco no WhatsApp"
           >
             <svg
