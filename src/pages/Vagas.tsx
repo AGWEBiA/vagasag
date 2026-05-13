@@ -208,9 +208,9 @@ const Vagas = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pleno-bg text-gold text-xs font-medium mb-3 border border-gold/30">
             <Briefcase className="h-3 w-3" /> Gestão de Vagas
           </div>
-          <h1 className="font-display text-4xl font-semibold">Vagas Abertas</h1>
+          <h1 className="font-display text-4xl font-semibold">Gestão de Vagas</h1>
           <p className="text-muted-foreground mt-1">
-            Crie vagas e receba candidaturas pelo portal público.
+            Crie descrições detalhadas e configure os formulários de inscrição.
           </p>
         </div>
         <div className="flex gap-2">
@@ -333,107 +333,119 @@ const Vagas = () => {
               Vagas com status "aberta" aparecem no portal público.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Título</Label>
-              <Input
-                value={form.titulo}
-                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-                placeholder="Ex: Gestor de Tráfego Sênior"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-gold/80 border-b border-gold/20 pb-1">Informações Básicas</h4>
               <div className="space-y-2">
-                <Label>Cargo</Label>
-                <Select
-                  value={form.cargo}
-                  onValueChange={(v) => setForm({ ...form, cargo: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CARGOS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Título da Vaga</Label>
+                <Input
+                  value={form.titulo}
+                  onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                  placeholder="Ex: Gestor de Tráfego Sênior"
+                />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Cargo / Área</Label>
+                  <Select
+                    value={form.cargo}
+                    onValueChange={(v) => setForm({ ...form, cargo: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARGOS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Modalidade</Label>
+                  <Select
+                    value={form.modalidade}
+                    onValueChange={(v) => setForm({ ...form, modalidade: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="remoto">Remoto</SelectItem>
+                      <SelectItem value="hibrido">Híbrido</SelectItem>
+                      <SelectItem value="presencial">Presencial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Localização (opcional)</Label>
+                  <Input
+                    value={form.localizacao}
+                    onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
+                    placeholder="Ex: São Paulo / SP"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Faixa salarial (opcional)</Label>
+                  <Input
+                    value={form.faixa_salarial}
+                    onChange={(e) => setForm({ ...form, faixa_salarial: e.target.value })}
+                    placeholder="Ex: R$ 8k–12k"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-gold/80 border-b border-gold/20 pb-1">Descrição e Requisitos</h4>
               <div className="space-y-2">
-                <Label>Modalidade</Label>
-                <Select
-                  value={form.modalidade}
-                  onValueChange={(v) => setForm({ ...form, modalidade: v })}
-                >
+                <Label>Conteúdo da Vaga (Dica: Use títulos para separar seções)</Label>
+                <ReactQuill 
+                  theme="snow" 
+                  value={form.descricao} 
+                  onChange={(value) => setForm({ ...form, descricao: value })}
+                  className="bg-background rounded-md [&_.ql-container]:h-80 [&_.ql-editor]:text-body"
+                  modules={{
+                    toolbar: [
+                      [{ header: [2, 3, false] }],
+                      ["bold", "italic", "underline"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link"],
+                      ["clean"],
+                    ],
+                  }}
+                  placeholder="Descreva a oportunidade, responsabilidades, requisitos e benefícios..."
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-gold/80 border-b border-gold/20 pb-1">Configurações do Formulário</h4>
+              <div className="space-y-2">
+                <Label>Status da Vaga</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="remoto">Remoto</SelectItem>
-                    <SelectItem value="hibrido">Híbrido</SelectItem>
-                    <SelectItem value="presencial">Presencial</SelectItem>
+                    <SelectItem value="aberta">Aberta (Visível no Portal)</SelectItem>
+                    <SelectItem value="pausada">Pausada</SelectItem>
+                    <SelectItem value="encerrada">Encerrada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Localização (opcional)</Label>
-                <Input
-                  value={form.localizacao}
-                  onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
-                  placeholder="Ex: São Paulo / SP"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Faixa salarial (opcional)</Label>
-                <Input
-                  value={form.faixa_salarial}
-                  onChange={(e) => setForm({ ...form, faixa_salarial: e.target.value })}
-                  placeholder="Ex: R$ 8k–12k"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Descrição completa (inclua requisitos e benefícios)</Label>
-              <ReactQuill 
-                theme="snow" 
-                value={form.descricao} 
-                onChange={(value) => setForm({ ...form, descricao: value })}
-                className="bg-background rounded-md [&_.ql-container]:h-64 [&_.ql-editor]:text-body"
-                modules={{
-                  toolbar: [
-                    [{ header: [2, 3, false] }],
-                    ["bold", "italic", "underline"],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    ["link"],
-                    ["clean"],
-                  ],
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aberta">Aberta</SelectItem>
-                  <SelectItem value="pausada">Pausada</SelectItem>
-                  <SelectItem value="encerrada">Encerrada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="pt-3 border-t border-sidebar-border">
-              <VagaPerguntasEditor
-                vagaId={editing?.id ?? null}
-                cargo={form.cargo || null}
-                onDraftChange={setPerguntasDraft}
-              />
+              <div className="pt-2">
+                <VagaPerguntasEditor
+                  vagaId={editing?.id ?? null}
+                  cargo={form.cargo || null}
+                  onDraftChange={setPerguntasDraft}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
