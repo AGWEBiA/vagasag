@@ -118,7 +118,7 @@ const PortalVagas = () => {
         )}
       </main>
 
-      <footer className="border-t border-sidebar-border mt-20 py-10 text-center text-xs text-muted-foreground relative">
+      <footer className="border-t border-sidebar-border mt-20 py-10 text-center text-xs text-muted-foreground relative" id="portal-footer">
         <div className="flex flex-col items-center gap-4">
           <a
             href="https://wa.me/5548996670822"
