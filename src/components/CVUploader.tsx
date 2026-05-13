@@ -22,7 +22,7 @@ interface CVUploaderProps {
 }
 
 const ACCEPTED = ".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg,.webp";
-const MAX_BYTES = 6 * 1024 * 1024; // 6MB
+const MAX_BYTES = 50 * 1024 * 1024; // 50MB
 
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -56,7 +56,7 @@ export const CVUploader = ({ onParsed }: CVUploaderProps) => {
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > MAX_BYTES) {
-      toast.error("Arquivo muito grande. Limite de 6MB.");
+      toast.error("Arquivo muito grande. Limite de 50MB.");
       return;
     }
     setFile(f);
@@ -108,7 +108,7 @@ export const CVUploader = ({ onParsed }: CVUploaderProps) => {
         <div className="flex-1">
           <div className="font-medium text-sm">Preencher com IA</div>
           <p className="text-xs text-muted-foreground">
-            Envie seu currículo (PDF, DOC, TXT ou imagem) e a IA preenche o
+            Envie seu currículo (PDF, DOC, TXT ou imagem) de até 50MB e a IA preenche o
             formulário automaticamente. Você pode revisar tudo antes de enviar.
           </p>
         </div>
