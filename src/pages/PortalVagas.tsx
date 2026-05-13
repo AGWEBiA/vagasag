@@ -124,7 +124,7 @@ const PortalVagas = () => {
             href="https://wa.me/5548996670822"
             target="_blank"
             rel="noopener noreferrer"
-            className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-3.5 rounded-full shadow-lg hover:bg-[#20ba5a] transition-all hover:scale-110 active:scale-95 group"
+            className="fixed bottom-6 right-6 z-[9999] bg-[#25D366] text-white p-3.5 rounded-full shadow-lg hover:bg-[#20ba5a] transition-all hover:scale-110 active:scale-95 group"
             title="Fale conosco no WhatsApp"
           >
             <svg
