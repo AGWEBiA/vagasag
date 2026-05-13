@@ -376,9 +376,9 @@ export const VagaPerguntasEditor = ({ vagaId, cargo, onDraftChange }: Props) => 
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <Label>Perguntas para o candidato</Label>
+          <Label className="text-base font-semibold">Formulário de Inscrição</Label>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Selecione do banco ou crie perguntas específicas para esta vaga.
+            Adicione perguntas personalizadas que o candidato deve responder ao se inscrever.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
