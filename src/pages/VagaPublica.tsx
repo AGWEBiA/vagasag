@@ -112,11 +112,91 @@ const VagaPublica = () => {
     if (slugOrId) localStorage.removeItem(`draft-candidatura-${slugOrId}`);
   }, [slugOrId]);
 
+  const renderContent = () => {
+    if (!vaga) return null;
+    
+    // Lista de termos que geralmente são títulos em descrições de vagas
+    const commonTitles = [
+      "Sobre a oportunidade",
+      "Sobre a empresa",
+      "Responsabilidades e Atribuições",
+      "Responsabilidades",
+      "Atribuições",
+      "Requisitos e qualificações",
+      "Requisitos",
+      "Qualificações",
+      "Desejável",
+      "Diferenciais",
+      "O que oferecemos",
+      "Benefícios",
+      "Informações Adicionais",
+      "Processo Seletivo"
+    ];
+
+    const fullContent = descricaoCompleta;
+    const isHtml = /<[a-z][\s\S]*>/i.test(fullContent);
+
+    if (isHtml) {
+      return <Section title="Descrição da Vaga" isHtml>{fullContent}</Section>;
+    }
+
+    // Tentar separar por títulos comuns para criar acordeões se for texto puro
+    const sections: { title: string; content: string }[] = [];
+    let currentTitle = "Sobre a oportunidade";
+    let currentContent = "";
+
+    const lines = fullContent.split("\n");
+    
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      const isTitle = commonTitles.some(t => 
+        trimmedLine.toLowerCase() === t.toLowerCase() || 
+        trimmedLine.toLowerCase() === (t + ":").toLowerCase()
+      );
+
+      if (isTitle) {
+        if (currentContent.trim()) {
+          sections.push({ title: currentTitle, content: currentContent.trim() });
+        }
+        currentTitle = trimmedLine.replace(/:$/, "");
+        currentContent = "";
+      } else {
+        currentContent += line + "\n";
+      }
+    });
+
+    if (currentContent.trim()) {
+      sections.push({ title: currentTitle, content: currentContent.trim() });
+    }
+
+    if (sections.length <= 1) {
+      return <Section title="Descrição da Vaga">{fullContent}</Section>;
+    }
+
+    return (
+      <div className="space-y-4">
+        {sections.map((s, idx) => (
+          <details key={idx} className="group border border-sidebar-border rounded-lg overflow-hidden" open={idx === 0}>
+            <summary className="flex items-center justify-between p-4 cursor-pointer bg-surface hover:bg-surface-elevated transition-colors list-none">
+              <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-gold m-0">
+                {s.title}
+              </h3>
+              <ArrowDown className="h-4 w-4 text-gold group-open:rotate-180 transition-transform" />
+            </summary>
+            <div className="p-4 pt-0 text-sm text-body leading-relaxed whitespace-pre-line border-t border-sidebar-border/30 mt-4">
+              {s.content}
+            </div>
+          </details>
+        ))}
+      </div>
+    );
+  };
+
   const descricaoCompleta = useMemo(() => {
     if (!vaga) return "";
     let texto = vaga.descricao;
     if (vaga.requisitos) {
-      texto += `\n\nRequisitos:\n${vaga.requisitos}`;
+      texto += `\n\nRequisitos e qualificações:\n${vaga.requisitos}`;
     }
     if (vaga.beneficios) {
       texto += `\n\nBenefícios:\n${vaga.beneficios}`;
@@ -411,7 +491,7 @@ const VagaPublica = () => {
                 )}
               </div>
 
-              <Section title="Descrição da Vaga" isHtml={/<[a-z][\s\S]*>/i.test(descricaoCompleta)}>{descricaoCompleta}</Section>
+              {renderContent()}
             </article>
 
             <form
@@ -693,11 +773,11 @@ const Section = ({ title, children, isHtml = false }: { title: string; children:
     </h3>
     {isHtml ? (
       <div 
-        className="prose prose-invert max-w-none text-body prose-headings:font-display prose-headings:text-foreground prose-a:text-gold prose-strong:text-foreground prose-table:w-full prose-td:border prose-td:border-sidebar-border prose-td:p-3 prose-th:border prose-th:border-sidebar-border prose-th:p-3 prose-th:bg-surface-elevated prose-th:text-left prose-ul:list-disc prose-ol:list-decimal prose-p:leading-relaxed"
+        className="prose prose-invert max-w-none text-body prose-headings:font-display prose-headings:text-foreground prose-a:text-gold prose-strong:text-foreground prose-table:w-full prose-td:border prose-td:border-sidebar-border prose-td:p-3 prose-th:border prose-th:border-sidebar-border prose-th:p-3 prose-th:bg-surface-elevated prose-th:text-left prose-ul:list-disc prose-ol:list-decimal prose-p:leading-tight prose-p:mb-2"
         dangerouslySetInnerHTML={{ __html: children }} 
       />
     ) : (
-      <p className="text-body whitespace-pre-line leading-relaxed">{children}</p>
+      <p className="text-body whitespace-pre-line leading-tight">{children}</p>
     )}
   </div>
 );
