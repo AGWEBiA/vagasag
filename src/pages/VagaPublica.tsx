@@ -355,6 +355,7 @@ const VagaPublica = () => {
         p_portfolio: parsed.data!.portfolio || null,
         p_dados_profissionais: parsed.data!.dados_profissionais,
         p_informacoes_adicionais: parsed.data!.informacoes_adicionais || null,
+        p_respostas: respostas,
       });
 
       if (error || !candId) {
@@ -366,31 +367,8 @@ const VagaPublica = () => {
       // Não use .insert(...).select("id") aqui: o público pode gravar,
       // mas não pode ler candidaturas por RLS; pedir retorno da linha quebra o envio.
 
-      // Inserir respostas
-      const respostasRows = perguntas
-        .map((p) => {
-          const r = respostas[p.id];
-          if (!r) return null;
-          const hasText = (r.texto ?? "").trim().length > 0;
-          const hasNum = typeof r.numero === "number";
-          if (!hasText && !hasNum) return null;
-          return {
-            candidatura_id: candidaturaId,
-            vaga_pergunta_id: p.id,
-            resposta_texto: hasText ? r.texto!.trim() : null,
-            resposta_numero: hasNum ? r.numero! : null,
-          };
-        })
-        .filter((x): x is NonNullable<typeof x> => x !== null);
-
-      if (respostasRows.length > 0) {
-        const { error: rErr } = await supabase
-          .from("candidatura_respostas")
-          .insert(respostasRows);
-        if (rErr) {
-          console.error("Erro respostas:", rErr);
-        }
-      }
+      // As respostas adicionais são gravadas pela função acima, junto com a candidatura.
+      // Isso evita candidatura salva sem respostas em caso de falha de permissão/rede em uma segunda chamada.
 
       // Dispara e-mail de confirmação (best-effort)
       enviarEmailConfirmacaoCandidatura({
