@@ -346,7 +346,7 @@ const VagaPublica = () => {
     setSubmitting(true);
     
     try {
-      const { data: candId, error } = await supabase.rpc("submit_candidatura_publica", {
+      const { data: candId, error } = await (supabase as any).rpc("submit_candidatura_publica", {
         p_vaga_id: vaga.id,
         p_nome: parsed.data!.nome,
         p_email: parsed.data!.email,
@@ -363,32 +363,8 @@ const VagaPublica = () => {
 
       const candidaturaId = String(candId);
 
-      /*
-       * Não use .insert(...).select("id") aqui.
-       * O cadastro público pode gravar, mas não pode ler candidaturas por RLS;
-       * pedir retorno da linha faz o envio falhar no celular com "TypeError: Load failed".
-       */
-      const legacyDirectInsert = false;
-      if (legacyDirectInsert) {
-        const { data: cand, error } = await supabase
-        .from("candidaturas")
-        .insert({
-          vaga_id: vaga.id,
-          nome: parsed.data!.nome,
-          email: parsed.data!.email,
-          telefone: parsed.data!.telefone || null,
-          linkedin: parsed.data!.linkedin || null,
-          portfolio: parsed.data!.portfolio || null,
-          dados_profissionais: parsed.data!.dados_profissionais,
-          informacoes_adicionais: parsed.data!.informacoes_adicionais || null,
-        })
-        .select("id")
-        .single();
-
-      if (error || !cand) {
-        throw error || new Error("Falha ao criar candidatura.");
-      }
-      }
+      // Não use .insert(...).select("id") aqui: o público pode gravar,
+      // mas não pode ler candidaturas por RLS; pedir retorno da linha quebra o envio.
 
       // Inserir respostas
       const respostasRows = perguntas
