@@ -1060,19 +1060,34 @@ export type Database = {
           read_ct: number
         }[]
       }
-      submit_candidatura_publica: {
-        Args: {
-          p_dados_profissionais?: string
-          p_email: string
-          p_informacoes_adicionais?: string
-          p_linkedin?: string
-          p_nome: string
-          p_portfolio?: string
-          p_telefone?: string
-          p_vaga_id: string
-        }
-        Returns: string
-      }
+      submit_candidatura_publica:
+        | {
+            Args: {
+              p_dados_profissionais?: string
+              p_email: string
+              p_informacoes_adicionais?: string
+              p_linkedin?: string
+              p_nome: string
+              p_portfolio?: string
+              p_telefone?: string
+              p_vaga_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_dados_profissionais?: string
+              p_email: string
+              p_informacoes_adicionais?: string
+              p_linkedin?: string
+              p_nome: string
+              p_portfolio?: string
+              p_respostas?: Json
+              p_telefone?: string
+              p_vaga_id: string
+            }
+            Returns: string
+          }
     }
     Enums: {
       app_role:

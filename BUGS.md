@@ -22,3 +22,9 @@ Este arquivo documenta problemas encontrados, soluções implementadas e liçõe
 - **Correção aplicada**: Criada a função segura `submit_candidatura_publica`, que valida vaga aberta e campos obrigatórios, grava a candidatura e retorna apenas o UUID da inscrição. O frontend passou a usar essa função e mantém a gravação das respostas adicionais com o ID retornado.
 - **Validação**: Testado via API pública com vaga real e com inserção de resposta adicional; ambos retornaram sucesso. Candidaturas de diagnóstico foram removidas depois do teste.
 - **Prevenção de regressão**: Nunca voltar a usar `supabase.from("candidaturas").insert(...).select("id")` no formulário público. Se precisar do ID da candidatura, usar `submit_candidatura_publica` ou outra RPC segura que retorne apenas dados mínimos.
+
+## [2026-05-14] Respostas do candidato apareciam como “Nenhuma resposta enviada”
+- **Sintoma**: No painel admin, o bloco “Respostas do candidato” aparecia vazio mesmo quando o candidato havia preenchido as perguntas adicionais.
+- **Causa raiz**: A candidatura era gravada pela função segura, mas as respostas adicionais eram enviadas em uma segunda chamada separada. Se essa segunda gravação falhasse, a candidatura ficava salva sem respostas na tabela final; as respostas permaneciam apenas no log de envio.
+- **Correção aplicada**: `submit_candidatura_publica` passou a receber e gravar as respostas adicionais na mesma operação da candidatura. Também foi feita recuperação das respostas antigas que estavam nos logs de envio, incluindo o caso do print.
+- **Prevenção de regressão**: Não voltar a salvar respostas adicionais públicas em uma chamada separada após criar a candidatura. A criação da candidatura e das respostas deve ser atômica na função segura.
