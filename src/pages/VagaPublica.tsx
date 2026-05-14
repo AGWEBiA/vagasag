@@ -346,7 +346,31 @@ const VagaPublica = () => {
     setSubmitting(true);
     
     try {
-      const { data: cand, error } = await supabase
+      const { data: candId, error } = await supabase.rpc("submit_candidatura_publica", {
+        p_vaga_id: vaga.id,
+        p_nome: parsed.data!.nome,
+        p_email: parsed.data!.email,
+        p_telefone: parsed.data!.telefone || null,
+        p_linkedin: parsed.data!.linkedin || null,
+        p_portfolio: parsed.data!.portfolio || null,
+        p_dados_profissionais: parsed.data!.dados_profissionais,
+        p_informacoes_adicionais: parsed.data!.informacoes_adicionais || null,
+      });
+
+      if (error || !candId) {
+        throw error || new Error("Falha ao criar candidatura.");
+      }
+
+      const candidaturaId = String(candId);
+
+      /*
+       * Não use .insert(...).select("id") aqui.
+       * O cadastro público pode gravar, mas não pode ler candidaturas por RLS;
+       * pedir retorno da linha faz o envio falhar no celular com "TypeError: Load failed".
+       */
+      const legacyDirectInsert = false;
+      if (legacyDirectInsert) {
+        const { data: cand, error } = await supabase
         .from("candidaturas")
         .insert({
           vaga_id: vaga.id,
@@ -364,6 +388,7 @@ const VagaPublica = () => {
       if (error || !cand) {
         throw error || new Error("Falha ao criar candidatura.");
       }
+      }
 
       // Inserir respostas
       const respostasRows = perguntas
@@ -374,7 +399,7 @@ const VagaPublica = () => {
           const hasNum = typeof r.numero === "number";
           if (!hasText && !hasNum) return null;
           return {
-            candidatura_id: cand.id,
+            candidatura_id: candidaturaId,
             vaga_pergunta_id: p.id,
             resposta_texto: hasText ? r.texto!.trim() : null,
             resposta_numero: hasNum ? r.numero! : null,
@@ -393,7 +418,7 @@ const VagaPublica = () => {
 
       // Dispara e-mail de confirmação (best-effort)
       enviarEmailConfirmacaoCandidatura({
-        candidaturaId: cand.id,
+        candidaturaId,
         nome: parsed.data!.nome,
         email: parsed.data!.email,
         vaga: vaga.titulo,
