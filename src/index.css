@@ -136,7 +136,15 @@
   }
   .surface-card {
     background: var(--gradient-surface);
-    border: 1px solid hsl(var(--border));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.5);
     box-shadow: var(--shadow-card);
+  }
+  .glass-effect {
+    background: hsl(var(--surface) / 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border) / 0.4);
   }
 }
