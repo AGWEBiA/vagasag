@@ -211,6 +211,7 @@ const InboxCandidaturas = () => {
     }
   };
 
+  const evaluate = async (c: Candidatura) => {
     const cargo = vaga?.cargo || c.vagas?.cargo;
     if (!cargo) {
       toast.error("Cargo não identificado para esta vaga");
