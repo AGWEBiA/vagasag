@@ -293,8 +293,8 @@ const InboxCandidaturas = () => {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="grid gap-4 md:grid-cols-[280px_1fr]">
+          <div className="space-y-2 max-h-[40vh] md:max-h-[75vh] overflow-y-auto pr-1">
             {items.map((c) => (
               <button
                 key={c.id}
