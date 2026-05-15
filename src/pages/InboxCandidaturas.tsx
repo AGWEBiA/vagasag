@@ -300,12 +300,15 @@ const InboxCandidaturas = () => {
                 key={c.id}
                 onClick={() => setSelected(c)}
                 className={cn(
-                  "w-full text-left surface-card rounded-lg p-4 transition border",
+                  "w-full text-left surface-card rounded-xl p-4 transition-all duration-300 border relative overflow-hidden group",
                   selected?.id === c.id
-                    ? "ring-1 ring-gold/40 border-gold/30"
-                    : "border-transparent hover:border-gold/20",
+                    ? "ring-2 ring-gold/40 border-gold/40 shadow-gold"
+                    : "border-white/5 hover:border-gold/30 hover:shadow-lg",
                 )}
               >
+                {selected?.id === c.id && (
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gold" />
+                )}
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2 truncate">
                     <div className="font-medium truncate">{c.nome}</div>
