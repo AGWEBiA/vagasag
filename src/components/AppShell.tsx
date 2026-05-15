@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Inbox,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -38,6 +39,7 @@ import {
 
 const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/candidaturas", label: "Candidaturas", icon: Inbox },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/nova-avaliacao", label: "Nova Avaliação", icon: Sparkles, badge: "IA" },
   { to: "/historico", label: "Histórico", icon: LucideHistory },

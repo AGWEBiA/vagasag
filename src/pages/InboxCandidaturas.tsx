@@ -58,6 +58,7 @@ interface Candidatura {
   created_at: string;
   estagio_id: string | null;
   visualizada: boolean;
+  vagas?: { titulo: string; cargo: string };
 }
 
 const InboxCandidaturas = () => {
@@ -125,25 +126,34 @@ const InboxCandidaturas = () => {
   }, [vagaId]);
 
   const load = async () => {
-    if (!vagaId) return;
     setLoading(true);
-    const [{ data: v }, { data: cs }, { data: es }] = await Promise.all([
-      supabase.from("vagas").select("id,titulo,cargo").eq("id", vagaId).maybeSingle(),
-      supabase
-        .from("candidaturas")
-        .select("*")
-        .eq("vaga_id", vagaId)
-        .order("created_at", { ascending: false }),
+    
+    let csQuery = supabase
+      .from("candidaturas")
+      .select("*, vagas(titulo, cargo)")
+      .order("created_at", { ascending: false });
+
+    if (vagaId) {
+      csQuery = csQuery.eq("vaga_id", vagaId);
+    }
+
+    const [vagaRes, csRes, esRes] = await Promise.all([
+      vagaId 
+        ? supabase.from("vagas").select("id,titulo,cargo").eq("id", vagaId).maybeSingle()
+        : Promise.resolve({ data: null }),
+      csQuery,
       supabase
         .from("pipeline_estagios")
         .select("*")
         .eq("ativo", true)
         .order("ordem", { ascending: true }),
     ]);
-    setVaga(v as Vaga | null);
-    const list = (cs ?? []) as Candidatura[];
+
+    setVaga(vagaRes.data as Vaga | null);
+    const list = (csRes.data ?? []) as Candidatura[];
     setItems(list);
-    setEstagios((es ?? []) as PipelineEstagio[]);
+    setEstagios((esRes.data ?? []) as PipelineEstagio[]);
+    
     if (candParam) {
       const found = list.find((c) => c.id === candParam);
       setSelected(found ?? list[0] ?? null);
@@ -181,7 +191,7 @@ const InboxCandidaturas = () => {
         estagio,
         nome: cand.nome,
         email: cand.email,
-        vaga: vaga?.titulo ?? "",
+        vaga: vaga?.titulo ?? cand.vagas?.titulo ?? "",
       });
       if ("ok" in r && r.ok) toast.success("E-mail enviado ao candidato");
       else if ("error" in r) toast.error("Falha ao enviar e-mail");
@@ -202,13 +212,17 @@ const InboxCandidaturas = () => {
   };
 
   const evaluate = async (c: Candidatura) => {
-    if (!vaga) return;
+    const cargo = vaga?.cargo || c.vagas?.cargo;
+    if (!cargo) {
+      toast.error("Cargo não identificado para esta vaga");
+      return;
+    }
     setEvaluating(c.id);
     try {
       const { data, error } = await supabase.functions.invoke("assess-candidate", {
         body: {
           nome: c.nome,
-          cargo: vaga.cargo,
+          cargo: cargo,
           dadosProfissionais: c.dados_profissionais,
           informacoesAdicionais:
             c.informacoes_adicionais ||
@@ -244,22 +258,24 @@ const InboxCandidaturas = () => {
             </Link>
           </Button>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pleno-bg text-gold text-xs font-medium mb-2 border border-gold/30">
-            <Inbox className="h-3 w-3" /> Candidaturas
+            <Inbox className="h-3 w-3" /> {vagaId ? "Candidaturas" : "Todas as Candidaturas"}
           </div>
           <h1 className="font-display text-3xl font-semibold">
-            {vaga?.titulo ?? "Carregando..."}
+            {vaga?.titulo ?? "Novas Candidaturas"}
           </h1>
-          {vaga && (
+          {(vaga || items.length > 0) && (
             <p className="text-sm text-muted-foreground mt-0.5">
-              {CARGO_LABEL[vaga.cargo]} · {items.length} candidatura(s)
+              {vaga ? `${CARGO_LABEL[vaga.cargo]} · ` : ""} {items.length} candidatura(s)
             </p>
           )}
         </div>
-        <Button asChild variant="outline">
-          <Link to={`/vagas-admin/${vagaId}/pipeline`}>
-            <Layers className="h-4 w-4 mr-2" /> Visão Kanban
-          </Link>
-        </Button>
+        {vagaId && (
+          <Button asChild variant="outline">
+            <Link to={`/vagas-admin/${vagaId}/pipeline`}>
+              <Layers className="h-4 w-4 mr-2" /> Visão Kanban
+            </Link>
+          </Button>
+        )}
       </header>
 
       {loading ? (
@@ -300,6 +316,11 @@ const InboxCandidaturas = () => {
                   <StatusBadge status={c.status} />
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{c.email}</div>
+                {!vagaId && c.vagas && (
+                  <div className="text-[10px] text-gold mt-1 font-medium truncate">
+                    Vaga: {c.vagas.titulo}
+                  </div>
+                )}
                 <div className="text-[10px] text-muted-foreground mt-1">
                   {new Date(c.created_at).toLocaleString("pt-BR")}
                 </div>
@@ -404,7 +425,7 @@ const InboxCandidaturas = () => {
                     vagaId={selected.vaga_id}
                     candidatoNome={selected.nome}
                     candidatoEmail={selected.email}
-                    vagaTitulo={vaga?.titulo ?? ""}
+                    vagaTitulo={vaga?.titulo ?? selected.vagas?.titulo ?? ""}
                   />
                 </TabsContent>
 
