@@ -300,12 +300,15 @@ const InboxCandidaturas = () => {
                 key={c.id}
                 onClick={() => setSelected(c)}
                 className={cn(
-                  "w-full text-left surface-card rounded-lg p-4 transition border",
+                  "w-full text-left surface-card rounded-xl p-4 transition-all duration-300 border relative overflow-hidden group",
                   selected?.id === c.id
-                    ? "ring-1 ring-gold/40 border-gold/30"
-                    : "border-transparent hover:border-gold/20",
+                    ? "ring-2 ring-gold/40 border-gold/40 shadow-gold"
+                    : "border-white/5 hover:border-gold/30 hover:shadow-lg",
                 )}
               >
+                {selected?.id === c.id && (
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gold" />
+                )}
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2 truncate">
                     <div className="font-medium truncate">{c.nome}</div>
@@ -329,8 +332,8 @@ const InboxCandidaturas = () => {
           </div>
 
           {selected && (
-            <div className="surface-card rounded-xl p-3 sm:p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
+            <div className="surface-card rounded-2xl p-4 sm:p-7 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h2 className="font-display text-xl sm:text-2xl font-semibold truncate">{selected.nome}</h2>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
@@ -430,9 +433,9 @@ const InboxCandidaturas = () => {
                     </div>
                   )}
 
-                  <div>
-                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
-                      Respostas do candidato
+                  <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-4 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" /> Respostas do candidato
                     </h3>
                     <RespostasCandidato candidaturaId={selected.id} />
                   </div>
