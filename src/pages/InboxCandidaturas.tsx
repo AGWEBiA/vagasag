@@ -329,8 +329,8 @@ const InboxCandidaturas = () => {
           </div>
 
           {selected && (
-            <div className="surface-card rounded-xl p-3 sm:p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
+            <div className="surface-card rounded-2xl p-4 sm:p-7 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h2 className="font-display text-xl sm:text-2xl font-semibold truncate">{selected.nome}</h2>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
