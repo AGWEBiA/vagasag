@@ -131,7 +131,25 @@ const Relatorio = () => {
       const link = document.createElement("a");
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;
-      link.download = `relatorio-${id}.pdf`;
+      const safeCandidateName = (data?.candidates?.nome || "relatorio")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      
+      const safeJobTitle = (data?.candidates?.cargo || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      const fileName = safeJobTitle 
+        ? `${safeCandidateName}-${safeJobTitle}.pdf`
+        : `${safeCandidateName}-${id}.pdf`;
+
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       link.remove();
