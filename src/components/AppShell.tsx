@@ -39,7 +39,7 @@ import {
 
 const BASE_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/admin/candidaturas", label: "Candidaturas", icon: Inbox },
+  { to: "/admin/candidaturas", label: "Novas Candidaturas", icon: Inbox },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/nova-avaliacao", label: "Nova Avaliação", icon: Sparkles, badge: "IA" },
   { to: "/historico", label: "Histórico", icon: LucideHistory },
