@@ -63,6 +63,7 @@ const App = () => (
             <Route path="/relatorio/:id" element={<ProtectedRoute><Relatorio /></ProtectedRoute>} />
             <Route path="/vagas-admin" element={<ProtectedRoute><Vagas /></ProtectedRoute>} />
             <Route path="/banco-talentos" element={<ProtectedRoute><BancoTalentos /></ProtectedRoute>} />
+            <Route path="/admin/candidaturas" element={<ProtectedRoute><InboxCandidaturas /></ProtectedRoute>} />
             <Route
               path="/admin/candidaturas/:vagaId"
               element={<ProtectedRoute><InboxCandidaturas /></ProtectedRoute>}
