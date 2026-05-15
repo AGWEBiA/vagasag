@@ -331,10 +331,16 @@ const InboxCandidaturas = () => {
           {selected && (
             <div className="surface-card rounded-xl p-4 sm:p-6 space-y-5">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-display text-2xl font-semibold">{selected.nome}</h2>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Inscrito em {new Date(selected.created_at).toLocaleString("pt-BR")}
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-display text-2xl font-semibold truncate">{selected.nome}</h2>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
+                    <span>Inscrito em {new Date(selected.created_at).toLocaleString("pt-BR")}</span>
+                    {selected.vagas && (
+                      <>
+                        <span className="hidden sm:inline text-gold/30">•</span>
+                        <span className="text-gold font-medium">Vaga: {selected.vagas.titulo}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <StatusBadge status={selected.status} />
