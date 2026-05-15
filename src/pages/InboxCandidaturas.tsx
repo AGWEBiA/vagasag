@@ -293,8 +293,8 @@ const InboxCandidaturas = () => {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="grid gap-4 md:grid-cols-[280px_1fr]">
+          <div className="space-y-2 max-h-[40vh] md:max-h-[75vh] overflow-y-auto pr-1">
             {items.map((c) => (
               <button
                 key={c.id}
@@ -329,10 +329,10 @@ const InboxCandidaturas = () => {
           </div>
 
           {selected && (
-            <div className="surface-card rounded-xl p-4 sm:p-6 space-y-5">
+            <div className="surface-card rounded-xl p-3 sm:p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-display text-2xl font-semibold truncate">{selected.nome}</h2>
+                  <h2 className="font-display text-xl sm:text-2xl font-semibold truncate">{selected.nome}</h2>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mt-0.5">
                     <span>Inscrito em {new Date(selected.created_at).toLocaleString("pt-BR")}</span>
                     {selected.vagas && (
@@ -343,7 +343,20 @@ const InboxCandidaturas = () => {
                     )}
                   </div>
                 </div>
-                <StatusBadge status={selected.status} />
+                <div className="flex items-center gap-2 shrink-0">
+                  <StatusBadge status={selected.status} />
+                  {isAdminMaster && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleDelete}
+                      className="h-8 w-8 text-destructive border-destructive/30 hover:bg-destructive/10"
+                      title="Excluir candidatura"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -464,16 +477,6 @@ const InboxCandidaturas = () => {
                       <Sparkles className="h-4 w-4 mr-2" />
                     )}
                     Avaliar com IA
-                  </Button>
-                )}
-                {isAdminMaster && (
-                  <Button
-                    variant="outline"
-                    onClick={handleDelete}
-                    className="ml-auto text-destructive border-destructive/20 hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir Candidatura
                   </Button>
                 )}
               </div>
