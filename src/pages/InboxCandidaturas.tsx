@@ -430,9 +430,9 @@ const InboxCandidaturas = () => {
                     </div>
                   )}
 
-                  <div>
-                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-2">
-                      Respostas do candidato
+                  <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+                    <h3 className="font-display text-sm uppercase tracking-widest text-gold mb-4 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" /> Respostas do candidato
                     </h3>
                     <RespostasCandidato candidaturaId={selected.id} />
                   </div>
