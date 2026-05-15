@@ -1132,7 +1132,19 @@ const ViewAnswersDialog = ({
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
-      doc.save(`respostas-${safeName}.pdf`);
+      
+      const safeVaga = (data.vaga_titulo || data.cargo || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      const fileName = safeVaga 
+        ? `${safeName}-${safeVaga}.pdf`
+        : `respostas-${safeName}.pdf`;
+
+      doc.save(fileName);
       toast.success("PDF gerado!");
     } catch (e) {
       console.error(e);
