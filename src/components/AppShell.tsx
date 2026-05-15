@@ -102,8 +102,8 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar">
+    <div className="flex min-h-screen bg-background selection:bg-gold/30 selection:text-gold-bright">
+      <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border/30 bg-sidebar/80 backdrop-blur-xl sticky top-0 h-screen overflow-hidden">
         <div className="px-6 py-6 border-b border-sidebar-border">
           {branding.logo_horizontal_url ? (
             <img
