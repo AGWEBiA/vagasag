@@ -479,16 +479,6 @@ const InboxCandidaturas = () => {
                     Avaliar com IA
                   </Button>
                 )}
-                {isAdminMaster && (
-                  <Button
-                    variant="outline"
-                    onClick={handleDelete}
-                    className="ml-auto text-destructive border-destructive/20 hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir Candidatura
-                  </Button>
-                )}
               </div>
             </div>
           )}
