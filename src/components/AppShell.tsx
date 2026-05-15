@@ -82,10 +82,10 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           onClick={onClick}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-all min-h-[44px]",
-              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-gold",
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 min-h-[44px]",
+              "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-gold border border-transparent",
               isActive &&
-                "bg-sidebar-accent text-gold ring-1 ring-gold/20 shadow-card",
+                "bg-sidebar-accent text-gold border-gold/20 shadow-lg shadow-black/20",
             )
           }
         >
