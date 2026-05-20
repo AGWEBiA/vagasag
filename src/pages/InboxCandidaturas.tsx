@@ -318,7 +318,18 @@ const InboxCandidaturas = () => {
                   </div>
                   <StatusBadge status={c.status} />
                 </div>
-                <div className="text-xs text-muted-foreground truncate">{c.email}</div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                    <Mail className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{c.email}</span>
+                  </div>
+                  {c.telefone && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                      <Phone className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{c.telefone}</span>
+                    </div>
+                  )}
+                </div>
                 {!vagaId && c.vagas && (
                   <div className="text-[10px] text-gold mt-1 font-medium truncate">
                     Vaga: {c.vagas.titulo}
