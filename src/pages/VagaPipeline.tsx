@@ -8,6 +8,8 @@ import {
   Layers,
   List,
   Loader2,
+  Mail,
+  Phone,
   Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +39,7 @@ interface Candidatura {
   id: string;
   nome: string;
   email: string;
+  telefone: string | null;
   estagio_id: string | null;
   estagio_atualizado_em: string;
   candidate_id: string | null;
@@ -81,7 +84,7 @@ const VagaPipeline = () => {
       supabase
         .from("candidaturas")
         .select(
-          "id, nome, email, estagio_id, estagio_atualizado_em, candidate_id, tags, created_at, status, visualizada",
+          "id, nome, email, telefone, estagio_id, estagio_atualizado_em, candidate_id, tags, created_at, status, visualizada",
         )
         .eq("vaga_id", vagaId)
         .order("created_at", { ascending: false }),
@@ -349,8 +352,17 @@ const CardConteudo = ({ cand }: { cand: Candidatura }) => (
         <Sparkles className="h-3 w-3 text-gold shrink-0" />
       )}
     </div>
-    <div className="text-[11px] text-muted-foreground truncate">
-      {cand.email}
+    <div className="space-y-1 mt-1.5">
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
+        <Mail className="h-3 w-3 shrink-0" />
+        <span className="truncate">{cand.email}</span>
+      </div>
+      {cand.telefone && (
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
+          <Phone className="h-3 w-3 shrink-0" />
+          <span className="truncate">{cand.telefone}</span>
+        </div>
+      )}
     </div>
     {cand.tags.length > 0 && (
       <div className="flex flex-wrap gap-1 mt-2">
